@@ -9,11 +9,12 @@ import { WHATSAPP_URL } from "@/lib/constants";
 const STORAGE_KEY = "capco-chat-v1";
 const FUENTE_KEY = "capco-fuente-v1";
 const BIENVENIDA =
-  "Pregúntame lo que no entiendas de tu boleta: tasa, refrendo, cuánto vas a pagar o si te conviene moverte. Orientación general, sin costo. Tu caso real lo revisamos por WhatsApp.";
+  "Pregúntame lo que quieras sobre empeños: qué dice tu boleta, cuánto vas a pagar, cuánto debes hoy o si te conviene cambiar de institución. Aquí mismo lo resolvemos, sin costo. Si te conviene cambiar tu boleta, te agendo con un asesor.";
 const CHIPS = [
-  "¿Cuánto voy a pagar?",
-  "No entiendo mi boleta",
-  "¿Me conviene moverme?",
+  "Explícame mi boleta",
+  "¿Cuánto debo hoy?",
+  "¿Me conviene cambiar de casa de empeño?",
+  "Enséñame con un ejemplo",
 ];
 const MENSAJE_CAIDA =
   "Ahora mismo no puedo responder. Escríbenos por WhatsApp y un asesor te atiende.";
@@ -308,7 +309,7 @@ export default function ChatWidget() {
                     className="inline-flex items-center gap-2 rounded-full bg-esmeralda px-5 py-3 font-sans text-sm font-medium text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
                   >
                     <IconoWhatsApp className="h-5 w-5" />
-                    Continuar por WhatsApp
+                    Confirmar cita por WhatsApp
                   </a>
                 </div>
                 {cta.persistido && !contactoEnviado && (
@@ -326,11 +327,11 @@ export default function ChatWidget() {
           <ChatInput onEnviar={enviar} deshabilitado={cargando} autoFocus />
 
           <p className="border-t border-esmeralda/10 bg-papel px-4 py-2 text-center font-sans text-[11px] leading-snug text-esmeralda/55">
-            Orientación general, no asesoría personalizada. Tu caso real lo revisamos por{" "}
+            Asistente automático: orienta y evalúa tu caso. La cita con un asesor se confirma por{" "}
             <a href={WHATSAPP_URL} className="underline underline-offset-2">
               WhatsApp
             </a>
-            . El chat no guarda datos personales; solo los que dejes en el formulario, con tu permiso.
+            . No guarda datos personales; solo los que dejes en el formulario, con tu permiso.
           </p>
         </div>
       )}

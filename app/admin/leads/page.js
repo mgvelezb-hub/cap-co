@@ -83,14 +83,15 @@ export default async function LeadsPage() {
 
       <Tabla
         titulo="Últimos 50 leads"
-        encabezados={["Código", "Fecha", "Perfil", "Resumen", "Fuente", "WhatsApp", "Contacto"]}
+        encabezados={["Código", "Fecha", "Perfil", "Prob.", "Resumen", "Fuente", "WhatsApp", "Contacto"]}
       >
         {s.recientes.map((r) => (
           <tr key={r.codigo}>
             <td className="font-mono text-xs">{r.codigo}</td>
             <td className="whitespace-nowrap">{fmt(r.created_at)}</td>
             <td>{PERFILES[r.perfil]?.etiqueta || r.perfil}</td>
-            <td className="max-w-[28ch] text-esmeralda/80">{r.resumen}</td>
+            <td className="tabular-nums">{r.probabilidad != null ? `${r.probabilidad} %` : "—"}</td>
+            <td className="max-w-[36ch] text-esmeralda/80">{r.resumen}</td>
             <td>{r.utm_source || "directo"}</td>
             <td>{r.whatsapp_click_at ? "sí" : "—"}</td>
             <td className="whitespace-nowrap">
@@ -116,8 +117,8 @@ function Marco({ children }) {
         <p className="font-sans text-xs uppercase tracking-[0.2em] text-esmeralda/60">Interno</p>
         <h1 className="font-serif text-3xl">Leads del chatbot</h1>
         <p className="mt-1 font-sans text-sm text-esmeralda/70">
-          Cada lead es una conversación que cerró hacia WhatsApp. Nombre y teléfono solo aparecen si la
-          persona aceptó el aviso de privacidad.
+          Cada lead es una conversación en la que el asistente ofreció cita con un asesor (cambio de boleta con
+          probabilidad alta, o la persona lo pidió). Nombre y teléfono solo aparecen si aceptó el aviso de privacidad.
         </p>
       </header>
       {children}

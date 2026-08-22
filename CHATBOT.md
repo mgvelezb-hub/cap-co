@@ -5,6 +5,16 @@
 
 ---
 
+## 0. Cambio de alcance (22-ago-2026, tarde) — el chat resuelve; WhatsApp solo agenda
+
+Retroalimentación de Mau tras probarlo: redirigía demasiado pronto a WhatsApp y contestaba solo la primera pregunta. Nuevo comportamiento (vigente):
+- El chat debe resolver **hasta el 90 %** de las dudas él solo: explicar conceptos (como a alguien de 12 años), leer y **simular boletas**, cotizar, calcular lo que se debe hoy, **evaluar si conviene cambiar de institución** con números, capacitar (qué preguntar en mostrador, derechos) y perfilar.
+- Contesta **todas** las preguntas de un mensaje, en orden.
+- **WhatsApp = confirmar horario de una cita presencial** con un asesor que ya recibe el caso evaluado. Se ofrece solo cuando (a) la evaluación muestra que el cambio de boleta conviene y la persona quiere hacerlo, estimación **≥ 70 %** de que se concrete, o (b) la persona pide hablar con alguien.
+- El bot de WhatsApp (fase 3) reutiliza el mismo system prompt y tools; su último nivel es agendar (y, si se automatiza, gestionar la cita).
+
+Implementación: `system.js` reescrito (escalera de 4 niveles, señales de probabilidad, prohibido ofrecer asesor fuera de los casos), KB ampliada (boleta de ejemplo, analogías, método de comparación, tasas de referencia), tools nuevas `calcular_desempeno_hoy` y `comparar_opciones` (criterio: conviene si ahorro ≥ $500 o ≥ 5 %), `cerrar_a_whatsapp` → `agendar_cita(perfil, resumen, probabilidad)`; el lead guarda `probabilidad` y `etapa`; `max_tokens` 2048 y `effort: medium`; copy del widget ("Confirmar cita por WhatsApp"). Guiones v2 en `scratchpad/guiones2.mjs` (varias preguntas, niño de 12, simular boleta, evaluación sí/no, pide asesor, capacitación): todos correctos; costo ≈ $0.01 USD por turno (respuestas más largas).
+
 ## 1. Premisas y límites
 
 | Tema | Decisión | Por qué |

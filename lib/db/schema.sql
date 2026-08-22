@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS lead (
   notas         TEXT
 );
 
+-- Fase 2.1: calificación del lead al agendar.
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS probabilidad SMALLINT;   -- 0-100, estimada por el modelo al agendar
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS etapa TEXT NOT NULL DEFAULT 'cita_solicitada'; -- cita_solicitada | cita_confirmada | atendido | descartado
+
 CREATE INDEX IF NOT EXISTS lead_created_at_idx ON lead (created_at DESC);
 CREATE INDEX IF NOT EXISTS lead_perfil_idx     ON lead (perfil);
 

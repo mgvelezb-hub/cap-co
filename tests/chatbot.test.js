@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { calcularCosto } from "../lib/chatbot/calculo.js";
+import { calcularCosto, calcularDesempenoHoy, compararOpciones } from "../lib/chatbot/calculo.js";
 import { generarCodigo, construirLinkWhatsApp, PATRON_CODIGO } from "../lib/chatbot/codigo.js";
 import { PERFIL_IDS, esPerfilValido } from "../lib/chatbot/perfiles.js";
 
@@ -43,13 +43,13 @@ test("construirLinkWhatsApp arma wa.me con código y frase del perfil", () => {
   const texto = decodeURIComponent(url.split("text=")[1]);
   assert.equal(
     texto,
-    "Hola, vengo de la página. Código CAP-ABCD. Quiero saber si me conviene mover mi empeño a otra opción.",
+    "Hola, vengo de la página. Código CAP-ABCD. Quiero agendar una cita para cambiar mi boleta a una mejor opción.",
   );
 });
 
 test("construirLinkWhatsApp cae a 'curioso' con perfil desconocido y rechaza código malo", () => {
   const url = construirLinkWhatsApp({ numero: "525568809606", codigo: "CAP-ABCD", perfil: "xxx" });
-  assert.ok(decodeURIComponent(url).includes("Quiero asesoría sobre empeños."));
+  assert.ok(decodeURIComponent(url).includes("Quiero agendar una cita con un asesor."));
   assert.throws(() => construirLinkWhatsApp({ numero: "1", codigo: "CAP-0000", perfil: "curioso" }));
 });
 
@@ -62,7 +62,7 @@ test("perfiles: cinco perfiles válidos", () => {
 import { TOOLS, ejecutarTool } from "../lib/chatbot/tools.js";
 
 test("tools: definiciones estrictas y nombres estables", () => {
-  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "cerrar_a_whatsapp"]);
+  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "agendar_cita"]);
   for (const t of TOOLS) {
     assert.equal(t.strict, true);
     assert.equal(t.input_schema.additionalProperties, false);
@@ -77,8 +77,8 @@ test("ejecutarTool calcular_costo devuelve cifras formateadas y marca errores", 
   assert.equal(malo.esError, true);
 });
 
-test("ejecutarTool cerrar_a_whatsapp produce cta con código y link", async () => {
-  const r = await ejecutarTool("cerrar_a_whatsapp", { perfil: "boleta_vencida", resumen: "x" });
+test("ejecutarTool agendar_cita produce cta con código y link", async () => {
+  const r = await ejecutarTool("agendar_cita", { perfil: "boleta_vencida", resumen: "x", probabilidad: 80 });
   assert.match(r.cta.codigo, PATRON_CODIGO);
   assert.ok(r.cta.url.includes("wa.me/525568809606"));
   assert.ok(decodeURIComponent(r.cta.url).includes(r.cta.codigo));
@@ -108,4 +108,25 @@ test("limpiarFuente solo conserva llaves conocidas y recorta", () => {
   assert.equal(f.utm_source, "facebook");
   assert.equal(f.utm_campaign.length, 200);
   assert.deepEqual(limpiarFuente(null), {});
+});
+
+test("calcularDesempenoHoy: refrendar paga intereses, desempeñar liquida todo", () => {
+  const r = calcularDesempenoHoy({ prestamo: 5000, tasaMensual: 7.5, mesesSinPagar: 2, penalizacion: 0 });
+  assert.equal(r.ok, true);
+  assert.equal(r.interesMensual, 375);
+  assert.equal(r.refrendarHoy, 750);
+  assert.equal(r.desempenarHoy, 5750);
+  assert.equal(calcularDesempenoHoy({ prestamo: 5000, tasaMensual: 7.5, mesesSinPagar: 40, penalizacion: 0 }).ok, false);
+});
+
+test("compararOpciones: moverse a tasa menor conviene cuando el ahorro es claro", () => {
+  const r = compararOpciones({ prestamo: 5000, tasaActual: 8, tasaNueva: 3.5, mesesRestantes: 6, mesesSinPagar: 1, penalizacion: 0 });
+  assert.equal(r.ok, true);
+  assert.equal(r.liquidarHoy, 5400);
+  assert.equal(r.quedarse.total, 5400 + 2400);
+  assert.equal(r.moverse.total, 5400 + 1134);
+  assert.equal(r.ahorro, 1266);
+  assert.equal(r.conviene, true);
+  const corto = compararOpciones({ prestamo: 1000, tasaActual: 8, tasaNueva: 7, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0 });
+  assert.equal(corto.conviene, false);
 });

@@ -37,7 +37,7 @@ export default function ContactoForm({ codigo, onEnviado }) {
   if (estado.tipo === "ok") {
     return (
       <p className="rounded-xl border border-esmeralda/10 bg-papel-alto px-4 py-3 font-sans text-sm text-esmeralda/80">
-        Listo. Te escribimos por WhatsApp. Tu código es <span className="font-mono">{codigo}</span>.
+        Listo. Un asesor te escribe por WhatsApp para agendar. Tu código es <span className="font-mono">{codigo}</span>.
       </p>
     );
   }
@@ -57,7 +57,7 @@ export default function ContactoForm({ codigo, onEnviado }) {
   return (
     <form onSubmit={enviar} className="space-y-3 rounded-xl border border-esmeralda/10 bg-papel-alto p-4">
       <p className="font-sans text-sm text-esmeralda/80">
-        Déjanos tu nombre y WhatsApp y un asesor te escribe. Sin compromiso.
+        Déjanos tu nombre y WhatsApp y un asesor te escribe para agendar tu cita. Sin compromiso.
       </p>
       <input
         type="text"
@@ -95,7 +95,7 @@ export default function ContactoForm({ codigo, onEnviado }) {
           <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             aviso de privacidad
           </a>{" "}
-          y que me contacten por WhatsApp sobre mi consulta.
+          y que me contacten por WhatsApp para agendar mi cita.
         </span>
       </label>
       {estado.tipo === "error" && (

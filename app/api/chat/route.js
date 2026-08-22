@@ -22,10 +22,10 @@ const MODEL = process.env.CHAT_MODEL || "claude-sonnet-5";
 const MAX_MENSAJES = 20;
 const MAX_CHARS = 1500;
 const MAX_ITERACIONES = 3;
-const MAX_TOKENS = 1024;
+const MAX_TOKENS = 2048;
 
 const NOTA_CTA_PREVIO =
-  "\n\n[Nota del sistema, no del usuario: el botón de WhatsApp ya está en pantalla desde un turno anterior. No llames cerrar_a_whatsapp otra vez; si viene al caso, solo recuérdale que lo use.]";
+  "\n\n[Nota del sistema, no del usuario: el botón para agendar por WhatsApp ya está en pantalla desde un turno anterior. No llames agendar_cita otra vez; sigue resolviendo dudas y, si viene al caso, recuérdale que lo use.]";
 
 const MENSAJE_CAIDA =
   "Ahora mismo no puedo responder. Escríbenos por WhatsApp y un asesor te atiende.";
@@ -93,7 +93,7 @@ async function correrTurno(historial, emitir, { yaHayCta, fuente }) {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       thinking: { type: "adaptive" },
-      output_config: { effort: "low" },
+      output_config: { effort: "medium" },
       system: [
         { type: "text", text: SYSTEM },
         { type: "text", text: KNOWLEDGE, cache_control: { type: "ephemeral" } },
