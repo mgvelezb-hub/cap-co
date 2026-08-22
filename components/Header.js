@@ -6,7 +6,7 @@ import { WHATSAPP_URL, BRAND } from "@/lib/constants";
 
 const LINKS = [
   ["#quienes-somos", "¿Quiénes somos?"],
-  ["#problema", "El problema"],
+  ["#decide-bien", "Decide bien"],
   ["#boleta", "Tu boleta"],
   ["#calculadora", "Calcula"],
 ];

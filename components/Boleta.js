@@ -166,7 +166,7 @@ export default function Boleta() {
                     style={{ gridTemplateRows: abierta ? "1fr" : "0fr" }}
                   >
                     <div className="overflow-hidden">
-                      <p className="pt-3 font-sans leading-relaxed text-esmeralda/80 text-justify hyphens-auto">{z.texto}</p>
+                      <p className="pt-3 font-sans leading-relaxed text-esmeralda/80 text-justify">{z.texto}</p>
                       <p className="mt-3 inline-block rounded-lg bg-granate/[0.07] px-3 py-2 font-sans text-sm font-medium text-granate">
                         {z.alerta}
                       </p>

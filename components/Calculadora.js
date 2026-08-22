@@ -73,15 +73,16 @@ export default function Calculadora() {
         <div className="mt-2 font-serif text-[clamp(3rem,7vw,5.5rem)] leading-none tabular-nums">
           {fmt(total)}
         </div>
-        <p className="mt-5 max-w-md font-sans leading-relaxed text-sobre-verde/80 text-justify hyphens-auto">
+        <p className="mt-5 max-w-md font-sans leading-relaxed text-sobre-verde/80 text-justify">
           {fmt(monto)} de préstamo + {fmt(interesTotal)} de puros intereses
           ({fmt(interesMensual)} por mes). Recuperar tu pieza te costará{" "}
           <strong className="text-sobre-verde">{veces.toFixed(1)} veces</strong> lo que te
           prestaron.
         </p>
-        <p className="mt-4 max-w-md rounded-lg bg-white/[0.08] px-4 py-3 font-sans text-sm text-sobre-verde/90">
-          Y si solo refrendas, nada de esto baja tu deuda: el refrendo paga
-          únicamente el interés del mes.
+        <p className="mt-4 w-fit max-w-full rounded-lg bg-white/[0.08] px-4 py-3 font-sans text-sm text-sobre-verde/90">
+          Y si solo refrendas, nada de esto baja tu deuda:
+          <br className="hidden sm:block" /> el refrendo paga únicamente el
+          interés del mes.
         </p>
         <a
           href={WHATSAPP_URL}

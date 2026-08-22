@@ -16,7 +16,7 @@ import * as THREE from "three";
 // aparecía nunca, solo "por accidente" cuando otro reflow —como el scroll—
 // forzaba una remedición). El wrapper CSS de afuera ahora solo maneja opacity,
 // que no afecta el tamaño medido.
-const POP_DELAY = 2.6;
+const POP_DELAY = 3.15;
 const POP_DURATION = 0.6;
 const TARGET_SCALE = [0.82, 1, 0.82];
 
@@ -36,9 +36,12 @@ function Gema({ girando }) {
   const geometry = useMemo(() => new THREE.OctahedronGeometry(1, 0), []);
   return (
     <mesh ref={ref} geometry={geometry} scale={[0, 0, 0]} rotation={[0, 0.4, 0]}>
-      {/* Granate exacto de la ficha técnica (#A32638): metalness/roughness bajos para
-          que la luz no lo desplace hacia blanco o negro, solo lo modele. */}
-      <meshStandardMaterial color="#A32638" roughness={0.42} metalness={0.06} />
+      {/* Oro del rombo del PDF (mediana #B88F54, brillo hasta #EFDCAB). Metalness
+          casi nulo a propósito: sin environment map, un material metálico solo
+          refleja negro y el oro se ve marrón sucio. Con metalness bajo la luz
+          modela las caras igual que hacía con el granate y el tono queda en la
+          rampa dorada real de la ficha. */}
+      <meshStandardMaterial color="#C8A24B" roughness={0.42} metalness={0.08} />
     </mesh>
   );
 }

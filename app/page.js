@@ -1,6 +1,7 @@
 import Logo from "@/components/Logo";
 import AnimatedLogo from "@/components/AnimatedLogo";
 import Gem3D from "@/components/Gem3D";
+import RayaRombo from "@/components/RayaRombo";
 import Header from "@/components/Header";
 import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
@@ -12,13 +13,17 @@ function Hero() {
   return (
     <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-5 py-16 md:px-8 lg:grid-cols-2 lg:gap-10">
-        <div className="flex justify-center lg:justify-start">
+        <div className="flex items-center justify-center gap-14 lg:justify-start">
           <div className="relative">
             <AnimatedLogo className="h-60 w-auto sm:h-72 md:h-80 lg:h-[28rem]" />
             <div className="pointer-events-none absolute left-1/2 top-[21%] h-[13%] w-[13%] -translate-x-1/2 -translate-y-1/2">
               <Gem3D className="h-full w-full" />
             </div>
           </div>
+          {/* Raya del lockup del PDF: 0.751 del alto del isotipo (28rem → 21rem).
+              Solo en lg, donde el hero replica la disposición horizontal
+              isotipo · raya · nombre del lockup. */}
+          <RayaRombo className="raya-fade hidden w-auto lg:block lg:h-[21rem]" />
         </div>
         <Reveal delay={250} className="text-center lg:text-left">
           <h1 className="font-serif text-[clamp(2.75rem,6vw,4.75rem)] leading-[1.05] tracking-wide">
@@ -27,7 +32,7 @@ function Hero() {
           <p className="mt-4 font-sans text-sm uppercase tracking-[0.28em] text-esmeralda/55 md:text-[15px]">
             {BRAND.slogan}
           </p>
-          <p className="mx-auto mt-9 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 text-justify hyphens-auto lg:mx-0">
+          <p className="mx-auto mt-9 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 text-justify lg:mx-0">
             Te explicamos exactamente qué firmaste, cuánto vas a pagar y qué
             opciones tienes. Con datos reales, no promesas.
           </p>
@@ -58,30 +63,29 @@ function Hero() {
 
 function Problema() {
   return (
-    <section id="problema" className="bg-esmeralda text-sobre-verde">
+    <section id="decide-bien" className="bg-esmeralda text-sobre-verde">
       <div className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
         <Reveal>
           <h2 className="max-w-[24ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
-            La industria del empeño vive de que no la entiendas.
+            Decidir bien vale más que decidir rápido.
           </h2>
         </Reveal>
         <div className="mt-14 grid gap-12 md:grid-cols-12">
           <Reveal delay={100} className="md:col-span-5">
-            <p className="font-sans text-lg leading-relaxed text-sobre-verde/80 text-justify hyphens-auto">
-              Millones de personas empeñan sin entender tasas, refrendos ni
-              costos totales. Firmas hoy por una urgencia, y meses después
-              sigues pagando sin saber exactamente por qué, ni cuánto falta, ni
-              si había una opción mejor.
+            <p className="font-sans text-lg leading-relaxed text-sobre-verde/80 text-justify">
+              Antes de empeñar — o si ya empeñaste — conocer tus números te da
+              poder: cuánto vas a pagar en total, cuándo terminas, y si existe
+              una opción mejor. Eso es lo que ponemos sobre la mesa.
             </p>
           </Reveal>
           <Reveal delay={220} className="md:col-span-7">
             <div className="border-t border-sobre-verde/20 pt-8 md:border-l md:border-t-0 md:pl-12 md:pt-0">
               <p className="font-serif text-2xl leading-snug md:text-3xl">
-                Nosotros traducimos tu boleta a lenguaje humano, comparamos
-                opciones reales del mercado y te acompañamos si decides moverte
-                a una mejor.
+                Revisamos tu boleta, te explicamos tasas, plazos y costo total,
+                y después de analizar tu caso te orientamos sobre lo que más te
+                conviene.
               </p>
-              <p className="mt-6 font-sans leading-relaxed text-sobre-verde/70 text-justify hyphens-auto">
+              <p className="mt-6 font-sans leading-relaxed text-sobre-verde/70 text-justify">
                 Y si no te conviene moverte, también te lo decimos. Esa es la
                 diferencia.
               </p>
@@ -100,9 +104,9 @@ function SeccionBoleta() {
         <h2 className="max-w-[22ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
           Así se lee una boleta de empeño.
         </h2>
-        <p className="mt-5 max-w-[52ch] font-sans text-lg leading-relaxed text-esmeralda/75 text-justify hyphens-auto">
-          Cuatro datos deciden cuánto vas a pagar. Tócalos para ver qué
-          significan de verdad.
+        <p className="mt-5 font-sans text-lg leading-relaxed text-esmeralda/75">
+          Cuatro datos determinan cuánto vas a pagar. Toca cada uno para
+          conocer su significado.
         </p>
       </Reveal>
       <Reveal delay={150} className="mt-14">
@@ -120,7 +124,7 @@ function SeccionCalculadora() {
           <h2 className="max-w-[24ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
             ¿Cuánto vas a pagar realmente?
           </h2>
-          <p className="mt-5 max-w-[52ch] font-sans text-lg leading-relaxed text-sobre-verde/75 text-justify hyphens-auto">
+          <p className="mt-5 font-sans text-lg leading-relaxed text-sobre-verde/75">
             Mueve los números de tu caso y mira el costo completo, el que no
             aparece en el mostrador.
           </p>
@@ -151,13 +155,13 @@ function ComoFunciona() {
         <div className="absolute left-0 right-0 top-5 hidden h-px bg-esmeralda/15 lg:block" aria-hidden="true" />
         <div className="grid gap-12 lg:grid-cols-4 lg:gap-8">
           {pasos.map(([titulo, texto], i) => (
-            <Reveal key={titulo} delay={i * 130} className={i % 2 === 1 ? "lg:mt-12" : ""}>
+            <Reveal key={titulo} delay={i * 130}>
               <div>
                 <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-full bg-esmeralda font-serif text-lg text-sobre-verde">
                   {i + 1}
                 </div>
                 <h3 className="mb-3 font-serif text-xl md:text-2xl">{titulo}</h3>
-                <p className="max-w-[36ch] font-sans text-[15px] leading-relaxed text-esmeralda/70 text-justify hyphens-auto">{texto}</p>
+                <p className="max-w-[36ch] font-sans text-[15px] leading-relaxed text-esmeralda/70 text-justify">{texto}</p>
               </div>
             </Reveal>
           ))}
@@ -175,10 +179,10 @@ function QuienesSomos() {
     "Vas a empeñar por primera vez y quieres entender antes de firmar",
   ];
   const valores = [
-    ["Claridad radical", "si no lo entiende un niño de 10 años, se reescribe."],
-    ["Datos, no opiniones", "cada comparación con números verificables."],
-    ["Evaluación justa", "solo recomendamos un movimiento si te beneficia."],
-    ["Discreción", "tu situación y tus piezas son asunto tuyo."],
+    ["Claridad radical", "Te explicamos cada término en lenguaje claro, sin tecnicismos."],
+    ["Datos, no opiniones", "Cada comparación con números verificables."],
+    ["Evaluación justa", "Solo recomendamos un movimiento si te beneficia."],
+    ["Discreción", "Tu situación y tus piezas son asunto tuyo."],
   ];
   return (
     <section id="quienes-somos" className="border-t border-esmeralda/10 bg-papel-alto">
@@ -186,14 +190,14 @@ function QuienesSomos() {
         {/* Por qué existimos */}
         <Reveal>
           <p className="max-w-[30ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
-            La industria del empeño vive de que no entiendas tu contrato.
-            Nosotros elegimos lo contrario.
+            Una decisión prendaria bien informada cambia el resultado.
+            Nuestro trabajo es que llegues a ella.
           </p>
         </Reveal>
 
         {/* Qué hacemos */}
         <Reveal delay={80} className="mt-10 max-w-[62ch]">
-          <p className="font-sans text-lg leading-relaxed text-esmeralda/75 text-justify hyphens-auto">
+          <p className="font-sans text-lg leading-relaxed text-esmeralda/75 text-justify">
             Revisamos tu boleta cláusula por cláusula, la comparamos contra
             otras opciones reales del mercado y te acompañamos si conviene
             moverte a una mejor. CONDUSEF recomienda comparar como mínimo tres
@@ -214,22 +218,39 @@ function QuienesSomos() {
                   <svg viewBox="0 0 16 20" className="mt-1.5 h-4 w-auto shrink-0" aria-hidden="true">
                     <path d="M 8 0 L 16 10 L 8 20 L 0 10 Z" fill="#A32638" />
                   </svg>
-                  <p className="font-sans leading-relaxed text-esmeralda/80 text-justify hyphens-auto">{s}</p>
+                  <p className="font-sans leading-relaxed text-esmeralda/80 text-justify">{s}</p>
                 </li>
               ))}
             </ul>
           </Reveal>
           <Reveal delay={220} className="lg:col-span-7">
-            <p className="font-sans leading-relaxed text-esmeralda/70 text-justify hyphens-auto">
-              Que cualquier persona entienda exactamente qué firmó al empeñar,
-              cuánto va a pagar y qué opciones tiene: esa es nuestra misión
-              completa.
-            </p>
-            <p className="mt-5 max-w-[50ch] font-sans leading-relaxed text-esmeralda/70 text-justify hyphens-auto">
-              Nuestra visión es ser la referencia de confianza en México para
-              decisiones prendarias, donde la gente llega confundida y sale
-              sabiendo qué le conviene.
-            </p>
+            <div className="flex h-full flex-col justify-between gap-12">
+              <div>
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 16 20" className="h-4 w-auto shrink-0" aria-hidden="true">
+                    <path d="M 8 0 L 16 10 L 8 20 L 0 10 Z" fill="#C8A24B" />
+                  </svg>
+                  <h3 className="font-serif text-2xl md:text-3xl">Misión</h3>
+                </div>
+                <p className="mt-4 max-w-[52ch] font-sans leading-relaxed text-esmeralda/70">
+                  Que cualquier persona entienda exactamente qué opciones
+                  tiene, qué firmó al empeñar y cuánto va a pagar.
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 16 20" className="h-4 w-auto shrink-0" aria-hidden="true">
+                    <path d="M 8 0 L 16 10 L 8 20 L 0 10 Z" fill="#C8A24B" />
+                  </svg>
+                  <h3 className="font-serif text-2xl md:text-3xl">Visión</h3>
+                </div>
+                <p className="mt-4 max-w-[52ch] font-sans leading-relaxed text-esmeralda/70">
+                  Ser la referencia de confianza en México para decisiones
+                  prendarias: la gente llega confundida y sale sabiendo qué
+                  le conviene.
+                </p>
+              </div>
+            </div>
           </Reveal>
         </div>
 
@@ -238,8 +259,8 @@ function QuienesSomos() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
             {valores.map(([titulo, texto], i) => (
               <div key={titulo} className={i > 0 ? "lg:border-l lg:border-esmeralda/10 lg:pl-8" : ""}>
-                <h3 className="font-serif text-xl">{titulo}</h3>
-                <p className="mt-2 font-sans text-[15px] leading-relaxed text-esmeralda/70 text-justify hyphens-auto">
+                <h3 className="text-center font-serif text-xl">{titulo}</h3>
+                <p className="mt-2 font-sans text-[15px] leading-relaxed text-esmeralda/70 text-justify">
                   {texto}
                 </p>
               </div>

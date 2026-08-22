@@ -37,6 +37,11 @@
     animation: none !important;
     opacity: 1 !important;
   }
+  .animated-logo .fill-in,
+  .raya-fade {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
 
 /* Marquesina de verdades */
@@ -69,12 +74,32 @@
   }
 }
 
+/* Piezas rellenas nuevas del logo (anillo, diamante, patines): el
+   contorno se dibuja con .segment, y recién al terminar se funde el
+   relleno con degradado — mismo truco que .gem-fade pero por elemento. */
+.animated-logo .fill-in {
+  opacity: 0;
+  animation: fill-in var(--dur, 0.3s) linear var(--delay, 0s) both;
+}
+@keyframes fill-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Raya vertical con rombo (lockup del PDF): entra desvanecida junto con el
+   anillo, cuando el monograma ya está completo. */
+.raya-fade {
+  opacity: 0;
+  animation: fill-in 600ms linear 2.55s both;
+}
+
 /* Gema 3D del hero: opacity SOLO (nunca transform/scale aquí — un contenedor
    con transform:scale(0) hace que getBoundingClientRect() mida 0x0, y R3F
    sizea el canvas con eso al montar; el "pop" de escala real vive dentro de
    Three.js, en Gem3D.js). Aparece justo después de que se completa la A. */
 .gem-fade {
-  animation: gem-fade 0.4s linear 2.55s both;
+  animation: gem-fade 0.4s linear 3.1s both;
 }
 @keyframes gem-fade {
   from {
@@ -117,4 +142,3 @@ input[type="range"]::-moz-range-thumb {
   border: none;
   cursor: pointer;
 }
-
