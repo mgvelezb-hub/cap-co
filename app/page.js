@@ -334,7 +334,7 @@ function Footer() {
           <span>
             © {new Date().getFullYear()} {BRAND.nombre} · {BRAND.slogan}
           </span>
-          <a href="#" className="underline-offset-4 hover:underline">
+          <a href="/aviso-de-privacidad" className="underline-offset-4 hover:underline">
             Aviso de privacidad
           </a>
         </div>

@@ -69,18 +69,43 @@ test("tools: definiciones estrictas y nombres estables", () => {
   }
 });
 
-test("ejecutarTool calcular_costo devuelve cifras formateadas y marca errores", () => {
-  const ok = JSON.parse(ejecutarTool("calcular_costo", { prestamo: 2000, tasa_mensual: 8, meses: 6 }).resultado);
+test("ejecutarTool calcular_costo devuelve cifras formateadas y marca errores", async () => {
+  const ok = JSON.parse((await ejecutarTool("calcular_costo", { prestamo: 2000, tasa_mensual: 8, meses: 6 })).resultado);
   assert.equal(ok.total_a_pagar, "$2,960");
   assert.equal(ok.veces_el_prestamo, 1.48);
-  const malo = ejecutarTool("calcular_costo", { prestamo: 2000, tasa_mensual: 200, meses: 6 });
+  const malo = await ejecutarTool("calcular_costo", { prestamo: 2000, tasa_mensual: 200, meses: 6 });
   assert.equal(malo.esError, true);
 });
 
-test("ejecutarTool cerrar_a_whatsapp produce cta con código y link", () => {
-  const r = ejecutarTool("cerrar_a_whatsapp", { perfil: "boleta_vencida", resumen: "x" });
+test("ejecutarTool cerrar_a_whatsapp produce cta con código y link", async () => {
+  const r = await ejecutarTool("cerrar_a_whatsapp", { perfil: "boleta_vencida", resumen: "x" });
   assert.match(r.cta.codigo, PATRON_CODIGO);
   assert.ok(r.cta.url.includes("wa.me/525568809606"));
   assert.ok(decodeURIComponent(r.cta.url).includes(r.cta.codigo));
   assert.equal(JSON.parse(r.resultado).codigo, r.cta.codigo);
+});
+
+import { normalizarTelefono, validarContacto, limpiarFuente } from "../lib/leads/validar.js";
+
+test("normalizarTelefono acepta formatos comunes de México", () => {
+  assert.equal(normalizarTelefono("55 1234 5678"), "5512345678");
+  assert.equal(normalizarTelefono("+52 55 1234 5678"), "5512345678");
+  assert.equal(normalizarTelefono("+52 1 55 1234 5678"), "5512345678");
+  assert.equal(normalizarTelefono("12345"), null);
+  assert.equal(normalizarTelefono(5512345678), null);
+});
+
+test("validarContacto exige consentimiento, nombre y teléfono válidos", () => {
+  assert.equal(validarContacto({ nombre: "Ana", telefono: "5512345678", acepta: false }).ok, false);
+  assert.equal(validarContacto({ nombre: "A", telefono: "5512345678", acepta: true }).ok, false);
+  const ok = validarContacto({ nombre: "  Ana   López ", telefono: "55-12-34-56-78", acepta: true });
+  assert.deepEqual(ok, { ok: true, nombre: "Ana López", telefono: "5512345678" });
+});
+
+test("limpiarFuente solo conserva llaves conocidas y recorta", () => {
+  const f = limpiarFuente({ utm_source: " facebook ", hack: "x", path: "/", utm_campaign: "a".repeat(300) });
+  assert.deepEqual(Object.keys(f).sort(), ["path", "utm_campaign", "utm_source"]);
+  assert.equal(f.utm_source, "facebook");
+  assert.equal(f.utm_campaign.length, 200);
+  assert.deepEqual(limpiarFuente(null), {});
 });

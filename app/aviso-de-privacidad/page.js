@@ -1,0 +1,110 @@
+// Aviso de privacidad PROVISIONAL (estructura LFPDPPP: responsable, datos, finalidades, ARCO,
+// transferencias, cambios). Redactado por el equipo; pendiente de revisión legal y de los datos
+// del responsable (razón social, domicilio, correo) que entrega Ricardo.
+
+import Header from "@/components/Header";
+import { BRAND } from "@/lib/constants";
+import { AVISO_VERSION } from "@/lib/leads/validar";
+
+export const metadata = {
+  title: "Aviso de privacidad — CAP & Co.",
+  robots: { index: false, follow: false },
+};
+
+const CORREO_PRIVACIDAD = "[correo de privacidad pendiente]";
+const RESPONSABLE = "[razón social pendiente]";
+const DOMICILIO = "[domicilio pendiente], Ciudad de México";
+
+export default function AvisoPrivacidad() {
+  return (
+    <>
+      <Header />
+      <main className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-24">
+        <p className="font-sans text-xs uppercase tracking-[0.2em] text-esmeralda/60">Aviso de privacidad</p>
+        <h1 className="mt-2 font-serif text-[clamp(2rem,4.5vw,3rem)] leading-tight">
+          Qué datos tomamos y para qué.
+        </h1>
+        <p className="mt-4 font-sans text-sm text-esmeralda/60">
+          Versión {AVISO_VERSION}. Documento provisional, en revisión legal.
+        </p>
+
+        <div className="prose-capco mt-10 space-y-8 font-sans text-[1.0625rem] leading-relaxed text-esmeralda/90">
+          <Seccion titulo="Responsable">
+            <p>
+              {RESPONSABLE}, que opera bajo la marca {BRAND.nombre} ({BRAND.slogan}), con domicilio en{" "}
+              {DOMICILIO}, es responsable del tratamiento de tus datos personales conforme a la Ley Federal de
+              Protección de Datos Personales en Posesión de los Particulares.
+            </p>
+          </Seccion>
+
+          <Seccion titulo="Qué datos recabamos">
+            <p>
+              El asistente virtual de esta página no solicita ni guarda datos personales. Solo registra, de forma
+              anónima, el tipo de consulta (por ejemplo, &ldquo;va a empeñar por primera vez&rdquo;), un resumen breve
+              sin datos identificables, la fecha y la fuente de la visita, asociados a un código de seguimiento.
+            </p>
+            <p>
+              Si decides dejarnos tu nombre y número de WhatsApp en el formulario, recabamos únicamente esos dos datos,
+              con tu consentimiento expreso.
+            </p>
+            <p>
+              Cuando nos escribes por WhatsApp y nos compartes tu boleta de empeño, recabamos los datos que aparezcan
+              en ella (nombre, número de contrato, monto, institución) y los que tú nos proporciones para revisar tu caso.
+            </p>
+          </Seccion>
+
+          <Seccion titulo="Para qué los usamos">
+            <p>Finalidades primarias: contactarte por WhatsApp cuando lo solicitas; revisar tu boleta y orientarte sobre tasas, plazos, costo total y opciones; dar seguimiento a tu consulta.</p>
+            <p>Finalidades secundarias: estadísticas internas anónimas sobre el tipo de consultas recibidas, para mejorar el servicio. Puedes oponerte a esta finalidad escribiendo al correo indicado abajo.</p>
+            <p>No usamos tus datos para publicidad de terceros ni los vendemos.</p>
+          </Seccion>
+
+          <Seccion titulo="Con quién los compartimos">
+            <p>
+              No transferimos tus datos a terceros, salvo cuando tú nos pidas acompañarte en un traspaso y sea
+              necesario compartirlos con la institución que elijas, o cuando lo exija la ley. Nuestros proveedores
+              tecnológicos (alojamiento web, base de datos y mensajería) tratan los datos únicamente por cuenta
+              nuestra y bajo obligaciones de confidencialidad.
+            </p>
+          </Seccion>
+
+          <Seccion titulo="Cuánto tiempo los conservamos">
+            <p>
+              Los datos de contacto y de tu consulta se conservan mientras dure la atención de tu caso y hasta 12 meses
+              después, salvo que solicites antes su eliminación. Los registros anónimos de estadística se conservan sin
+              límite, pues no te identifican.
+            </p>
+          </Seccion>
+
+          <Seccion titulo="Tus derechos (ARCO)">
+            <p>
+              Puedes acceder, rectificar, cancelar u oponerte al tratamiento de tus datos, así como revocar tu
+              consentimiento, escribiendo a {CORREO_PRIVACIDAD} con tu nombre, el código de seguimiento si lo tienes y
+              la solicitud concreta. Respondemos en un máximo de 20 días hábiles.
+            </p>
+          </Seccion>
+
+          <Seccion titulo="Cambios a este aviso">
+            <p>
+              Si este aviso cambia, publicaremos la nueva versión en esta misma página con su fecha. La versión que
+              aceptaste al dejar tus datos queda registrada.
+            </p>
+          </Seccion>
+        </div>
+
+        <p className="mt-14 font-sans text-sm text-esmeralda/60">
+          <a href="/" className="underline underline-offset-4">Volver a la página principal</a>
+        </p>
+      </main>
+    </>
+  );
+}
+
+function Seccion({ titulo, children }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="font-serif text-2xl">{titulo}</h2>
+      {children}
+    </section>
+  );
+}

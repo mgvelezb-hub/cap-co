@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
+import ContactoForm from "./ContactoForm";
 import { WHATSAPP_URL } from "@/lib/constants";
 
 const STORAGE_KEY = "capco-chat-v1";
+const FUENTE_KEY = "capco-fuente-v1";
 const BIENVENIDA =
   "Pregúntame lo que no entiendas de tu boleta: tasa, refrendo, cuánto vas a pagar o si te conviene moverte. Orientación general, sin costo. Tu caso real lo revisamos por WhatsApp.";
 const CHIPS = [
@@ -15,6 +17,27 @@ const CHIPS = [
 ];
 const MENSAJE_CAIDA =
   "Ahora mismo no puedo responder. Escríbenos por WhatsApp y un asesor te atiende.";
+
+// Fuente de la visita (primer toque): utm_* de la URL, referrer y ruta. Sin datos personales.
+function capturarFuente() {
+  try {
+    const previa = sessionStorage.getItem(FUENTE_KEY);
+    if (previa) return JSON.parse(previa);
+    const q = new URLSearchParams(window.location.search);
+    const fuente = { path: window.location.pathname };
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content"]) {
+      const v = q.get(k);
+      if (v) fuente[k] = v;
+    }
+    if (document.referrer && !document.referrer.startsWith(window.location.origin)) {
+      fuente.referrer = document.referrer.slice(0, 200);
+    }
+    sessionStorage.setItem(FUENTE_KEY, JSON.stringify(fuente));
+    return fuente;
+  } catch {
+    return {};
+  }
+}
 
 function cargarEstado() {
   try {
@@ -35,6 +58,8 @@ export default function ChatWidget() {
   const [cargando, setCargando] = useState(false);
   const [hidratado, setHidratado] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [contactoEnviado, setContactoEnviado] = useState(false);
+  const fuenteRef = useRef({});
   const listaRef = useRef(null);
   const panelRef = useRef(null);
   const abortRef = useRef(null);
@@ -44,18 +69,20 @@ export default function ChatWidget() {
     if (guardado) {
       setMensajes(guardado.mensajes);
       setCta(guardado.cta || null);
+      setContactoEnviado(guardado.contactoEnviado === true);
     }
+    fuenteRef.current = capturarFuente();
     setHidratado(true);
   }, []);
 
   useEffect(() => {
     if (!hidratado) return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ mensajes, cta }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ mensajes, cta, contactoEnviado }));
     } catch {
       // sin almacenamiento: el chat sigue funcionando en memoria
     }
-  }, [mensajes, cta, hidratado]);
+  }, [mensajes, cta, contactoEnviado, hidratado]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -112,6 +139,7 @@ export default function ChatWidget() {
           body: JSON.stringify({
             messages: historial.map(({ role, content }) => ({ role, content })),
             hasCta: Boolean(cta),
+            fuente: fuenteRef.current,
           }),
           signal: controller.signal,
         });
@@ -149,7 +177,7 @@ export default function ChatWidget() {
               acumulado += evento.text;
               pintar(acumulado, true);
             } else if (evento.type === "cta" && evento.url) {
-              setCta({ codigo: evento.codigo, url: evento.url });
+              setCta({ codigo: evento.codigo, url: evento.url, persistido: evento.persistido === true });
             } else if (evento.type === "error") {
               acumulado = acumulado ? `${acumulado}\n\n${evento.message}` : evento.message;
               pintar(acumulado, true);
@@ -172,7 +200,18 @@ export default function ChatWidget() {
     abortRef.current?.abort();
     setMensajes([]);
     setCta(null);
+    setContactoEnviado(false);
     setCargando(false);
+  }
+
+  // Marca el click en WhatsApp sin bloquear la navegación (sendBeacon sobrevive al cambio de pestaña).
+  function registrarClick() {
+    if (!cta?.codigo) return;
+    try {
+      navigator.sendBeacon(`/api/leads/${cta.codigo}/click`);
+    } catch {
+      // sin beacon: no pasa nada, el link sigue funcionando
+    }
   }
 
   return (
@@ -259,16 +298,27 @@ export default function ChatWidget() {
               <ChatMessage key={i} role={m.role} content={m.content} pendiente={m.pendiente} />
             ))}
             {cta && (
-              <div className="flex justify-start">
-                <a
-                  href={cta.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-esmeralda px-5 py-3 font-sans text-sm font-medium text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
-                >
-                  <IconoWhatsApp className="h-5 w-5" />
-                  Continuar por WhatsApp
-                </a>
+              <div className="space-y-3">
+                <div className="flex justify-start">
+                  <a
+                    href={cta.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={registrarClick}
+                    className="inline-flex items-center gap-2 rounded-full bg-esmeralda px-5 py-3 font-sans text-sm font-medium text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
+                  >
+                    <IconoWhatsApp className="h-5 w-5" />
+                    Continuar por WhatsApp
+                  </a>
+                </div>
+                {cta.persistido && !contactoEnviado && (
+                  <ContactoForm codigo={cta.codigo} onEnviado={() => setContactoEnviado(true)} />
+                )}
+                {cta.persistido && contactoEnviado && (
+                  <p className="font-sans text-xs text-esmeralda/60">
+                    Ya tenemos tu contacto. Te escribimos por WhatsApp.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -280,7 +330,7 @@ export default function ChatWidget() {
             <a href={WHATSAPP_URL} className="underline underline-offset-2">
               WhatsApp
             </a>
-            . Este chat no guarda datos personales.
+            . El chat no guarda datos personales; solo los que dejes en el formulario, con tu permiso.
           </p>
         </div>
       )}

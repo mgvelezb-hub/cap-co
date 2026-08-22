@@ -1,6 +1,7 @@
 // POST /api/chat — un turno del chatbot.
-// Entrada: { messages: [{role:"user"|"assistant", content:string}, ...], hasCta?: boolean }
+// Entrada: { messages: [{role:"user"|"assistant", content:string}, ...], hasCta?: boolean, fuente?: object }
 //   hasCta = el widget ya muestra el botón de WhatsApp de un turno anterior.
+//   fuente = utm_source/medium/campaign/referrer/path de la visita (para el lead).
 // Salida: stream de líneas JSON (NDJSON):
 //   {type:"text", text}          fragmento de respuesta
 //   {type:"cta", codigo, url}    botón de WhatsApp (cuando el modelo cierra)
@@ -12,6 +13,7 @@ import { SYSTEM } from "@/lib/chatbot/system";
 import { KNOWLEDGE } from "@/lib/chatbot/knowledge";
 import { TOOLS, ejecutarTool } from "@/lib/chatbot/tools";
 import { permitir, ipDeRequest } from "@/lib/chatbot/ratelimit";
+import { limpiarFuente } from "@/lib/leads/validar";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -50,6 +52,7 @@ export async function POST(request) {
     return Response.json({ error: "Formato de mensajes inválido." }, { status: 400 });
   }
   const yaHayCta = body?.hasCta === true;
+  const fuente = limpiarFuente(body?.fuente);
   if (yaHayCta) {
     // Va al final del último mensaje (fuera del prefijo cacheado). Es del servidor, no del usuario.
     const ultimo = mensajes[mensajes.length - 1];
@@ -61,7 +64,7 @@ export async function POST(request) {
     async start(controller) {
       const emitir = (obj) => controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
       try {
-        await correrTurno(mensajes, emitir, { yaHayCta });
+        await correrTurno(mensajes, emitir, { yaHayCta, fuente });
       } catch (err) {
         registrarError(err);
         emitir({ type: "error", message: MENSAJE_CAIDA });
@@ -79,7 +82,7 @@ export async function POST(request) {
   });
 }
 
-async function correrTurno(historial, emitir, { yaHayCta }) {
+async function correrTurno(historial, emitir, { yaHayCta, fuente }) {
   const messages = [...historial];
   const usoAcumulado = { input: 0, cache_read: 0, cache_write: 0, output: 0 };
   let ctaEmitido = yaHayCta;
@@ -123,19 +126,23 @@ async function correrTurno(historial, emitir, { yaHayCta }) {
     const llamadas = respuesta.content.filter((b) => b.type === "tool_use");
     messages.push({ role: "assistant", content: respuesta.content });
 
-    const resultados = llamadas.map((llamada) => {
-      const { resultado, cta, esError } = ejecutarTool(llamada.name, llamada.input, { yaHayCta: ctaEmitido });
+    const resultados = [];
+    for (const llamada of llamadas) {
+      const { resultado, cta, esError } = await ejecutarTool(llamada.name, llamada.input, {
+        yaHayCta: ctaEmitido,
+        fuente,
+      });
       if (cta) {
         ctaEmitido = true;
-        emitir({ type: "cta", codigo: cta.codigo, url: cta.url });
+        emitir({ type: "cta", codigo: cta.codigo, url: cta.url, persistido: cta.persistido === true });
       }
-      return {
+      resultados.push({
         type: "tool_result",
         tool_use_id: llamada.id,
         content: resultado,
         ...(esError ? { is_error: true } : {}),
-      };
-    });
+      });
+    }
     messages.push({ role: "user", content: resultados });
   }
 

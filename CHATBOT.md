@@ -105,9 +105,27 @@ Orden pensado para que cada paso sea verificable solo.
 - Caché: ≈7,400 tokens cacheados (system + KB); `cache_read` > 0 desde el segundo turno. Costo observado ≈ $0.005 USD por turno, ≈ $0.02–0.03 por conversación de 4 turnos.
 - Ajustes que salieron de las pruebas: salto de línea entre iteraciones de tool; `hasCta` del widget al servidor para no repetir el código; reglas 3, 4 y 6 del prompt reforzadas (no negar/afirmar vínculos, sin frases de neutralidad, no usar el nombre de la persona); canal de quejas PROFECO en la KB.
 
-## 4. Fuera de fase 1 (siguientes fases)
+## 4. Fase 2 — Leads con datos (construida 22-ago-2026)
 
-- **Fase 2 — Leads con datos**: aviso de privacidad (provisional o legal), consentimiento en el chat, DB (Neon Postgres) con tabla `Lead {id, codigo, perfil, resumen, fuente_utm, created_at, consent_at, nombre?, telefono?}`, tool `registrar_lead`, vista de estadísticas (por perfil, por día, por fuente).
+Decisión de diseño: el modelo **nunca** recibe datos personales. El lead anónimo se crea al cerrar a WhatsApp; nombre y teléfono solo entran por un formulario controlado (no por la conversación), con casilla de consentimiento que enlaza al aviso. La DB lo refuerza con un CHECK: sin `consent_at` no puede haber `nombre`/`telefono`.
+
+| Pieza | Archivo | Qué hace |
+|---|---|---|
+| Esquema | `lib/db/schema.sql` · `scripts/migrate.mjs` (`npm run db:migrate`) | Tabla `lead` (codigo único, perfil, resumen, fuente JSONB, created_at, whatsapp_click_at, nombre, telefono, consent_at, consent_version, contactado_at, notas). Idempotente |
+| Conexión | `lib/db/client.js` | `pg` Pool; si no hay `DATABASE_URL`, todo degrada sin romper el chat |
+| Repositorio | `lib/leads/repo.js` | `crearLead` (reintenta si el código choca), `registrarClickWhatsApp`, `registrarContacto`, `obtenerLead`, `estadisticas` |
+| Validación | `lib/leads/validar.js` | Teléfono MX 10 dígitos (acepta +52/521), nombre 2–80, consentimiento obligatorio, `limpiarFuente` (solo utm_*, referrer, path) |
+| Chat | `lib/chatbot/tools.js` · `app/api/chat/route.js` | `cerrar_a_whatsapp` crea el lead con la `fuente` que manda el widget |
+| APIs | `app/api/leads/[codigo]/click` (POST, beacon) · `.../contacto` (POST, rate-limited) · `app/api/leads/[codigo]` (GET, `Authorization: Bearer LEADS_API_SECRET`, para el bot de WhatsApp) | |
+| Widget | `components/chat/ContactoForm.js` · `ChatWidget.js` | Captura utm/referrer al primer toque (sessionStorage), beacon al tocar WhatsApp, formulario opcional "¿Prefieres que te escribamos nosotros?" bajo el botón |
+| Aviso | `app/aviso-de-privacidad/page.js` | Provisional (LFPDPPP: responsable, datos, finalidades, transferencias, conservación, ARCO, cambios). Placeholders: razón social, domicilio, correo de privacidad. Versión `AVISO_VERSION` en `validar.js` |
+| Vista interna | `app/admin/leads/page.js` · `middleware.js` | Basic auth (`ADMIN_USER`/`ADMIN_PASSWORD`). Totales, por perfil, por fuente, por día, últimos 50 |
+| SEO | `app/layout.js` | `robots noindex` mientras `SITE_INDEXABLE` ≠ `true` |
+
+Env nuevas: `DATABASE_URL`, `ADMIN_USER`, `ADMIN_PASSWORD`, `LEADS_API_SECRET`, `SITE_INDEXABLE`. Pruebas: `tests/leads.db.test.js` corre contra la DB si hay `DATABASE_URL` (local: instancia aislada en el scratchpad, puerto 5499).
+
+## 5. Siguientes fases
+- **Fase 2 pendientes**: datos reales del responsable en el aviso (Ricardo) + revisión legal; marcar "contactado" desde la vista interna; exportar CSV.
 - **Fase 3 — Bot de WhatsApp 24/7**: WhatsApp Business Platform (Meta Cloud API) o Twilio. Requiere Meta Business verificado a nombre del cliente, número dedicado (el 55 6880 9606 no puede estar a la vez en la app normal de WhatsApp), webhook, plantillas aprobadas para seguimiento fuera de la ventana de 24 h. Lee el código `CAP-XXXX`, recupera perfil, continúa con contexto. **Camino crítico: iniciar el trámite de Meta desde ya (equipo de la clienta).**
 - **Fase 4 — Contenido real**: reemplazar `knowledge.js` con lo que entregue Ricardo; evals con Opus 5 en batch.
 
