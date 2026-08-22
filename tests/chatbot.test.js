@@ -62,7 +62,7 @@ test("perfiles: cinco perfiles válidos", () => {
 import { TOOLS, ejecutarTool } from "../lib/chatbot/tools.js";
 
 test("tools: definiciones estrictas y nombres estables", () => {
-  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "agendar_cita"]);
+  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "comparar_instituciones", "cotizar_traspaso", "agendar_cita"]);
   for (const t of TOOLS) {
     assert.equal(t.strict, true);
     assert.equal(t.input_schema.additionalProperties, false);
@@ -78,7 +78,7 @@ test("ejecutarTool calcular_costo devuelve cifras formateadas y marca errores", 
 });
 
 test("ejecutarTool agendar_cita produce cta con código y link", async () => {
-  const r = await ejecutarTool("agendar_cita", { perfil: "boleta_vencida", resumen: "x", probabilidad: 80 });
+  const r = await ejecutarTool("agendar_cita", { perfil: "boleta_vencida", resumen: "x", probabilidad: 80, institucion_origen: null, tasa_actual: null, tasa_oferta: null, ahorro: null });
   assert.match(r.cta.codigo, PATRON_CODIGO);
   assert.ok(r.cta.url.includes("wa.me/525568809606"));
   assert.ok(decodeURIComponent(r.cta.url).includes(r.cta.codigo));
@@ -129,4 +129,45 @@ test("compararOpciones: moverse a tasa menor conviene cuando el ahorro es claro"
   assert.equal(r.conviene, true);
   const corto = compararOpciones({ prestamo: 1000, tasaActual: 8, tasaNueva: 7, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0 });
   assert.equal(corto.conviene, false);
+});
+
+import { cotizarTraspaso } from "../lib/chatbot/cotizacion.js";
+import { rankingPublico, pisoTasa } from "../lib/chatbot/instituciones.js";
+
+test("cotizarTraspaso: tasa alta → oferta = tasa pública del aliado y avanza", () => {
+  const r = cotizarTraspaso({ prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000, institucionActual: "Prendamex" });
+  assert.equal(r.ok, true);
+  assert.equal(r.tipoOferta, "tasa_publica");
+  assert.equal(r.tasaOferta, 3.5);
+  assert.equal(r.institucionActual, "Prendamex");
+  assert.equal(r.avanza, true);
+  assert.ok(r.comparacion.ahorro > 500);
+});
+
+test("cotizarTraspaso: tasa igual o menor a la pública → preferente 5 % abajo con piso", () => {
+  const r = cotizarTraspaso({ prestamo: 10000, tasaActual: 3.4, mesesRestantes: 8, mesesSinPagar: 0, penalizacion: 0, valorPieza: 25000, institucionActual: "Nacional Monte de Piedad" });
+  assert.equal(r.tipoOferta, "tasa_preferente");
+  assert.equal(r.tasaOferta, 3.23);
+  assert.equal(r.piso, 2.5);
+  assert.equal(r.institucionActual, "Nacional Monte de Piedad");
+});
+
+test("cotizarTraspaso: no avanza si la oferta no mejora la tasa (piso) o el ahorro es chico", () => {
+  const enPiso = cotizarTraspaso({ prestamo: 5000, tasaActual: 3.0, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 6000, institucionActual: null });
+  assert.equal(enPiso.avanza, false);
+  assert.equal(enPiso.tocoPiso, true);
+  assert.match(enPiso.mensajeSugerido, /mejor trato posible/);
+  const corto = cotizarTraspaso({ prestamo: 1500, tasaActual: 4, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0, valorPieza: null, institucionActual: null });
+  assert.equal(corto.avanza, false);
+  assert.match(corto.motivoNoAvanza, /ahorro/);
+});
+
+test("instituciones: ranking por CAT ascendente con fuente; piso por valor de pieza", () => {
+  const r = rankingPublico();
+  assert.equal(r.conDato[0].catAnual, 69);
+  assert.ok(r.conDato.every((i) => i.fuente));
+  for (let i = 1; i < r.conDato.length; i += 1) assert.ok(r.conDato[i].catAnual >= r.conDato[i - 1].catAnual);
+  assert.equal(pisoTasa(30000), 2.5);
+  assert.equal(pisoTasa(7000), 3.0);
+  assert.equal(pisoTasa(null), 3.25);
 });

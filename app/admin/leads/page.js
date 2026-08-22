@@ -83,7 +83,7 @@ export default async function LeadsPage() {
 
       <Tabla
         titulo="Últimos 50 leads"
-        encabezados={["Código", "Fecha", "Perfil", "Prob.", "Resumen", "Fuente", "WhatsApp", "Contacto"]}
+        encabezados={["Código", "Fecha", "Perfil", "Prob.", "Origen", "Tasa → oferta", "Ahorro", "Resumen", "Fuente", "WhatsApp", "Contacto"]}
       >
         {s.recientes.map((r) => (
           <tr key={r.codigo}>
@@ -91,6 +91,12 @@ export default async function LeadsPage() {
             <td className="whitespace-nowrap">{fmt(r.created_at)}</td>
             <td>{PERFILES[r.perfil]?.etiqueta || r.perfil}</td>
             <td className="tabular-nums">{r.probabilidad != null ? `${r.probabilidad} %` : "—"}</td>
+            <td>{r.institucion_origen || "—"}</td>
+            <td className="whitespace-nowrap tabular-nums">
+              {r.tasa_actual != null ? `${Number(r.tasa_actual)} %` : "—"}
+              {r.tasa_oferta != null ? ` → ${Number(r.tasa_oferta)} %` : ""}
+            </td>
+            <td className="tabular-nums">{r.ahorro != null ? `$${Math.round(Number(r.ahorro)).toLocaleString("es-MX")}` : "—"}</td>
             <td className="max-w-[36ch] text-esmeralda/80">{r.resumen}</td>
             <td>{r.utm_source || "directo"}</td>
             <td>{r.whatsapp_click_at ? "sí" : "—"}</td>
