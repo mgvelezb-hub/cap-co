@@ -1,5 +1,6 @@
 import { Marcellus, Inter } from "next/font/google";
 import "./globals.css";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 const marcellus = Marcellus({
   weight: "400",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
     <html lang="es" className="scroll-smooth">
       <body className={`${marcellus.variable} ${inter.variable} font-sans bg-papel text-esmeralda antialiased`}>
         {children}
+        <ChatWidget />
       </body>
     </html>
   );
