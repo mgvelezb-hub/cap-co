@@ -1,6 +1,6 @@
 import Logo from "@/components/Logo";
 import AnimatedLogo from "@/components/AnimatedLogo";
-import Gem3D from "@/components/Gem3D";
+import Gem3D from "@/components/Gem3DDiferida";
 import RayaRombo from "@/components/RayaRombo";
 import Header from "@/components/Header";
 import Reveal from "@/components/Reveal";
