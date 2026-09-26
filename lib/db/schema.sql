@@ -56,3 +56,25 @@ CREATE TABLE IF NOT EXISTS precio_metal (
   fuente        TEXT          NOT NULL               -- p. ej. "gold-api.com + BCE (Frankfurter)"
 );
 CREATE INDEX IF NOT EXISTS precio_metal_capturado_idx ON precio_metal (capturado_at DESC);
+
+-- Eventos del sistema (errores del chat, fallas del cron de precios). Alimentan las alertas
+-- por correo y el estado que muestra el panel. Sin datos personales.
+CREATE TABLE IF NOT EXISTS evento_sistema (
+  id            BIGSERIAL PRIMARY KEY,
+  creado_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  tipo          TEXT        NOT NULL,   -- saldo_anthropic | llave_anthropic | limite_anthropic | error_chat | chat_caido | precios_fallo | precios_viejos
+  nivel         TEXT        NOT NULL,   -- critico | aviso
+  detalle       TEXT        NOT NULL DEFAULT '',
+  notificado_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS evento_sistema_creado_idx ON evento_sistema (creado_at DESC);
+CREATE INDEX IF NOT EXISTS evento_sistema_tipo_idx ON evento_sistema (tipo, creado_at DESC);
+
+-- Contadores de uso por ventana fija, para frenar abuso aunque haya varias instancias.
+-- La clave lleva un hash de la IP, nunca la IP.
+CREATE TABLE IF NOT EXISTS limite_uso (
+  clave   TEXT        NOT NULL,
+  ventana TIMESTAMPTZ NOT NULL,
+  n       INTEGER     NOT NULL DEFAULT 0,
+  PRIMARY KEY (clave, ventana)
+);

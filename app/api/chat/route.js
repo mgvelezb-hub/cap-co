@@ -11,7 +11,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { correrTurno } from "@/lib/chatbot/motor";
-import { permitir, ipDeRequest } from "@/lib/chatbot/ratelimit";
+import { permitir, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
+import { registrarEvento, tipoDeErrorAnthropic } from "@/lib/alertas/eventos";
 import { limpiarFuente } from "@/lib/leads/validar";
 import { validarImagen, mensajeConImagen } from "@/lib/chatbot/imagen";
 
@@ -29,12 +30,18 @@ const MENSAJE_CAIDA =
 
 const client = new Anthropic();
 
+const MENSAJE_LIMITE = "Demasiados mensajes en poco tiempo. Espera unos minutos o escríbenos por WhatsApp.";
+const MENSAJE_SATURADO = "El asistente está saturado en este momento. Escríbenos por WhatsApp y un asesor te atiende.";
+const MENSAJE_FOTOS = "Ya analizamos varias fotos tuyas hoy. Escríbenos los datos de tu boleta o intenta mañana.";
+
 export async function POST(request) {
-  if (!permitir(ipDeRequest(request))) {
-    return Response.json(
-      { error: "Demasiados mensajes en poco tiempo. Espera unos minutos o escríbenos por WhatsApp." },
-      { status: 429 },
-    );
+  const visitante = hashIp(ipDeRequest(request));
+  if (!(await permitir("chat", visitante))) {
+    return Response.json({ error: MENSAJE_LIMITE }, { status: 429 });
+  }
+  if (!(await permitir("chatGlobal", "global"))) {
+    await registrarEvento("limite_anthropic", "critico", "Se alcanzó el tope diario de mensajes del sitio (freno de gasto).");
+    return Response.json({ error: MENSAJE_SATURADO }, { status: 429 });
   }
 
   let body;
@@ -51,6 +58,15 @@ export async function POST(request) {
   const img = validarImagen(body?.imagen);
   if (!img.ok) {
     return Response.json({ error: img.error }, { status: 400 });
+  }
+  if (img.imagen) {
+    if (!(await permitir("foto", visitante))) {
+      return Response.json({ error: MENSAJE_FOTOS }, { status: 429 });
+    }
+    if (!(await permitir("fotoGlobal", "global"))) {
+      await registrarEvento("limite_anthropic", "critico", "Se alcanzó el tope diario de fotos de boleta del sitio.");
+      return Response.json({ error: MENSAJE_SATURADO }, { status: 429 });
+    }
   }
   const yaHayCta = body?.hasCta === true;
   const fuente = limpiarFuente(body?.fuente);
@@ -72,6 +88,8 @@ export async function POST(request) {
         await correrTurno(client, mensajes, emitir, { yaHayCta, fuente });
       } catch (err) {
         registrarError(err);
+        const { tipo, nivel } = tipoDeErrorAnthropic(err);
+        await registrarEvento(tipo, nivel, `${err?.status || ""} ${String(err?.message || err).slice(0, 300)}`.trim());
         emitir({ type: "error", message: MENSAJE_CAIDA });
       } finally {
         controller.close();

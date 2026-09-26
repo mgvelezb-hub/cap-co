@@ -230,3 +230,12 @@ test("imagen: el mensaje lleva la foto y la fecha de hoy fuera del prompt", () =
   assert.match(m[1].text, /^Analiza mi boleta/);
   assert.match(m[1].text, /26 de septiembre de 2026/);
 });
+
+import { tipoDeErrorAnthropic } from "../lib/alertas/eventos.js";
+
+test("alertas: clasifica errores de Anthropic", () => {
+  assert.deepEqual(tipoDeErrorAnthropic({ status: 400, message: "Your credit balance is too low" }), { tipo: "saldo_anthropic", nivel: "critico" });
+  assert.equal(tipoDeErrorAnthropic({ status: 401, message: "invalid x-api-key" }).tipo, "llave_anthropic");
+  assert.equal(tipoDeErrorAnthropic({ status: 429, message: "rate" }).tipo, "limite_anthropic");
+  assert.equal(tipoDeErrorAnthropic(new Error("socket hang up")).tipo, "error_chat");
+});

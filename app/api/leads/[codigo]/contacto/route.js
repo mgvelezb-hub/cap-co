@@ -5,12 +5,12 @@
 import { PATRON_CODIGO } from "@/lib/chatbot/codigo";
 import { registrarContacto } from "@/lib/leads/repo";
 import { validarContacto } from "@/lib/leads/validar";
-import { permitir, ipDeRequest } from "@/lib/chatbot/ratelimit";
+import { permitir, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(request, { params }) {
-  if (!permitir(ipDeRequest(request))) {
+  if (!(await permitir("contacto", hashIp(ipDeRequest(request))))) {
     return Response.json({ error: "Demasiados intentos. Espera unos minutos." }, { status: 429 });
   }
   const { codigo } = await params;
