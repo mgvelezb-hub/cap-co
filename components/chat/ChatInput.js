@@ -170,7 +170,7 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
           maxLength={MAX_CHARS}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={adjunto ? "Agrega un comentario (opcional)…" : "Escribe tu duda…"}
+          placeholder={adjunto ? "Comentario (opcional)…" : "Escribe tu duda…"}
           aria-label="Escribe tu mensaje"
           className="max-h-[120px] flex-1 resize-none rounded-xl border border-esmeralda/15 bg-papel-alto px-3.5 py-2.5 font-sans text-[15px] leading-snug text-esmeralda outline-none placeholder:text-esmeralda/40 focus:border-esmeralda/40"
         />
