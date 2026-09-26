@@ -43,7 +43,7 @@ Pedido de Mau tras probarlo: que no conteste nada fuera de lo prendario y que se
 ## 0.3 Precios de metales en vivo y foto de boleta (26-sep-2026)
 
 **Precios de metales (dos fotografías al día).** Pedido de Mau: precio real de oro, plata y metales, pero sin que una evaluación cambie cada minuto.
-- Cron de Vercel lunes a viernes a las **9:00 y 15:00 (CDMX)** → `GET /api/cron/precios` (protegido con `CRON_SECRET`) guarda una fila en `precio_metal`: oro, plata, platino y paladio en USD/oz + tipo de cambio USD/MXN, con fecha y fuente. Fin de semana se queda la del viernes (el mercado cierra).
+- Cron de Vercel lunes a viernes a las **9:00 y 15:00 (CDMX)** → `GET /api/cron/precios?sesion=manana|tarde` (una ruta por horario: Vercel no registra dos crons con la misma ruta; protegido con `CRON_SECRET`, que está en Vercel) guarda una fila en `precio_metal`: oro, plata, platino y paladio en USD/oz + tipo de cambio USD/MXN, con fecha y fuente. Fin de semana se queda la del viernes (el mercado cierra).
 - Fuentes sin llave: **gold-api.com** (spot) y **tipo de cambio de referencia del BCE vía Frankfurter**. Rangos de cordura antes de guardar. Mejora sugerida: tipo de cambio FIX de Banxico (requiere token gratuito de Banxico, lo saca Mau).
 - Herramientas `precio_metales` (tabla por gramo en pesos: oro puro y por kilate, plata 925, platino 950, paladio 950) y `estimar_valor_metal` (metal + pureza + gramos → valor del metal y préstamo típico 40–60 %). El bot siempre dice fecha y hora del precio y que es referencia internacional, no lo que paga la casa de empeño. Si la última fotografía tiene más de 96 h, no da cifras.
 - La migración ahora corre en cada build (`npm run build` = `migrate` + `next build`).
