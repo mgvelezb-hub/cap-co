@@ -10,6 +10,7 @@ import Calculadora from "@/components/Calculadora";
 import { WHATSAPP_URL, SOCIAL, BRAND } from "@/lib/constants";
 import AbrirChat from "@/components/chat/AbrirChat";
 import { PREGUNTAS } from "@/lib/contenido/preguntas";
+import Footer from "@/components/Footer";
 
 function Hero() {
   return (
@@ -38,21 +39,21 @@ function Hero() {
             ¡No pierdas tu empeño!
           </p>
           <p className="mx-auto mt-3 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 lg:mx-0">
-            Te apoyamos a recuperar tus joyas con el mayor beneficio económico:
-            revisamos tu boleta, te decimos cuánto vas a pagar y si hay una opción mejor.
+            Te ayudamos a recuperar tus joyas pagando menos: revisamos tu boleta, te decimos
+            cuánto vas a pagar y si hay una opción que te convenga más.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
             <a
               href={WHATSAPP_URL}
               className="rounded-full bg-esmeralda px-8 py-4 font-sans text-sm font-medium tracking-wide text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
             >
-              Cotiza tu boleta por WhatsApp
+              Revisa tu boleta sin costo por WhatsApp
             </a>
-            <AbrirChat className="font-sans text-sm text-esmeralda/75 underline underline-offset-4 hover:text-esmeralda">
+            <AbrirChat className="inline-flex min-h-[44px] items-center px-2 font-sans text-sm text-esmeralda/80 underline underline-offset-4 hover:text-esmeralda">
               o analízala aquí con nuestro asistente
             </AbrirChat>
           </div>
-          <p className="mt-6 font-sans text-xs tracking-wide text-esmeralda/50">
+          <p className="mt-6 font-sans text-sm tracking-wide text-esmeralda/75">
             Análisis de tu boleta sin costo · Discreción total · Lunes a viernes, 9:00 a 17:00
           </p>
         </Reveal>
@@ -149,14 +150,14 @@ function ComoFunciona() {
   const pasos = [
     ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
     ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
-    ["Comparamos tus opciones", "Con datos reales del mercado evaluamos si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos en el cambio paso a paso; nuestra comisión te la decimos antes de empezar. Si no conviene, te lo decimos."],
+    ["Comparamos tus opciones", "Con datos públicos del mercado y la tasa preferente que gestionamos con nuestro aliado, evaluamos si tu empeño está bien donde está."],
+    ["Tú decides, te acompañamos", "Si conviene moverte aun pagando nuestra comisión, te acompañamos en el cambio paso a paso; el monto te lo decimos antes de empezar. Si no conviene, te lo decimos."],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
       <Reveal>
         <h2 className="max-w-[22ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
-          Cuatro pasos, sin letras chiquitas.
+          Cuatro pasos, sin sorpresas.
         </h2>
       </Reveal>
       <div className="relative mt-16">
@@ -180,33 +181,45 @@ function ComoFunciona() {
 }
 
 function PreguntasFrecuentes() {
-  // Datos estructurados para que Google muestre las preguntas en los resultados.
+  // Datos estructurados de las preguntas (ayudan a buscadores y asistentes a entender la página;
+  // Google ya no muestra resultados enriquecidos de FAQ para sitios comerciales).
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: PREGUNTAS.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+    mainEntity: PREGUNTAS.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
   };
   return (
-    <section id="preguntas" className="border-t border-esmeralda/10 bg-papel-alto">
+    <section id="preguntas" className="scroll-mt-20 border-t border-esmeralda/10 bg-papel-alto">
       <div className="mx-auto max-w-4xl px-5 py-24 md:px-8 md:py-32">
         <Reveal>
           <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">Preguntas frecuentes</h2>
         </Reveal>
         <div className="mt-10 divide-y divide-esmeralda/10 border-y border-esmeralda/10">
-          {PREGUNTAS.map(([q, a]) => (
-            <details key={q} className="group py-5">
-              <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-serif text-lg md:text-xl">
+          {PREGUNTAS.map(({ q, a, enlace }) => (
+            <details key={q} className="group py-3">
+              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-6 py-2 font-serif text-lg md:text-xl [&::-webkit-details-marker]:hidden">
                 {q}
                 <span className="mt-1 shrink-0 font-sans text-esmeralda/50 transition-transform duration-300 group-open:rotate-45" aria-hidden="true">
                   +
                 </span>
               </summary>
-              <p className="mt-3 max-w-[65ch] font-sans leading-relaxed text-esmeralda/75">{a}</p>
+              <p className="mb-2 mt-2 max-w-[65ch] font-sans leading-relaxed text-esmeralda/75">
+                {a}
+                {enlace && (
+                  <>
+                    {" "}
+                    <a href={enlace.href} className="underline underline-offset-4">
+                      {enlace.texto}
+                    </a>
+                    .
+                  </>
+                )}
+              </p>
             </details>
           ))}
         </div>
       </div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
     </section>
   );
 }
@@ -221,7 +234,7 @@ function QuienesSomos() {
   const valores = [
     ["Claridad radical", "Te explicamos cada término en lenguaje claro, sin tecnicismos."],
     ["Datos, no opiniones", "Cada comparación con números verificables."],
-    ["Evaluación justa", "Solo recomendamos un movimiento si te beneficia."],
+    ["Evaluación clara", "Solo te proponemos un cambio si te beneficia, ya contando nuestra comisión."],
     ["Discreción", "Tu situación y tus piezas son asunto tuyo."],
   ];
   return (
@@ -309,86 +322,6 @@ function QuienesSomos() {
         </Reveal>
       </div>
     </section>
-  );
-}
-
-function IconFacebook(props) {
-  return (
-    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
-      <circle cx="16" cy="16" r="12.5" />
-      <path d="M18.5 12h-2a1.8 1.8 0 0 0-1.8 1.8V15h3.6l-.5 3h-3.1v7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconInstagram(props) {
-  return (
-    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
-      <rect x="4.5" y="4.5" width="23" height="23" rx="6.5" />
-      <circle cx="16" cy="16" r="5.8" />
-      <circle cx="22.6" cy="9.4" r="1.1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="bg-esmeralda text-sobre-verde">
-      <div className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
-        <div className="grid items-center gap-14 lg:grid-cols-12">
-          <Reveal className="lg:col-span-8">
-            <h2 className="max-w-[18ch] font-serif text-[clamp(2rem,4.5vw,3.6rem)] leading-tight">
-              ¿Tienes una boleta que no entiendes?
-            </h2>
-            <a
-              href={WHATSAPP_URL}
-              className="mt-10 inline-block rounded-full bg-sobre-verde px-8 py-4 font-sans text-sm font-medium tracking-wide text-esmeralda transition-transform duration-300 ease-expo hover:scale-[1.03]"
-            >
-              Escríbenos por WhatsApp
-            </a>
-            <p className="mt-4 font-sans text-sm text-sobre-verde/70">Lunes a viernes, de 9:00 a 17:00.</p>
-            <div className="mt-10 flex items-center gap-4">
-              <span className="font-sans text-xs uppercase tracking-[0.2em] text-sobre-verde/50">
-                Síguenos
-              </span>
-              <a
-                href={SOCIAL.facebook}
-                aria-label="Facebook de CAP & Co."
-                className="text-sobre-verde/70 transition-colors hover:text-sobre-verde"
-              >
-                <IconFacebook className="h-6 w-6" />
-              </a>
-              <a
-                href={SOCIAL.instagram}
-                aria-label="Instagram de CAP & Co."
-                className="text-sobre-verde/70 transition-colors hover:text-sobre-verde"
-              >
-                <IconInstagram className="h-6 w-6" />
-              </a>
-            </div>
-          </Reveal>
-          <Reveal delay={200} className="hidden justify-end lg:col-span-4 lg:flex">
-            <Logo className="h-40 w-auto" color="#F4F6F1" />
-          </Reveal>
-        </div>
-        <div className="mt-20 flex flex-col items-start justify-between gap-4 border-t border-sobre-verde/15 pt-8 font-sans text-xs text-sobre-verde/60 md:flex-row md:items-center">
-          <span>
-            © {new Date().getFullYear()} {BRAND.nombre} · {BRAND.slogan}
-          </span>
-          <nav className="flex flex-wrap gap-x-5 gap-y-2">
-            <a href="/#preguntas" className="underline-offset-4 hover:underline">
-              Preguntas frecuentes
-            </a>
-            <a href="/glosario" className="underline-offset-4 hover:underline">
-              Glosario
-            </a>
-            <a href="/aviso-de-privacidad" className="underline-offset-4 hover:underline">
-              Aviso de privacidad
-            </a>
-          </nav>
-        </div>
-      </div>
-    </footer>
   );
 }
 

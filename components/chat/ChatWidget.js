@@ -126,8 +126,29 @@ function ChatWidgetPublico() {
     return () => abortRef.current?.abort();
   }, []);
 
+  // Al cerrar, el foco regresa a lo que abrió el chat (o al botón flotante), para no perder el
+  // lugar con teclado o lector de pantalla.
+  const origenFocoRef = useRef(null);
+  const lanzadorRef = useRef(null);
+  const estabaAbierto = useRef(false);
   useEffect(() => {
-    const abrir = () => setAbierto(true);
+    if (abierto) {
+      estabaAbierto.current = true;
+      return;
+    }
+    if (!estabaAbierto.current) return;
+    estabaAbierto.current = false;
+    const origen = origenFocoRef.current;
+    origenFocoRef.current = null;
+    if (origen && document.contains(origen)) origen.focus();
+    else lanzadorRef.current?.focus();
+  }, [abierto]);
+
+  useEffect(() => {
+    const abrir = () => {
+      origenFocoRef.current = document.activeElement;
+      setAbierto(true);
+    };
     window.addEventListener("capco:abrir-chat", abrir);
     return () => window.removeEventListener("capco:abrir-chat", abrir);
   }, []);
@@ -255,6 +276,7 @@ function ChatWidgetPublico() {
     <>
       {!abierto && (
         <button
+          ref={lanzadorRef}
           type="button"
           onClick={() => setAbierto(true)}
           aria-label="Abrir chat: pregunta lo que quieras sobre tu boleta"

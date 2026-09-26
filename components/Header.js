@@ -54,12 +54,17 @@ export default function Header() {
             Cotiza por WhatsApp
           </a>
         </nav>
-        <a
-          href={WHATSAPP_URL}
-          className="rounded-full bg-esmeralda px-4 py-2 text-sm font-medium text-sobre-verde lg:hidden"
-        >
-          WhatsApp
-        </a>
+        <div className="flex items-center gap-1 lg:hidden">
+          <a href="/#preguntas" className="inline-flex min-h-[44px] items-center px-3 font-sans text-sm text-esmeralda/80">
+            Preguntas
+          </a>
+          <a
+            href={WHATSAPP_URL}
+            className="inline-flex min-h-[44px] items-center rounded-full bg-esmeralda px-4 text-sm font-medium text-sobre-verde"
+          >
+            WhatsApp
+          </a>
+        </div>
       </div>
     </header>
   );

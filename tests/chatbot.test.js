@@ -239,3 +239,24 @@ test("alertas: clasifica errores de Anthropic", () => {
   assert.equal(tipoDeErrorAnthropic({ status: 429, message: "rate" }).tipo, "limite_anthropic");
   assert.equal(tipoDeErrorAnthropic(new Error("socket hang up")).tipo, "error_chat");
 });
+
+test("cotizarTraspaso: con comisión configurada, cuenta el ahorro neto", () => {
+  const base = { prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000 };
+  const sin = cotizarTraspaso(base);
+  assert.equal(sin.comision, null);
+  assert.equal(sin.ahorroNeto, null);
+  assert.match(sin.mensajeSugerido, /antes de nuestra comisión/);
+  process.env.COMISION_FIJA_MXN = "300";
+  try {
+    const con = cotizarTraspaso(base);
+    assert.equal(con.comision, 300);
+    assert.equal(con.ahorroNeto, Math.round((sin.comparacion.ahorro - 300) * 100) / 100);
+    assert.match(con.mensajeSugerido, /ya descontada nuestra comisión/);
+    process.env.COMISION_FIJA_MXN = String(Math.ceil(sin.comparacion.ahorro));
+    const come = cotizarTraspaso(base);
+    assert.equal(come.avanza, false, "si la comisión se come el ahorro, no se propone");
+    assert.match(come.motivoNoAvanza, /comisión/);
+  } finally {
+    delete process.env.COMISION_FIJA_MXN;
+  }
+});
