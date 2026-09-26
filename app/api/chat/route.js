@@ -9,20 +9,15 @@
 //   {type:"error", message}      error recuperable (el cliente lo muestra como burbuja)
 
 import Anthropic from "@anthropic-ai/sdk";
-import { SYSTEM } from "@/lib/chatbot/system";
-import { KNOWLEDGE } from "@/lib/chatbot/knowledge";
-import { TOOLS, ejecutarTool } from "@/lib/chatbot/tools";
+import { correrTurno } from "@/lib/chatbot/motor";
 import { permitir, ipDeRequest } from "@/lib/chatbot/ratelimit";
 import { limpiarFuente } from "@/lib/leads/validar";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = process.env.CHAT_MODEL || "claude-sonnet-5";
 const MAX_MENSAJES = 20;
 const MAX_CHARS = 1500;
-const MAX_ITERACIONES = 3;
-const MAX_TOKENS = 2048;
 
 const NOTA_CTA_PREVIO =
   "\n\n[Nota del sistema, no del usuario: el botón para agendar por WhatsApp ya está en pantalla desde un turno anterior. No llames agendar_cita otra vez; sigue resolviendo dudas y, si viene al caso, recuérdale que lo use.]";
@@ -64,7 +59,7 @@ export async function POST(request) {
     async start(controller) {
       const emitir = (obj) => controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
       try {
-        await correrTurno(mensajes, emitir, { yaHayCta, fuente });
+        await correrTurno(client, mensajes, emitir, { yaHayCta, fuente });
       } catch (err) {
         registrarError(err);
         emitir({ type: "error", message: MENSAJE_CAIDA });
@@ -80,74 +75,6 @@ export async function POST(request) {
       "Cache-Control": "no-store",
     },
   });
-}
-
-async function correrTurno(historial, emitir, { yaHayCta, fuente }) {
-  const messages = [...historial];
-  const usoAcumulado = { input: 0, cache_read: 0, cache_write: 0, output: 0 };
-  let ctaEmitido = yaHayCta;
-  let huboTexto = false;
-
-  for (let i = 0; i < MAX_ITERACIONES; i += 1) {
-    const s = client.messages.stream({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      thinking: { type: "adaptive" },
-      output_config: { effort: "medium" },
-      system: [
-        { type: "text", text: SYSTEM },
-        { type: "text", text: KNOWLEDGE, cache_control: { type: "ephemeral" } },
-      ],
-      tools: TOOLS,
-      messages,
-    });
-
-    // Entre iteraciones (antes y después de una tool) el modelo no pone salto de línea.
-    let primerDelta = true;
-    s.on("text", (delta) => {
-      if (primerDelta && huboTexto) emitir({ type: "text", text: "\n\n" });
-      primerDelta = false;
-      huboTexto = true;
-      emitir({ type: "text", text: delta });
-    });
-
-    const respuesta = await s.finalMessage();
-    acumularUso(usoAcumulado, respuesta.usage);
-
-    if (respuesta.stop_reason === "refusal") {
-      emitir({ type: "text", text: "Sobre eso no puedo orientarte aquí. Si tiene que ver con tu empeño, escríbenos por WhatsApp." });
-      break;
-    }
-
-    if (respuesta.stop_reason !== "tool_use") {
-      break;
-    }
-
-    const llamadas = respuesta.content.filter((b) => b.type === "tool_use");
-    messages.push({ role: "assistant", content: respuesta.content });
-
-    const resultados = [];
-    for (const llamada of llamadas) {
-      const { resultado, cta, esError } = await ejecutarTool(llamada.name, llamada.input, {
-        yaHayCta: ctaEmitido,
-        fuente,
-      });
-      if (cta) {
-        ctaEmitido = true;
-        emitir({ type: "cta", codigo: cta.codigo, url: cta.url, persistido: cta.persistido === true });
-      }
-      resultados.push({
-        type: "tool_result",
-        tool_use_id: llamada.id,
-        content: resultado,
-        ...(esError ? { is_error: true } : {}),
-      });
-    }
-    messages.push({ role: "user", content: resultados });
-  }
-
-  console.log(`[chat] model=${MODEL} in=${usoAcumulado.input} cache_read=${usoAcumulado.cache_read} cache_write=${usoAcumulado.cache_write} out=${usoAcumulado.output}`);
-  emitir({ type: "done", usage: usoAcumulado });
 }
 
 function normalizar(entrada) {
@@ -167,14 +94,6 @@ function normalizar(entrada) {
   while (recortados.length > 0 && recortados[0].role !== "user") recortados.shift();
   if (recortados.length === 0 || recortados[recortados.length - 1].role !== "user") return null;
   return recortados;
-}
-
-function acumularUso(acc, usage) {
-  if (!usage) return;
-  acc.input += usage.input_tokens || 0;
-  acc.cache_read += usage.cache_read_input_tokens || 0;
-  acc.cache_write += usage.cache_creation_input_tokens || 0;
-  acc.output += usage.output_tokens || 0;
 }
 
 function registrarError(err) {

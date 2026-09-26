@@ -30,6 +30,16 @@ Implementación: `instituciones.js` (tabla pública con CAT/tipo/fuente/fecha de
 
 Pendiente del cliente: CAT/tasa pública real de Montepío, descuento y pisos reales, tasa de referencia de Nacional Monte de Piedad, y decisión escrita sobre cómo se nombra la relación con Montepío (hoy: "aliado con tasa preferente", que es verificable; **no** se programó ningún ranking fijo ni inclinación oculta: el orden sale de los números).
 
+## 0.2 Tema cerrado y respuestas cortas (26-sep-2026)
+
+Pedido de Mau tras probarlo: que no conteste nada fuera de lo prendario y que sea mucho más conciso ("dice mucho y a la vez nada").
+- **Tema**: empeño y boletas, costos y cotizaciones, traspaso y comparación de instituciones, valor de metales/piedras/relojes, cuidado y restauración de piezas (taller de CAP & Co.), derechos PROFECO, empeño vs otros créditos solo para comparar costo, y qué es CAP & Co. Todo lo demás se declina con una respuesta fija que sugiere los cuatro temas más buscados. En mensajes mixtos contesta lo del tema y cierra con "Lo otro no lo puedo contestar; aquí solo veo temas de empeño."
+- **Concisión**: 30–80 palabras por respuesta (hasta 150 solo si pidió algo completo); un párrafo o una frase + lista de máximo 4 puntos; sin preámbulos; la nota de comisiones una sola vez por conversación.
+- **Base de conocimiento nueva**: §12 cómo se valúan oro (pureza por kilate y fórmula), plata, platino, diamantes (4C), otras piedras y relojes, sin precios del día; §13 taller de restauración (existe; costos y tiempos se cotizan en cita — **faltan los datos reales del taller**).
+- **Perfil nuevo** `restauracion`; `agendar_cita` también cuando quieren cotizar una restauración.
+- Reglas reforzadas: prohibidas las palabras "independiente/neutral/imparcial/objetivo" (apareció "asesoría independiente" en una corrida); ante "¿quién está detrás?" no se nombra ninguna institución (respuesta modelo en el prompt); si piden hablar con una persona, `agendar_cita` en ese mismo turno.
+- **Evaluación**: `npm run eval` (`scripts/eval-chat.mjs`, 28 casos: 8 fuera de tema, 8 en el borde del tema, 5 de concisión, 7 de regresión). Usa `lib/chatbot/motor.js`, el mismo ciclo que `/api/chat`. Antes: 8/26 y 148 palabras promedio; después: 28/28 en dos corridas seguidas y 62–64 palabras promedio.
+
 ## 1. Premisas y límites
 
 | Tema | Decisión | Por qué |

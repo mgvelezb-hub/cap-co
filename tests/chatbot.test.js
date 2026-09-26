@@ -53,8 +53,9 @@ test("construirLinkWhatsApp cae a 'curioso' con perfil desconocido y rechaza có
   assert.throws(() => construirLinkWhatsApp({ numero: "1", codigo: "CAP-0000", perfil: "curioso" }));
 });
 
-test("perfiles: cinco perfiles válidos", () => {
-  assert.equal(PERFIL_IDS.length, 5);
+test("perfiles: seis perfiles válidos", () => {
+  assert.equal(PERFIL_IDS.length, 6);
+  assert.equal(esPerfilValido("restauracion"), true);
   assert.equal(esPerfilValido("boleta_vencida"), true);
   assert.equal(esPerfilValido("constructor"), false);
 });
