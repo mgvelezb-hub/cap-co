@@ -1,0 +1,48 @@
+# Pruebas en cada push y pull request: unitarias, de base de datos (PostgreSQL de servicio) y build.
+# No llama a Anthropic: el eval del chat (npm run eval) se corre a mano porque cuesta dinero.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: capco
+          POSTGRES_PASSWORD: capco
+          POSTGRES_DB: capco
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U capco"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://capco:capco@localhost:5432/capco
+      RATE_SALT: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Migración
+        run: node scripts/migrate.mjs
+      - name: Pruebas (unitarias y de base de datos)
+        run: node --test tests/*.test.js
+      - name: Build
+        run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
