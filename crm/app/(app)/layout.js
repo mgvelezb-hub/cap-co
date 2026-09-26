@@ -17,10 +17,10 @@ export default async function AppLayout({ children }) {
         <div className="mb-3 flex items-center justify-between md:mb-6 md:block">
           <div>
             <p className="font-serif text-xl">CAP & Co.</p>
-            <p className="text-xs text-esmeralda/60">CRM · {s.nombre}</p>
+            <p className="text-xs text-esmeralda/75">CRM · {s.nombre}</p>
           </div>
           <form action={salir} className="md:mt-2">
-            <button className="text-xs text-esmeralda/60 underline underline-offset-2">Salir</button>
+            <button className="text-xs text-esmeralda/75 underline underline-offset-2">Salir</button>
           </form>
         </div>
         <Nav contadores={{ "/": rows[0].vencidas, "/revision": rows[0].revision }} />

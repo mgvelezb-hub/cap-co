@@ -1,3 +1,4 @@
+import { requireSesion } from "@/lib/auth";
 import { listarLeads } from "@lib/crm/leads";
 import { Clase, SinContestar, Vacio, CAMPO, BOTON } from "@/components/ui";
 import { pesos, fecha, etapaNombre, ETAPAS_PANEL, NOMBRE_CLASE, PERFILES } from "@/lib/formato";
@@ -5,6 +6,7 @@ import { pesos, fecha, etapaNombre, ETAPAS_PANEL, NOMBRE_CLASE, PERFILES } from 
 export const metadata = { title: "Leads" };
 
 export default async function Leads({ searchParams }) {
+  const sesion = await requireSesion();
   const p = await searchParams;
   const filtros = {
     etapa: p.etapa || null,
@@ -14,6 +16,7 @@ export default async function Leads({ searchParams }) {
     sinContestarMin: p.contestar !== undefined && p.contestar !== "" ? Number(p.contestar) : null,
     conDatos: p.datos === "1" ? true : null,
     revision: p.revision === "1" ? true : null,
+    asesor: p.mios === "1" ? sesion.usuario : null,
   };
   const leads = await listarLeads(filtros);
   return (
@@ -24,7 +27,7 @@ export default async function Leads({ searchParams }) {
           <p className="text-sm text-esmeralda/70">{leads.length} {leads.length === 1 ? "caso" : "casos"} con estos filtros.</p>
         </div>
       </header>
-      <form className="flex flex-wrap items-end gap-2 rounded-xl border border-esmeralda/10 bg-papel-alto p-3 text-sm" role="search">
+      <form className="grid grid-cols-2 items-end gap-2 rounded-xl sm:flex sm:flex-wrap border border-esmeralda/10 bg-papel-alto p-3 text-sm" role="search">
         <label className="flex flex-col text-xs text-esmeralda/70">
           Buscar
           <input name="q" defaultValue={p.q || ""} placeholder="código, nombre o teléfono" className={CAMPO} />
@@ -57,20 +60,42 @@ export default async function Leads({ searchParams }) {
             <option value="7">7 días o más</option>
           </select>
         </label>
-        <label className="flex items-center gap-2 pb-2 text-xs text-esmeralda/70">
-          <input type="checkbox" name="datos" value="1" defaultChecked={p.datos === "1"} className="h-4 w-4" /> Con datos de contacto
+        <label className="flex min-h-[44px] items-center gap-2 text-xs text-esmeralda/75">
+          <input type="checkbox" name="datos" value="1" defaultChecked={p.datos === "1"} className="h-5 w-5" /> Con datos de contacto
+        </label>
+        <label className="flex min-h-[44px] items-center gap-2 text-xs text-esmeralda/75">
+          <input type="checkbox" name="mios" value="1" defaultChecked={p.mios === "1"} className="h-5 w-5" /> Solo míos
         </label>
         {p.campana && <input type="hidden" name="campana" value={p.campana} />}
         <button className={BOTON}>Filtrar</button>
-        <a href="/leads" className="pb-2 text-xs underline">Limpiar</a>
+        <a href="/leads" className="inline-flex min-h-[44px] items-center text-sm underline">Limpiar</a>
       </form>
 
       {leads.length === 0 ? (
         <Vacio>No hay leads con estos filtros.</Vacio>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-esmeralda/10 bg-papel-alto">
+        <>
+        <ul className="space-y-2 md:hidden">
+          {leads.map((l) => (
+            <li key={l.codigo}>
+              <a href={`/leads/${l.codigo}`} className="block rounded-xl border border-esmeralda/15 bg-papel-alto p-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-medium">{l.nombre || "sin datos"}</span>
+                  <span className="font-mono text-xs">{l.codigo}</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                  <Clase clase={l.clasificacion} pendiente={l.revision_pendiente} />
+                  <span className="text-esmeralda/75">{etapaNombre(l.etapa)}</span>
+                  <SinContestar info={l.sinContestar} />
+                  {l.ahorro !== null && <span className="text-esmeralda/75">ahorro {pesos(l.ahorro)}</span>}
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto rounded-xl border border-esmeralda/10 bg-papel-alto md:block">
           <table className="w-full min-w-[56rem] text-sm [&_td]:px-3 [&_td]:py-2.5 [&_th]:px-3 [&_th]:py-2">
-            <thead className="border-b border-esmeralda/10 text-left text-xs uppercase tracking-[0.08em] text-esmeralda/60">
+            <thead className="border-b border-esmeralda/10 text-left text-xs uppercase tracking-[0.08em] text-esmeralda/75">
               <tr>
                 <th>Caso</th>
                 <th>Clasificación</th>
@@ -87,7 +112,7 @@ export default async function Leads({ searchParams }) {
                 <tr key={l.codigo} className="hover:bg-esmeralda/[0.03]">
                   <td>
                     <a href={`/leads/${l.codigo}`} className="font-mono text-xs underline-offset-2 hover:underline">{l.codigo}</a>
-                    <div className="text-sm">{l.nombre || <span className="text-esmeralda/50">sin datos</span>}</div>
+                    <div className="text-sm">{l.nombre || <span className="text-esmeralda/70">sin datos</span>}</div>
                   </td>
                   <td>
                     <Clase clase={l.clasificacion} pendiente={l.revision_pendiente} />
@@ -104,6 +129,7 @@ export default async function Leads({ searchParams }) {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </>
   );

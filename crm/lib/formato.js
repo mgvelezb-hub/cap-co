@@ -37,3 +37,12 @@ export const PERFILES = {
 export function hoyCDMX() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
 }
+
+export const NOMBRE_ESTADO_CITA = {
+  reservada: "Por confirmar",
+  confirmada: "Confirmada",
+  atendida: "Atendida",
+  no_asistio: "No asistió",
+  cancelada: "Cancelada",
+  expirada: "Expirada",
+};

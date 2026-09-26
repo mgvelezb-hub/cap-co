@@ -14,7 +14,7 @@ const LINKS = [
 export default function Nav({ contadores = {} }) {
   const path = usePathname();
   return (
-    <nav aria-label="Secciones" className="flex gap-1 overflow-x-auto md:flex-col">
+    <nav aria-label="Secciones" className="flex flex-wrap gap-1 md:flex-col">
       {LINKS.map(([href, texto]) => {
         const activo = href === "/" ? path === "/" : path.startsWith(href);
         const n = contadores[href];
@@ -23,7 +23,7 @@ export default function Nav({ contadores = {} }) {
             key={href}
             href={href}
             aria-current={activo ? "page" : undefined}
-            className={`flex min-h-[40px] items-center justify-between gap-3 whitespace-nowrap rounded-lg px-3 text-sm ${
+            className={`flex min-h-[44px] items-center justify-between gap-3 whitespace-nowrap rounded-lg px-3 text-sm ${
               activo ? "bg-esmeralda text-sobre-verde" : "text-esmeralda/80 hover:bg-esmeralda/5"
             }`}
           >

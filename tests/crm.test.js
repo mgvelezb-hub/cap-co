@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { clasificarPorReglas, propensionTallerPorReglas } from "../lib/crm/reglas.js";
+import { anonimizarTexto } from "../lib/crm/ia.js";
 import { decidir } from "../lib/crm/clasificacion.js";
 import { pasoPendiente, motivoSinSeguimiento, diasSinContestar, proximoSeguimiento, respondioANuestroContacto } from "../lib/crm/seguimiento-plan.js";
 import { linkWhatsApp, CORREOS, primerNombre } from "../lib/crm/plantillas.js";
@@ -19,10 +20,18 @@ const base = {
   consent_at: new Date("2026-09-28T16:00:00Z"),
 };
 
-test("reglas: ahorro claro, datos completos y probabilidad alta aplica en automático", () => {
-  const r = clasificarPorReglas(base);
+test("reglas: ahorro neto claro, datos completos y probabilidad alta aplica en automático", () => {
+  const r = clasificarPorReglas(base, { comision: 500 });
   assert.equal(r.clasificacion, "aplica_auto");
   assert.equal(r.confianza, "alta");
+  assert.match(r.motivo, /Ahorro neto de \$2,100/);
+});
+
+test("reglas: sin comisión configurada nada aplica solo ni se habla de ahorro neto", () => {
+  const r = clasificarPorReglas(base);
+  assert.equal(r.clasificacion, "revision");
+  assert.match(r.motivo, /comisión no está configurada/);
+  assert.doesNotMatch(clasificarPorReglas({ ...base, ahorro: "300" }).motivo, /neto/);
 });
 
 test("reglas: la comisión cuenta — si se come el ahorro, no aplica; si lo deja chico, revisión", () => {
@@ -34,7 +43,7 @@ test("reglas: la comisión cuenta — si se come el ahorro, no aplica; si lo dej
 });
 
 test("reglas: casos grises y especiales", () => {
-  assert.equal(clasificarPorReglas({ ...base, probabilidad: 50 }).clasificacion, "revision");
+  assert.equal(clasificarPorReglas({ ...base, probabilidad: 50 }, { comision: 100 }).clasificacion, "revision");
   assert.equal(clasificarPorReglas({ ...base, institucion_origen: null }).clasificacion, "revision");
   assert.equal(clasificarPorReglas({ ...base, etapa: "descartado" }).clasificacion, "no_aplica");
   assert.equal(clasificarPorReglas({ ...base, perfil: "restauracion" }).clasificacion, "taller");
@@ -53,6 +62,9 @@ test("decidir: regla segura se aplica; desacuerdo con la IA va a revisión; lo g
   assert.equal(d.clasificacion, "aplica_auto");
   assert.equal(d.revisionPendiente, true);
   assert.equal(d.sugerencia.clasificacion, "revision");
+  const noAplica = { clasificacion: "no_aplica", motivo: "La cotización no da ahorro.", confianza: "alta" };
+  assert.equal(decidir(noAplica, null).revisionPendiente, false, "sin datos: basta la regla");
+  assert.equal(decidir(noAplica, null, { conDatos: true }).revisionPendiente, true, "con datos: lo confirma una persona");
   const gris = decidir({ clasificacion: "revision", motivo: "y", confianza: "media" }, { clasificacion: "aplica_auto", motivo: "z", confianza: 80 });
   assert.equal(gris.clasificacion, "revision");
   assert.equal(gris.revisionPendiente, true);
@@ -120,4 +132,8 @@ test("correo: no sale sin correo, con baja o sin configurar; con Resend manda al
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
   }
+});
+
+test("IA: el resumen sale sin teléfonos ni correos", () => {
+  assert.equal(anonimizarTexto("Llamar al 55 1234 5678 o ana@correo.mx, préstamo 8000"), "Llamar al [número] o [correo], préstamo 8000");
 });

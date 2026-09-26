@@ -18,23 +18,40 @@ clasificación y seguimiento no están duplicados.
   margen por campaña y páginas más vistas.
 - **Ajustes:** estado de la automatización, tokens del servidor MCP y usuarios.
 
+## Roles
+
+- **Asesor:** ve y trabaja todos los leads, sus tareas ("Mías") y las del equipo; registra contactos,
+  acuerda citas, marca el checklist, aprueba clasificaciones y descarta.
+- **Dueño:** además registra cobros y gasto de publicidad, borra datos a solicitud (ARCO), maneja
+  usuarios y reparto, y es el único que crea tokens del servidor MCP.
+
+Los leads que dejan datos se reparten por turnos entre los usuarios activos que "reciben leads"
+(Ajustes). El asesor a cargo se puede cambiar en la ficha.
+
 ## Automatización (`../lib/crm`)
 
 - **Clasificación** (`reglas.js`, `ia.js`, `clasificacion.js`): reglas fijas con los números de la
   cotización y la comisión; la IA (solo datos anónimos) da segunda opinión, perfil y propensión a
   taller. Regla segura + IA de acuerdo → se aplica sola; desacuerdo o caso gris → cola de revisión.
 - **Seguimiento** (`seguimiento-plan.js`, `seguimiento.js`): al dejar datos, correo de bienvenida
-  (si dejó correo) y tarea de WhatsApp; sin respuesta, recordatorios a 1, 3 y 7 días hábiles. Se
-  detiene si responde, avanza de etapa, se descarta o pide baja (`casa-ap.com/baja/<token>`).
+  (si dejó correo; pide confirmarlo) y la tarea de llamarle en la franja que pidió; sin respuesta,
+  recordatorios a 1, 3 y 7 días hábiles (por correo solo si lo confirmó). Cada paso se reclama en la
+  base antes de mandar nada: el sitio y el cron nunca mandan dos veces el mismo correo. Se detiene
+  si responde, avanza de etapa, pide no ser contactado (ficha o MCP) o se da de baja
+  (`casa-ap.com/baja/<token>`, con botón de confirmación; baja de un clic por `List-Unsubscribe-Post`).
+- Un "no aplica" automático de alguien que dejó datos pasa por revisión antes de apagar el contacto.
+  Lo que decide una persona no lo cambia el sistema.
 - **Cron** (`/api/cron/seguimiento`, días hábiles 9:30 y 13:30 CDMX): corre el seguimiento,
   clasifica con IA a quien dejó datos y con reglas a los leads sin clasificar.
 
 ## Servidor MCP
 
-`/api/mcp` (Streamable HTTP) con 15 herramientas: resumen_hoy, listar_leads, ver_lead,
+`/api/mcp` (Streamable HTTP) con 18 herramientas: resumen_hoy, listar_leads, ver_lead,
 cola_revision, aprobar_clasificacion, reclasificar, registrar_contacto, preparar_whatsapp,
-tareas_pendientes, completar_tarea, agenda, actualizar_cita, actualizar_caso, marcar_traspaso y
-trafico. Token personal en Ajustes (90 días). Conexión desde Claude Code:
+no_contactar, asignar_asesor, registrar_cobro, tareas_pendientes, completar_tarea, agenda,
+actualizar_cita, actualizar_caso, marcar_traspaso y trafico. Solo tokens del dueño (Ajustes, 90
+días). Por defecto no devuelve nombre ni teléfono (`incluir_contacto: true` para pedirlos) y cada
+lectura queda en la bitácora. Conexión desde Claude Code:
 
 ```
 claude mcp add --transport http capco-crm https://<dominio-del-crm>/api/mcp --header "Authorization: Bearer capco_…"

@@ -1,3 +1,4 @@
+import { requireSesion } from "@/lib/auth";
 import { citasProximas } from "@lib/agenda/repo";
 import { CHECKLIST_TRASPASO } from "@lib/crm/leads";
 import { query } from "@lib/db/client";
@@ -8,6 +9,7 @@ export const metadata = { title: "Citas" };
 const FRANJA = { manana: "9:00 a 13:00", tarde: "13:00 a 17:00" };
 
 export default async function Citas() {
+  await requireSesion();
   const [citas, enCambio] = await Promise.all([
     citasProximas({ dias: 14 }),
     query(
@@ -24,8 +26,8 @@ export default async function Citas() {
       <span>{c.nombre}</span>
       {c.telefono && <a href={`tel:+52${c.telefono}`} className="underline">{c.telefono}</a>}
       <span className={c.estado === "confirmada" ? "text-esmeralda" : "text-ambar"}>{c.estado}</span>
-      {c.tipo !== "llamada" && <span className="text-esmeralda/60">{c.lugar}</span>}
-      {c.ahorro !== null && <span className="text-esmeralda/60">ahorro {pesos(c.ahorro)}</span>}
+      {c.tipo !== "llamada" && <span className="text-esmeralda/75">{c.lugar}</span>}
+      {c.ahorro !== null && <span className="text-esmeralda/75">ahorro {pesos(c.ahorro)}</span>}
     </li>
   );
   return (
@@ -46,7 +48,7 @@ export default async function Citas() {
         ) : (
           <div className="overflow-x-auto rounded-xl border border-esmeralda/10 bg-papel-alto">
             <table className="w-full min-w-[40rem] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
-              <thead className="text-left text-xs uppercase tracking-[0.08em] text-esmeralda/60">
+              <thead className="text-left text-xs uppercase tracking-[0.08em] text-esmeralda/75">
                 <tr><th>Caso</th><th>Avance</th><th>Falta</th></tr>
               </thead>
               <tbody className="[&_tr]:border-t [&_tr]:border-esmeralda/5">

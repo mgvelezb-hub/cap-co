@@ -15,7 +15,7 @@ const handler = createMcpHandler(registrarHerramientas, {
   instructions:
     "CRM de CAP & Co. (asesoría prendaria en CDMX; no presta dinero, cobra comisión por el cambio de boleta). " +
     "Leads del sitio casa-ap.com con clasificación (aplica_auto, revision, no_aplica, taller), días sin contestar, tareas, citas y checklist del cambio. " +
-    "Los datos de contacto son personales: úsalos solo para el trabajo que pide el usuario. " +
+    "Por defecto las herramientas no devuelven nombre ni teléfono; pide incluir_contacto solo si el usuario los necesita. Cada consulta queda en la bitácora. " +
     "Antes de aprobar clasificaciones, descartar leads o mover citas, confirma con el usuario si no lo pidió explícitamente.",
 });
 
@@ -23,7 +23,8 @@ const autenticado = withMcpAuth(
   handler,
   async (req) => {
     const u = await usuarioDeToken(req.headers.get("authorization"));
-    return u ? { token: "pat", clientId: u.usuario, scopes: [], extra: { usuario: u.usuario, nombre: u.nombre, rol: u.rol } } : undefined;
+    // El acceso de Claude a los leads es solo del dueño (tokens de asesores ya no sirven).
+    return u && u.rol === "dueno" ? { token: "pat", clientId: u.usuario, scopes: [], extra: { usuario: u.usuario, nombre: u.nombre, rol: u.rol } } : undefined;
   },
   { required: true },
 );

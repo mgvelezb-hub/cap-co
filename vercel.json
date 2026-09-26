@@ -1,7 +1,14 @@
 {
   "framework": "nextjs",
   "crons": [
-    { "path": "/api/cron/precios?sesion=manana", "schedule": "0 15 * * 1-5" },
-    { "path": "/api/cron/precios?sesion=tarde", "schedule": "0 21 * * 1-5" }
-  ]
+    {
+      "path": "/api/cron/precios?sesion=manana",
+      "schedule": "0 15 * * 1-5"
+    },
+    {
+      "path": "/api/cron/precios?sesion=tarde",
+      "schedule": "0 21 * * 1-5"
+    }
+  ],
+  "ignoreCommand": "git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- . ':(exclude)crm'"
 }

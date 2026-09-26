@@ -8,14 +8,16 @@ test("repo de leads: crear, click, contacto, stats", { skip: !URL && "sin DATABA
   const { crearLead, registrarClickWhatsApp, registrarContacto, obtenerLead, estadisticas } = await import(
     "../lib/leads/repo.js"
   );
-  const { cerrarPool } = await import("../lib/db/client.js");
+  const { cerrarPool, query } = await import("../lib/db/client.js");
+  let codigo = null;
   try {
-    const { codigo, persistido } = await crearLead({
+    const creado = await crearLead({
       perfil: "quiere_traspaso",
       resumen: "Le ofrecieron liquidar su boleta",
       fuente: { utm_source: "test" },
     });
-    assert.equal(persistido, true);
+    codigo = creado.codigo;
+    assert.equal(creado.persistido, true);
     assert.match(codigo, /^CAP-[A-Z2-9]{4}$/);
 
     assert.equal(await registrarClickWhatsApp(codigo), true);
@@ -35,6 +37,7 @@ test("repo de leads: crear, click, contacto, stats", { skip: !URL && "sin DATABA
     assert.ok(s.porPerfil.some((p) => p.perfil === "quiere_traspaso"));
     assert.ok(s.porFuente.some((f) => f.fuente === "test"));
   } finally {
+    if (codigo) await query(`DELETE FROM lead WHERE codigo = $1`, [codigo]);
     await cerrarPool();
   }
 });

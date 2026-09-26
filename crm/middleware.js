@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { verificarSesion, COOKIE } from "./lib/sesion";
 
 export const config = {
-  matcher: ["/((?!_next/|favicon|login|api/mcp|api/cron).*)"],
+  matcher: ["/((?!_next/|favicon|login|api/mcp|api/cron|\\.well-known).*)"],
 };
 
 export async function middleware(request) {

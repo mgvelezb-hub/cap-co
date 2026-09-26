@@ -1,7 +1,10 @@
 // Herramientas del servidor MCP del CRM. Cada una llama al mismo servicio que la pantalla
 // (../lib/crm): una sola lógica para la app, las acciones y Claude.
 import { z } from "zod";
-import { listarLeads, fichaLead, registrarAccion, actualizarCaso, marcarTraspaso, prepararWhatsApp, resumenHoy, CHECKLIST_TRASPASO, ACCIONES_CONTACTO } from "@lib/crm/leads";
+import {
+  listarLeads, fichaLead, registrarAccion, actualizarCaso, marcarTraspaso, prepararWhatsApp, resumenHoy, CHECKLIST_TRASPASO, ACCIONES_CONTACTO,
+  marcarNoContactar, asignarAsesor, registrarCobro, METODOS_COBRO,
+} from "@lib/crm/leads";
 import { clasificarLead, aprobarClasificacion, colaRevision } from "@lib/crm/clasificacion";
 import { tareasAbiertas, completarTarea } from "@lib/crm/tareas";
 import { CLASES } from "@lib/crm/reglas";
@@ -32,11 +35,18 @@ async function correr(fn) {
   }
 }
 
+// Datos mínimos por defecto: el nombre y el teléfono solo salen si se piden (incluir_contacto).
+const INCLUIR = z.boolean().optional().describe("true para incluir nombre, teléfono y correo. Pídelo solo si el usuario los necesita.");
+
+async function registrarLectura(ctx, herramienta, objetivo, conContacto) {
+  await bitacora(usuario(ctx), "mcp_lectura", objetivo, { herramienta, con_contacto: Boolean(conContacto) });
+}
+
 // Vista compacta del lead para listas.
-const vista = (l) => ({
+const vista = (l, conContacto) => ({
   codigo: l.codigo,
-  nombre: l.nombre,
-  telefono: l.telefono,
+  ...(conContacto ? { nombre: l.nombre, telefono: l.telefono } : { tiene_datos: Boolean(l.consent_at) }),
+  asesor: l.asesor_usuario,
   etapa: l.etapa,
   clasificacion: l.clasificacion,
   revision_pendiente: l.revision_pendiente,
@@ -73,12 +83,15 @@ export function registrarHerramientas(server) {
         campana: z.string().max(80).optional(),
         texto: z.string().max(60).optional(),
         limite: z.number().int().min(1).max(200).optional(),
+        solo_mios: z.boolean().optional(),
+        incluir_contacto: INCLUIR,
       }),
       ...lectura,
     },
-    async (f) =>
-      correr(async () =>
-        (
+    async (f, ctx) =>
+      correr(async () => {
+        await registrarLectura(ctx, "listar_leads", null, f.incluir_contacto);
+        return (
           await listarLeads({
             etapa: f.etapa ?? null,
             clasificacion: f.clasificacion ?? null,
@@ -88,19 +101,24 @@ export function registrarHerramientas(server) {
             campana: f.campana ?? null,
             texto: f.texto ?? "",
             limite: f.limite ?? 50,
+            asesor: f.solo_mios ? usuario(ctx) : null,
           })
-        ).map(vista),
-      ),
+        ).map((l) => vista(l, f.incluir_contacto));
+      }),
   );
 
   server.registerTool(
     "ver_lead",
-    { title: "Ficha de un lead", description: "Todo de un lead: datos, cotización, clasificación y perfil, citas, tareas abiertas e historial.", inputSchema: z.object({ codigo: CODIGO }), ...lectura },
-    async ({ codigo }) =>
+    { title: "Ficha de un lead", description: "Un lead: cotización, clasificación y perfil, citas, tareas abiertas e historial. Datos de contacto solo con incluir_contacto.", inputSchema: z.object({ codigo: CODIGO, incluir_contacto: INCLUIR }), ...lectura },
+    async ({ codigo, incluir_contacto }, ctx) =>
       correr(async () => {
         const f = await fichaLead(codigo);
         if (!f) return { ok: false, motivo: "no_existe" };
-        return { ...f, eventos: f.eventos.slice(0, 30) };
+        await registrarLectura(ctx, "ver_lead", codigo, incluir_contacto);
+        const { nombre, telefono, email, notas, baja_token, ...resto } = f.lead;
+        const lead = incluir_contacto ? { ...resto, nombre, telefono, email, notas } : { ...resto, tiene_datos: Boolean(f.lead.consent_at) };
+        const eventos = f.eventos.slice(0, 30).map((e) => (incluir_contacto ? e : { ...e, detalle: { ...e.detalle, nota: e.detalle?.nota ? "(nota)" : undefined } }));
+        return { lead, eventos, tareas: f.tareas.map(({ nombre: _n, telefono: _t, ...t }) => t), citas: f.citas, conversacion: f.conversacion };
       }),
   );
 
@@ -144,13 +162,45 @@ export function registrarHerramientas(server) {
       inputSchema: z.object({ codigo: CODIGO, plantilla: z.enum(Object.keys(WHATSAPP)), asesor: z.string().max(40).optional() }),
       ...lectura,
     },
-    async (i, ctx) => correr(() => prepararWhatsApp(i.codigo, i.plantilla, i.asesor || ctx?.http?.authInfo?.extra?.nombre?.split(" ")[0])),
+    async (i, ctx) =>
+      correr(async () => {
+        await registrarLectura(ctx, "preparar_whatsapp", i.codigo, true);
+        return prepararWhatsApp(i.codigo, i.plantilla, i.asesor || ctx?.http?.authInfo?.extra?.nombre?.split(" ")[0]);
+      }),
+  );
+
+  server.registerTool(
+    "no_contactar",
+    { title: "Pidió no ser contactado", description: "Registra que la persona pidió que no la contactemos: detiene seguimiento, cierra tareas de contacto.", inputSchema: z.object({ codigo: CODIGO, nota: z.string().max(300).optional() }) },
+    async (i, ctx) => correr(() => marcarNoContactar(i.codigo, { usuario: usuario(ctx), nota: i.nota || "" })),
+  );
+
+  server.registerTool(
+    "asignar_asesor",
+    { title: "Asignar asesor", description: "Pone a un usuario del CRM a cargo del lead (vacío para quitarlo).", inputSchema: z.object({ codigo: CODIGO, asesor_usuario: z.string().max(30).optional() }) },
+    async (i, ctx) => correr(() => asignarAsesor(i.codigo, i.asesor_usuario || null, usuario(ctx))),
+  );
+
+  server.registerTool(
+    "registrar_cobro",
+    {
+      title: "Registrar cobro",
+      description: "Registra el cobro de la comisión (monto en pesos, fecha AAAA-MM-DD, método). Pasa el caso a comisión cobrada. Solo si el usuario lo confirmó.",
+      inputSchema: z.object({ codigo: CODIGO, monto: z.number().positive().max(10_000_000), fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), metodo: z.enum(METODOS_COBRO) }),
+    },
+    async (i, ctx) =>
+      correr(async () => {
+        const r = await registrarCobro(i.codigo, { monto: i.monto, fecha: i.fecha ?? null, metodo: i.metodo, usuario: usuario(ctx) });
+        if (r.ok) await bitacora(usuario(ctx), "cobro_registrado", i.codigo, { monto: i.monto, metodo: i.metodo, via: "mcp" });
+        return r;
+      }),
   );
 
   server.registerTool(
     "tareas_pendientes",
-    { title: "Tareas pendientes", description: "Tareas abiertas del equipo (WhatsApp, llamadas, revisiones, confirmar cita), las vencidas primero.", inputSchema: z.object({ codigo: CODIGO.optional() }), ...lectura },
-    async ({ codigo }) => correr(() => tareasAbiertas({ codigo: codigo ?? null, limite: 100 })),
+    { title: "Tareas pendientes", description: "Tareas abiertas (WhatsApp, llamadas, revisiones, confirmar cita), las vencidas primero. solo_mias filtra las del usuario.", inputSchema: z.object({ codigo: CODIGO.optional(), solo_mias: z.boolean().optional() }), ...lectura },
+    async ({ codigo, solo_mias }, ctx) =>
+      correr(async () => (await tareasAbiertas({ codigo: codigo ?? null, asesor: solo_mias ? usuario(ctx) : null, limite: 100 })).map(({ nombre: _n, telefono: _t, ...t }) => t)),
   );
 
   server.registerTool(
@@ -162,7 +212,7 @@ export function registrarHerramientas(server) {
   server.registerTool(
     "agenda",
     { title: "Agenda", description: "Citas presenciales y llamadas por hacer de los próximos días (máximo 14).", inputSchema: z.object({ dias: z.number().int().min(1).max(14).optional() }), ...lectura },
-    async ({ dias }) => correr(() => citasProximas({ dias: dias ?? 7 })),
+    async ({ dias }) => correr(async () => (await citasProximas({ dias: dias ?? 7 })).map(({ nombre: _n, telefono: _t, ...c }) => c)),
   );
 
   server.registerTool(

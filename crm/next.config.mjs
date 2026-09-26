@@ -11,6 +11,20 @@ const nextConfig = {
   experimental: { externalDir: true },
   distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
+  // Nadie puede incrustar el CRM en otra página (clickjacking) ni adivinar tipos de archivo.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "same-origin" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

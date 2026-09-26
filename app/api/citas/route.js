@@ -54,7 +54,7 @@ export async function POST(request) {
   if (!r.ok) return Response.json({ error: MOTIVOS[r.motivo], motivo: r.motivo }, { status: STATUS[r.motivo] || 400 });
 
   // CRM: clasificación, correo de bienvenida y tarea de WhatsApp, después de responder.
-  diferir(() => alGuardarContacto(codigo, { modo, cita: r.cita.id }));
+  await diferir(() => alGuardarContacto(codigo, { modo, cita: r.cita.id }));
 
   const cuando = modo === "llamada" ? textoFranja(body.fecha, body.franja) : textoCita(new Date(r.cita.inicio));
   const texto =

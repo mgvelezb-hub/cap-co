@@ -268,3 +268,19 @@ CREATE TABLE IF NOT EXISTS visita (
 );
 CREATE INDEX IF NOT EXISTS visita_creado_idx ON visita (creado_at DESC);
 ALTER TABLE lead ADD COLUMN IF NOT EXISTS esperando_respuesta_desde TIMESTAMPTZ; -- primer contacto nuestro sin respuesta
+
+-- CRM 1.1 (comité): asignación a un asesor del CRM, cobro con método y retención ARCO.
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS asesor_usuario TEXT;   -- usuario de crm_usuario a cargo
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS cobro_metodo   TEXT;   -- efectivo | transferencia | tarjeta | otro
+CREATE INDEX IF NOT EXISTS lead_asesor_usuario_idx ON lead (asesor_usuario) WHERE asesor_usuario IS NOT NULL;
+ALTER TABLE crm_usuario ADD COLUMN IF NOT EXISTS asignado_at TIMESTAMPTZ; -- último lead asignado (reparto por turnos)
+ALTER TABLE crm_usuario ADD COLUMN IF NOT EXISTS recibe_leads BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS ia_intentado_at    TIMESTAMPTZ;  -- último intento de clasificar con IA
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS ia_intentos        SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS email_confirmado_at TIMESTAMPTZ; -- confirmó su correo: recibe recordatorios por correo
+CREATE INDEX IF NOT EXISTS cita_lead_creado_idx ON cita (lead_codigo, creado_at DESC);
+CREATE INDEX IF NOT EXISTS lead_consent_idx ON lead (consent_at) WHERE consent_at IS NOT NULL;
+-- Leads que dejaron datos antes del CRM (26-sep-2026): no entran al seguimiento automático;
+-- el equipo los atiende desde la bandeja. Solo afecta filas anteriores a esa fecha.
+UPDATE lead SET seguimiento_paso = 4
+ WHERE seguimiento_paso = 0 AND consent_at IS NOT NULL AND consent_at < '2026-09-26T20:00:00Z';
