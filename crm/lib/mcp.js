@@ -66,7 +66,11 @@ export function registrarHerramientas(server) {
   server.registerTool(
     "resumen_hoy",
     { title: "Resumen de hoy", description: "Números del día: sin atender, sin respuesta 3+ días, por aprobar, aplican por agendar, candidatos a taller, nuevos y tareas vencidas.", inputSchema: z.object({}), ...lectura },
-    async () => correr(() => resumenHoy()),
+    async (_i, ctx) =>
+      correr(async () => {
+        await registrarLectura(ctx, "resumen_hoy", null, false);
+        return resumenHoy();
+      }),
   );
 
   server.registerTool(
@@ -124,8 +128,12 @@ export function registrarHerramientas(server) {
 
   server.registerTool(
     "cola_revision",
-    { title: "Cola de revisión", description: "Leads cuya clasificación espera aprobación humana, con la sugerencia (IA o reglas) y su motivo.", inputSchema: z.object({}), ...lectura },
-    async () => correr(() => colaRevision()),
+    { title: "Cola de revisión", description: "Leads cuya clasificación espera aprobación humana, con la sugerencia (IA o reglas) y su motivo.", inputSchema: z.object({ incluir_contacto: INCLUIR }), ...lectura },
+    async ({ incluir_contacto }, ctx) =>
+      correr(async () => {
+        await registrarLectura(ctx, "cola_revision", null, incluir_contacto);
+        return (await colaRevision()).map(({ nombre, ...l }) => (incluir_contacto ? { ...l, nombre } : l));
+      }),
   );
 
   server.registerTool(
@@ -200,7 +208,10 @@ export function registrarHerramientas(server) {
     "tareas_pendientes",
     { title: "Tareas pendientes", description: "Tareas abiertas (WhatsApp, llamadas, revisiones, confirmar cita), las vencidas primero. solo_mias filtra las del usuario.", inputSchema: z.object({ codigo: CODIGO.optional(), solo_mias: z.boolean().optional() }), ...lectura },
     async ({ codigo, solo_mias }, ctx) =>
-      correr(async () => (await tareasAbiertas({ codigo: codigo ?? null, asesor: solo_mias ? usuario(ctx) : null, limite: 100 })).map(({ nombre: _n, telefono: _t, ...t }) => t)),
+      correr(async () => {
+        await registrarLectura(ctx, "tareas_pendientes", codigo ?? null, false);
+        return (await tareasAbiertas({ codigo: codigo ?? null, asesor: solo_mias ? usuario(ctx) : null, limite: 100 })).map(({ nombre: _n, telefono: _t, ...t }) => t);
+      }),
   );
 
   server.registerTool(
@@ -212,7 +223,11 @@ export function registrarHerramientas(server) {
   server.registerTool(
     "agenda",
     { title: "Agenda", description: "Citas presenciales y llamadas por hacer de los próximos días (máximo 14).", inputSchema: z.object({ dias: z.number().int().min(1).max(14).optional() }), ...lectura },
-    async ({ dias }) => correr(async () => (await citasProximas({ dias: dias ?? 7 })).map(({ nombre: _n, telefono: _t, ...c }) => c)),
+    async ({ dias }, ctx) =>
+      correr(async () => {
+        await registrarLectura(ctx, "agenda", null, false);
+        return (await citasProximas({ dias: dias ?? 7 })).map(({ nombre: _n, telefono: _t, ...c }) => c);
+      }),
   );
 
   server.registerTool(
@@ -246,7 +261,7 @@ export function registrarHerramientas(server) {
     },
     async ({ codigo, ...cambios }, ctx) =>
       correr(async () => {
-        const r = await actualizarCaso(codigo, cambios, usuario(ctx));
+        const r = await actualizarCaso(codigo, cambios, usuario(ctx), { rol: "dueno" });
         if (r.ok) await bitacora(usuario(ctx), "lead_actualizado", codigo, { ...cambios, via: "mcp" });
         return r;
       }),

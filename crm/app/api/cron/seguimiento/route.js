@@ -16,10 +16,13 @@ export async function GET(request) {
   const { rows } = await query(
     `SELECT codigo FROM lead
       WHERE consent_at IS NOT NULL AND perfil_ia IS NULL AND coalesce(clasificacion_fuente, '') <> 'humano'
-        AND etapa NOT IN ('descartado') ORDER BY consent_at DESC LIMIT 20`,
+        AND etapa NOT IN ('descartado') AND ia_intentos < 3
+        AND (ia_intentado_at IS NULL OR ia_intentado_at < now() - interval '6 hours')
+      ORDER BY ia_intentado_at NULLS FIRST, consent_at DESC LIMIT 20`,
   );
   let clasificados = 0;
-  for (const { codigo } of rows) {
+  // Sin llave de Anthropic no se intenta: solo reglas.
+  for (const { codigo } of process.env.ANTHROPIC_API_KEY ? rows : []) {
     const r = await clasificarLead(codigo, { usarIA: true }).catch(() => null);
     if (r?.ok) clasificados += 1;
   }

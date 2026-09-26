@@ -13,7 +13,8 @@ export default async function Leads({ searchParams }) {
     clasificacion: p.clase || null,
     texto: p.q || "",
     campana: p.campana || null,
-    sinContestarMin: p.contestar !== undefined && p.contestar !== "" ? Number(p.contestar) : null,
+    sinContestarMin: /^\d{1,3}$/.test(p.contestar || "") ? Number(p.contestar) : null,
+    soloSinAtender: p.pendiente === "sin_atender",
     conDatos: p.datos === "1" ? true : null,
     revision: p.revision === "1" ? true : null,
     asesor: p.mios === "1" ? sesion.usuario : null,
@@ -67,6 +68,7 @@ export default async function Leads({ searchParams }) {
           <input type="checkbox" name="mios" value="1" defaultChecked={p.mios === "1"} className="h-5 w-5" /> Solo míos
         </label>
         {p.campana && <input type="hidden" name="campana" value={p.campana} />}
+        {p.pendiente && <input type="hidden" name="pendiente" value={p.pendiente} />}
         <button className={BOTON}>Filtrar</button>
         <a href="/leads" className="inline-flex min-h-[44px] items-center text-sm underline">Limpiar</a>
       </form>

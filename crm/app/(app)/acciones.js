@@ -103,13 +103,12 @@ export async function accionCaso(_previo, f) {
     if (f.has(k)) cambios[k] = texto(f, k);
   }
   if (cambios.etapa === "") delete cambios.etapa;
-  // La comisión y la etapa "comisión cobrada" son dinero: solo el dueño (con Registrar cobro).
-  if (cambios.etapa === "comision_cobrada") return { ok: false, mensaje: MOTIVOS.usa_registrar_cobro };
+  // La comisión es dinero: solo el dueño. La etapa "comisión cobrada" la cuida el servicio.
   if (f.has("comision_mxn") && texto(f, "comision_mxn") !== "") {
     if (s.rol !== "dueno") return { ok: false, mensaje: MOTIVOS.solo_dueno };
     cambios.comision_mxn = texto(f, "comision_mxn");
   }
-  const r = await actualizarCaso(codigo, cambios, s.usuario);
+  const r = await actualizarCaso(codigo, cambios, s.usuario, { rol: s.rol });
   if (r.ok) await bitacora(s.usuario, "lead_actualizado", codigo, { ...cambios, notas: cambios.notas !== undefined ? "(editadas)" : undefined });
   refrescar(codigo);
   return resultado(r, "Caso guardado.");
@@ -119,7 +118,7 @@ export async function accionDescartarRapido(_previo, f) {
   const s = await requireSesion();
   const codigo = texto(f, "codigo");
   const motivo = texto(f, "motivo") || "Prueba o duplicado";
-  const r = await actualizarCaso(codigo, { etapa: "descartado", motivo_descarte: motivo }, s.usuario);
+  const r = await actualizarCaso(codigo, { etapa: "descartado", motivo_descarte: motivo }, s.usuario, { rol: s.rol });
   if (r.ok) await bitacora(s.usuario, "lead_actualizado", codigo, { etapa: "descartado", motivo_descarte: motivo });
   refrescar(codigo);
   return resultado(r, `${codigo} descartado (${motivo.toLowerCase()}).`);

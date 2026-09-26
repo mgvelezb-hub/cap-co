@@ -65,6 +65,7 @@ test("CRM en la base: lead → datos → clasificación → correo y tareas → 
     // Confirma su correo: el paso 2 sí va por correo.
     const { confirmarCorreo } = await import("../lib/crm/seguimiento.js");
     assert.equal(await confirmarCorreo((await leer(codigo)).baja_token), codigo);
+    assert.equal((await leer(codigo)).esperando_respuesta_desde !== null, true, "confirmar el correo no cuenta como respuesta");
     await query(`UPDATE lead SET proximo_seguimiento_at = now() - interval '1 minute', ultima_respuesta_at = NULL, esperando_respuesta_desde = now() - interval '2 days' WHERE codigo = $1`, [codigo]);
     corrida = await correrSeguimiento(new Date(), { fetchImpl, codigos: [codigo] });
     assert.ok(corrida.some((x) => x.codigo === codigo && x.paso === 2));
@@ -107,7 +108,11 @@ test("CRM en la base: lead → datos → clasificación → correo y tareas → 
     assert.equal(l.etapa, "comision_cobrada");
     assert.equal(Number(l.comision_mxn), 1200);
     assert.ok(l.cobrado_at && l.traspaso.comision_cobrada.hecho);
-    assert.equal((await actualizarCaso(codigo, { etapa: "descartado", motivo_descarte: "prueba" }, "luis")).ok, true);
+    assert.equal((await actualizarCaso(codigo, { notas: "cobrado y guardado", etapa: "comision_cobrada" }, "luis")).ok, true, "un caso cobrado se puede seguir editando");
+    assert.equal((await actualizarCaso(codigo, { etapa: "descartado" }, "luis")).motivo, "solo_dueno", "un asesor no saca un caso de cobrado");
+    assert.equal((await actualizarCaso(codigo, { etapa: "comision_cobrada" }, "luis")).ok, true);
+    assert.equal((await marcarTraspaso(codigo, { paso: "comision_cobrada", hecho: false, usuario: "luis" })).motivo, "usa_registrar_cobro");
+    assert.equal((await actualizarCaso(codigo, { etapa: "descartado", motivo_descarte: "prueba" }, "luis", { rol: "dueno" })).ok, true);
     assert.deepEqual(await tareas(codigo), [], "descartar cierra todo");
     const ficha = await fichaLead(codigo);
     const tipos = ficha.eventos.map((e) => e.tipo);

@@ -302,8 +302,8 @@ export default async function Ficha({ params }) {
                       {hecho && <span className="ml-2 text-xs text-esmeralda/70">{hecho.por}, {fecha(hecho.at)}</span>}
                       {k === "boleta_nueva" && !hecho && <span className="ml-2 text-xs text-esmeralda/70">(pasa el caso a «Cambio concretado»)</span>}
                     </span>
-                    {esCobro && !hecho ? (
-                      <span className="text-xs text-esmeralda/75">se marca al registrar el cobro</span>
+                    {esCobro ? (
+                      <span className="text-xs text-esmeralda/75">{hecho ? "registrado con el cobro" : "se marca al registrar el cobro"}</span>
                     ) : (
                       <Enviar className={BOTON_SUAVE}>{hecho ? "Desmarcar" : "Marcar"}</Enviar>
                     )}

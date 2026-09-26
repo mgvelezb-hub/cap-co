@@ -49,7 +49,7 @@ export default async function Hoy({ searchParams }) {
         </nav>
       </header>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        <Cifra etiqueta="Sin atender" valor={r.sin_atender} nota="dejaron datos, nadie les ha escrito" href="/leads?contestar=0&datos=1" alerta={r.sin_atender > 0} />
+        <Cifra etiqueta="Sin atender" valor={r.sin_atender} nota="dejaron datos, nadie les ha escrito" href="/leads?pendiente=sin_atender" alerta={r.sin_atender > 0} />
         <Cifra etiqueta="3+ días sin contestar" valor={r.sin_respuesta_3d} nota="sin atender o sin respuesta" href="/leads?contestar=3" alerta={r.sin_respuesta_3d > 0} />
         <Cifra etiqueta="Por aprobar" valor={r.en_revision} nota="clasificación" href="/revision" />
         <Cifra etiqueta="Aplican" valor={r.aplica_por_agendar} nota="por agendar" href="/leads?clase=aplica_auto&etapa=cita_solicitada" />
