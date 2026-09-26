@@ -126,6 +126,12 @@ function ChatWidgetPublico() {
     return () => abortRef.current?.abort();
   }, []);
 
+  useEffect(() => {
+    const abrir = () => setAbierto(true);
+    window.addEventListener("capco:abrir-chat", abrir);
+    return () => window.removeEventListener("capco:abrir-chat", abrir);
+  }, []);
+
   // En móvil el botón aparece hasta que la persona baja del hero, para no tapar
   // el CTA principal. En escritorio se muestra desde el inicio.
   useEffect(() => {

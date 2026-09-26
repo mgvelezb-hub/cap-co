@@ -9,6 +9,7 @@ const LINKS = [
   ["/#decide-bien", "Decide bien"],
   ["/#boleta", "Tu boleta"],
   ["/#calculadora", "Calcula"],
+  ["/#preguntas", "Preguntas"],
 ];
 
 export default function Header() {

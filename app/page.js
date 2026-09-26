@@ -8,6 +8,8 @@ import Ticker from "@/components/Ticker";
 import Boleta from "@/components/Boleta";
 import Calculadora from "@/components/Calculadora";
 import { WHATSAPP_URL, SOCIAL, BRAND } from "@/lib/constants";
+import AbrirChat from "@/components/chat/AbrirChat";
+import { PREGUNTAS } from "@/lib/contenido/preguntas";
 
 function Hero() {
   return (
@@ -32,9 +34,12 @@ function Hero() {
           <p className="mt-4 font-sans text-sm uppercase tracking-[0.28em] text-esmeralda/55 md:text-[15px]">
             {BRAND.slogan}
           </p>
-          <p className="mx-auto mt-9 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 text-justify lg:mx-0">
-            Te explicamos exactamente qué firmaste, cuánto vas a pagar y qué
-            opciones tienes. Con datos reales, no promesas.
+          <p className="mx-auto mt-9 max-w-[24ch] font-serif text-[clamp(1.5rem,2.6vw,2rem)] leading-snug lg:mx-0">
+            ¡No pierdas tu empeño!
+          </p>
+          <p className="mx-auto mt-3 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 lg:mx-0">
+            Te apoyamos a recuperar tus joyas con el mayor beneficio económico:
+            revisamos tu boleta, te decimos cuánto vas a pagar y si hay una opción mejor.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
             <a
@@ -43,9 +48,12 @@ function Hero() {
             >
               Cotiza tu boleta por WhatsApp
             </a>
+            <AbrirChat className="font-sans text-sm text-esmeralda/75 underline underline-offset-4 hover:text-esmeralda">
+              o analízala aquí con nuestro asistente
+            </AbrirChat>
           </div>
           <p className="mt-6 font-sans text-xs tracking-wide text-esmeralda/50">
-            Asesoría gratuita · Sin registros · Discreción total
+            Análisis de tu boleta sin costo · Discreción total · Lunes a viernes, 9:00 a 17:00
           </p>
         </Reveal>
       </div>
@@ -139,16 +147,16 @@ function SeccionCalculadora() {
 
 function ComoFunciona() {
   const pasos = [
-    ["Nos escribes por WhatsApp", "Mandas foto de tu boleta. Sin registros, sin filas, sin explicaciones incómodas."],
-    ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende."],
+    ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
+    ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
     ["Comparamos tus opciones", "Con datos reales del mercado evaluamos si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte, te ayudamos con el traspaso paso a paso. Si no, te quedas con la información."],
+    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos en el cambio paso a paso; nuestra comisión te la decimos antes de empezar. Si no conviene, te lo decimos."],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
       <Reveal>
         <h2 className="max-w-[22ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
-          Cuatro pasos. Ninguno cuesta.
+          Cuatro pasos, sin letras chiquitas.
         </h2>
       </Reveal>
       <div className="relative mt-16">
@@ -167,6 +175,38 @@ function ComoFunciona() {
           ))}
         </div>
       </div>
+    </section>
+  );
+}
+
+function PreguntasFrecuentes() {
+  // Datos estructurados para que Google muestre las preguntas en los resultados.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: PREGUNTAS.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+  };
+  return (
+    <section id="preguntas" className="border-t border-esmeralda/10 bg-papel-alto">
+      <div className="mx-auto max-w-4xl px-5 py-24 md:px-8 md:py-32">
+        <Reveal>
+          <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">Preguntas frecuentes</h2>
+        </Reveal>
+        <div className="mt-10 divide-y divide-esmeralda/10 border-y border-esmeralda/10">
+          {PREGUNTAS.map(([q, a]) => (
+            <details key={q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-serif text-lg md:text-xl">
+                {q}
+                <span className="mt-1 shrink-0 font-sans text-esmeralda/50 transition-transform duration-300 group-open:rotate-45" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 max-w-[65ch] font-sans leading-relaxed text-esmeralda/75">{a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </section>
   );
 }
@@ -304,8 +344,9 @@ function Footer() {
               href={WHATSAPP_URL}
               className="mt-10 inline-block rounded-full bg-sobre-verde px-8 py-4 font-sans text-sm font-medium tracking-wide text-esmeralda transition-transform duration-300 ease-expo hover:scale-[1.03]"
             >
-              Escríbenos por WhatsApp — es gratis
+              Escríbenos por WhatsApp
             </a>
+            <p className="mt-4 font-sans text-sm text-sobre-verde/70">Lunes a viernes, de 9:00 a 17:00.</p>
             <div className="mt-10 flex items-center gap-4">
               <span className="font-sans text-xs uppercase tracking-[0.2em] text-sobre-verde/50">
                 Síguenos
@@ -334,9 +375,17 @@ function Footer() {
           <span>
             © {new Date().getFullYear()} {BRAND.nombre} · {BRAND.slogan}
           </span>
-          <a href="/aviso-de-privacidad" className="underline-offset-4 hover:underline">
-            Aviso de privacidad
-          </a>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2">
+            <a href="/#preguntas" className="underline-offset-4 hover:underline">
+              Preguntas frecuentes
+            </a>
+            <a href="/glosario" className="underline-offset-4 hover:underline">
+              Glosario
+            </a>
+            <a href="/aviso-de-privacidad" className="underline-offset-4 hover:underline">
+              Aviso de privacidad
+            </a>
+          </nav>
         </div>
       </div>
     </footer>
@@ -355,6 +404,7 @@ export default function Home() {
         <SeccionBoleta />
         <SeccionCalculadora />
         <ComoFunciona />
+        <PreguntasFrecuentes />
       </main>
       <Footer />
     </>
