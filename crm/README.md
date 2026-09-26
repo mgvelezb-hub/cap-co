@@ -44,7 +44,7 @@ claude mcp add --transport http capco-crm https://<dominio-del-crm>/api/mcp --he
 
 | Variable | Para qué |
 |---|---|
-| `DATABASE_URL` | La misma base Neon del sitio |
+| `DATABASE_URL` | La misma base Neon del sitio (la migración la corre el build del sitio, no el del CRM) |
 | `CRM_SESSION_SECRET` | Firma de la sesión (32+ caracteres, obligatoria) |
 | `CRON_SECRET` | Protege el cron de seguimiento |
 | `ANTHROPIC_API_KEY` | Clasificación con IA (sin ella, solo reglas) |
