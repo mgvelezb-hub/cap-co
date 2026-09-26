@@ -151,7 +151,7 @@ function ComoFunciona() {
     ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
     ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
     ["Comparamos tus opciones", "Con datos públicos del mercado y la tasa preferente que gestionamos con nuestro aliado, evaluamos si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte aun pagando nuestra comisión, te acompañamos en el cambio paso a paso; el monto te lo decimos antes de empezar. Si no conviene, te lo decimos."],
+    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso. Antes de empezar te decimos nuestra comisión y el ahorro que te queda con ella; si ya no conviene, te lo decimos."],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
@@ -234,7 +234,7 @@ function QuienesSomos() {
   const valores = [
     ["Claridad radical", "Te explicamos cada término en lenguaje claro, sin tecnicismos."],
     ["Datos, no opiniones", "Cada comparación con números verificables."],
-    ["Evaluación clara", "Solo te proponemos un cambio si te beneficia, ya contando nuestra comisión."],
+    ["Evaluación clara", "Antes de cualquier trámite te decimos cuánto te ahorras ya con nuestra comisión; si no te conviene, no avanzamos."],
     ["Discreción", "Tu situación y tus piezas son asunto tuyo."],
   ];
   return (

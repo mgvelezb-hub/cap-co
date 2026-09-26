@@ -157,7 +157,8 @@ test("cotizarTraspaso: no avanza si la oferta no mejora la tasa (piso) o el ahor
   const enPiso = cotizarTraspaso({ prestamo: 5000, tasaActual: 3.0, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 6000, institucionActual: null });
   assert.equal(enPiso.avanza, false);
   assert.equal(enPiso.tocoPiso, true);
-  assert.match(enPiso.mensajeSugerido, /mejor trato posible/);
+  assert.match(enPiso.mensajeSugerido, /te conviene quedarte/);
+  assert.doesNotMatch(enPiso.mensajeSugerido, /mejor trato/);
   const corto = cotizarTraspaso({ prestamo: 1500, tasaActual: 4, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0, valorPieza: null, institucionActual: null });
   assert.equal(corto.avanza, false);
   assert.match(corto.motivoNoAvanza, /ahorro/);

@@ -86,7 +86,8 @@ export async function middleware(request) {
   if (!auth.startsWith("Basic ")) return pedirCredenciales();
   let decodificado = "";
   try {
-    decodificado = atob(auth.slice(6));
+    // Basic auth viaja en UTF-8: atob da bytes, hay que decodificarlos (contraseñas con ñ o acentos).
+    decodificado = new TextDecoder().decode(Uint8Array.from(atob(auth.slice(6)), (ch) => ch.charCodeAt(0)));
   } catch {
     return pedirCredenciales();
   }

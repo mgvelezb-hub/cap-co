@@ -19,8 +19,8 @@ export async function POST(request, { params }) {
   }
   const r = await actualizarCita(Number(id), { estado: body?.estado, lugar: body?.lugar, inicio: body?.inicio });
   if (!r.ok) {
-    const status = r.motivo === "no_existe" ? 404 : r.motivo === "ocupado" ? 409 : 400;
-    const error = r.motivo === "ocupado" ? "ese horario ya está lleno" : r.motivo;
+    const status = r.motivo === "no_existe" ? 404 : ["ocupado", "lead_con_otra_cita"].includes(r.motivo) ? 409 : 400;
+    const error = { ocupado: "ese horario ya está lleno", lead_con_otra_cita: "esta persona ya tiene otra cita activa", horario_invalido: "horario fuera de lunes a viernes 9:00 a 17:00" }[r.motivo] || r.motivo;
     return Response.json({ error }, { status });
   }
   await registrarAccion(usuarioPanel(request).usuario, "cita_actualizada", r.cita.lead_codigo, {

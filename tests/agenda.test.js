@@ -34,6 +34,7 @@ test("agenda: horarios de 9 a 16 h, con 2 h hábiles de anticipación, 10 días 
   assert.equal(horarioValido(new Date("2026-09-28T15:00:00Z"), sabado), false, "lunes 9:00 desde el sábado ya no");
   assert.equal(horarioValido(new Date("2026-09-28T17:00:00Z"), sabado), true);
   assert.equal(horarioValido(new Date("2026-09-28T15:30:00Z"), sabado), false, "no en punto");
+  assert.equal(horarioValido(new Date("2026-09-28T17:00:00.500Z"), sabado), false, "con milisegundos");
   assert.equal(horarioValido(new Date("2026-09-28T23:00:00Z"), sabado), false, "17:00 ya no");
   assert.equal(horarioValido(new Date("2026-09-27T15:00:00Z"), sabado), false, "domingo");
   assert.equal(horarioValido(new Date("2026-12-28T15:00:00Z"), sabado), false, "fuera de los 10 días");
@@ -60,6 +61,7 @@ test("agenda: la anticipación cuenta solo horas hábiles", () => {
 
 test("agenda: franjas de llamada", () => {
   const lunes1230 = new Date("2026-09-28T18:30:00Z"); // 12:30 CDMX: la mañana ya no (le queda media hora)
+  assert.equal(franjasPosibles(new Date("2026-09-28T21:30:00Z"))[0].fecha, "2026-09-29", "15:30: la tarde ya no da 2 h para llamar");
   const dias = franjasPosibles(lunes1230);
   assert.equal(dias.length, 5);
   assert.deepEqual(dias[0].franjas.map((f) => f.franja), ["tarde"]);

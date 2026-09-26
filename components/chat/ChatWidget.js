@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import AgendaForm from "./AgendaForm";
+import AgendaForm, { TarjetaCita } from "./AgendaForm";
 import { WHATSAPP_URL } from "@/lib/constants";
 
 const STORAGE_KEY = "capco-chat-v1";
@@ -371,21 +371,11 @@ function ChatWidgetPublico() {
             {cta && (
               <div className="space-y-3">
                 {cta.persistido && !citaApartada && (
-                  <AgendaForm codigo={cta.codigo} onReservada={(d) => setCitaApartada({ cuando: d.cuando, whatsapp: d.whatsapp, modo: d.modo })} />
+                  <AgendaForm codigo={cta.codigo} onReservada={(d) =>
+                      setCitaApartada({ cuando: d.cuando, whatsapp: d.whatsapp, modo: d.modo, lugar: d.lugar, confirmarAntes: d.confirmarAntes, codigo: d.codigo })
+                    } />
                 )}
-                {citaApartada && (
-                  <p className="rounded-xl border border-esmeralda/15 bg-papel-alto p-3 font-sans text-sm text-esmeralda">
-                    {citaApartada.modo === "llamada" ? (
-                      <>
-                        Te llamamos: <strong>{citaApartada.cuando}</strong> · no lleves tu pieza hasta que te confirmemos.
-                      </>
-                    ) : (
-                      <>
-                        Tu cita: <strong>{citaApartada.cuando}</strong> · el lugar te lo confirmamos por WhatsApp.
-                      </>
-                    )}
-                  </p>
-                )}
+                {citaApartada && <TarjetaCita cita={citaApartada} />}
                 <div className="flex justify-start">
                   <a
                     href={citaApartada?.whatsapp || cta.url}
@@ -399,7 +389,11 @@ function ChatWidgetPublico() {
                     }
                   >
                     <IconoWhatsApp className="h-5 w-5" />
-                    {cta.persistido && !citaApartada ? "Prefiero agendar por WhatsApp" : "Confirmar cita por WhatsApp"}
+                    {cta.persistido && !citaApartada
+                      ? "Prefiero agendar por WhatsApp"
+                      : citaApartada?.modo === "llamada"
+                        ? "Escríbenos por WhatsApp"
+                        : "Confirmar cita por WhatsApp"}
                   </a>
                 </div>
               </div>

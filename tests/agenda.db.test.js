@@ -51,10 +51,13 @@ test("agenda en la base: reserva atómica, cupo, teléfonos, reprogramación y e
     ]);
     assert.equal(await activas(a), 1);
 
-    // QA #5: reactivar una cita cancelada en un horario lleno responde "ocupado", no error.
+    // QA #5: reactivar una cita cancelada cuando el lead ya tiene otra activa responde con motivo, no error.
     const vieja = (await query(`SELECT id FROM cita WHERE lead_codigo = $1 AND estado = 'cancelada' AND inicio = $2 LIMIT 1`, [a, h1])).rows[0];
     await actualizarCita(ra.cita.id, {}); // no-op
-    if (vieja) assert.equal((await actualizarCita(vieja.id, { estado: "reservada" })).motivo, "ocupado");
+    if (vieja) assert.equal((await actualizarCita(vieja.id, { estado: "reservada" })).motivo, "lead_con_otra_cita");
+
+    // Milisegundos no se cuelan al cupo.
+    assert.equal((await reservar({ codigo: b, nombre: "Beto", telefono: tb, inicio: new Date(h1.getTime() + 500) })).motivo, "horario_invalido");
 
     // Etapas: confirmar avanza; no asistió regresa; nunca revive un descartado.
     const citaA = (await query(`SELECT id FROM cita WHERE lead_codigo = $1 AND estado = 'reservada'`, [a])).rows[0];
@@ -74,13 +77,19 @@ test("agenda en la base: reserva atómica, cupo, teléfonos, reprogramación y e
     const rl = await reservar({ codigo: d, nombre: "Dani", telefono: tel(), tipo: "llamada", fecha: dia.fecha, franja: "tarde" });
     assert.equal(rl.ok, true, JSON.stringify(rl));
     assert.equal(rl.cita.tipo, "llamada");
+    await query(`UPDATE cita SET apartada_at = now() - interval '3 days', creado_at = now() - interval '3 days' WHERE id = $1`, [rl.cita.id]);
     const rp = await actualizarCita(rl.cita.id, { inicio: libres.at(-1).horas.at(-1).toISOString() });
     assert.equal(rp.ok, true);
     assert.equal(rp.cita.tipo, "cita");
     assert.equal(rp.cita.franja, null);
+    assert.equal(rp.cita.estado, "confirmada", "acordada por teléfono = confirmada");
+    assert.ok(Date.now() - new Date(rp.cita.apartada_at).getTime() < 60_000, "el reloj se reinicia");
+    assert.equal(await etapa(d), "cita_confirmada");
+    await expirarCitas();
+    assert.equal(await activas(d), 1, "una cita acordada no expira sola");
 
     // Expiración de reservas no confirmadas a las 24 h.
-    await query(`UPDATE cita SET creado_at = now() - interval '25 hours' WHERE lead_codigo = $1 AND estado = 'reservada'`, [b]);
+    await query(`UPDATE cita SET apartada_at = now() - interval '5 days' WHERE lead_codigo = $1 AND estado = 'reservada'`, [b]);
     assert.ok((await expirarCitas()) >= 1);
     assert.equal(await activas(b), 0);
 

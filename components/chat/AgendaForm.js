@@ -75,42 +75,18 @@ export default function AgendaForm({ codigo, onReservada }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setEstado({ tipo: "error", mensaje: data.error || "No pudimos apartar tu lugar." });
-        if (res.status === 409 || res.status === 400) {
+        // Solo si el horario ya no sirve se elige otro; con un dato mal escrito, los campos se quedan.
+        if (data.motivo === "ocupado" || data.motivo === "horario_invalido") {
           setOpcion(null);
           cargar();
         }
         return;
       }
-      setEstado({ tipo: "ok", ...data });
-      onReservada?.(data);
+      setEstado({ tipo: "idle" });
+      onReservada?.({ ...data, codigo });
     } catch {
       setEstado({ tipo: "error", mensaje: "Sin conexión. Inténtalo de nuevo." });
     }
-  }
-
-  if (estado.tipo === "ok") {
-    const llamada = estado.modo === "llamada";
-    return (
-      <div role="status" className="space-y-3 rounded-xl border border-esmeralda/15 bg-papel-alto p-4 font-sans text-sm text-esmeralda">
-        <p>
-          <strong>{llamada ? "Te llamamos:" : "Tu cita quedó apartada:"}</strong> {estado.cuando}
-        </p>
-        <p className="text-esmeralda/75">
-          {llamada
-            ? "Un asesor te marca a ese WhatsApp para acordar día, hora y lugar de tu cita."
-            : `Lugar: ${estado.lugar === "Por confirmar" ? "te lo confirmamos por WhatsApp" : estado.lugar}. Confírmala por WhatsApp en las próximas ${estado.horasParaConfirmar} horas; si no, el horario se libera.`}{" "}
-          No lleves tu pieza ni pagues nada hasta que te confirmemos. Tu código es <span className="font-mono">{codigo}</span>.
-        </p>
-        <a
-          href={estado.whatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-[44px] items-center rounded-full bg-esmeralda px-4 font-medium text-sobre-verde"
-        >
-          {llamada ? "Escríbenos por WhatsApp" : "Confirmar por WhatsApp"}
-        </a>
-      </div>
-    );
   }
 
   if (dias === null) {
@@ -169,7 +145,7 @@ export default function AgendaForm({ codigo, onReservada }) {
               <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                 aviso de privacidad
               </a>{" "}
-              y que me contacten por WhatsApp para {modo === "llamada" ? "agendar" : "confirmar"} mi cita.
+              y que me contacten por llamada o WhatsApp para {modo === "llamada" ? "agendar" : "confirmar"} mi cita.
             </span>
           </label>
         </div>
@@ -184,5 +160,32 @@ export default function AgendaForm({ codigo, onReservada }) {
       </button>
       <p className="font-sans text-xs text-esmeralda/70">Lunes a viernes, de 9:00 a 17:00. No lleves tu pieza hasta que te confirmemos.</p>
     </form>
+  );
+}
+
+/** Confirmación de la cita o la llamada; la muestra el widget (sobrevive a recargar la página). */
+export function TarjetaCita({ cita }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+  const llamada = cita.modo === "llamada";
+  return (
+    <div ref={ref} tabIndex={-1} className="space-y-2 rounded-xl border border-esmeralda/15 bg-papel-alto p-4 font-sans text-sm text-esmeralda outline-none">
+      <p>
+        <strong>{llamada ? "Te llamamos:" : "Tu cita quedó apartada:"}</strong> {cita.cuando}
+      </p>
+      <p className="text-esmeralda/75">
+        {llamada
+          ? "Un asesor te marca a ese número para acordar día, hora y lugar de tu cita."
+          : `Lugar: ${!cita.lugar || cita.lugar === "Por confirmar" ? "te lo confirmamos por WhatsApp" : cita.lugar}.${cita.confirmarAntes ? ` Confírmala por WhatsApp antes del ${cita.confirmarAntes}; si no, el horario se libera.` : ""}`}{" "}
+        No lleves tu pieza ni pagues nada hasta que te confirmemos.
+        {cita.codigo && (
+          <>
+            {" "}Tu código es <span className="font-mono">{cita.codigo}</span>.
+          </>
+        )}
+      </p>
+    </div>
   );
 }

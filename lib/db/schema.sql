@@ -167,3 +167,9 @@ CREATE INDEX IF NOT EXISTS cita_activa_inicio_idx ON cita (inicio) WHERE estado 
 ALTER TABLE lead ADD COLUMN IF NOT EXISTS cobrado_at     TIMESTAMPTZ;
 ALTER TABLE lead ADD COLUMN IF NOT EXISTS actualizado_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS lead_telefono_idx ON lead (telefono) WHERE telefono IS NOT NULL;
+
+-- Fase 4.2 (QA final): el reloj de confirmación empieza al apartar o reprogramar, no al crear la
+-- fila (una llamada convertida en cita no debe expirar por la antigüedad de la llamada).
+ALTER TABLE cita ADD COLUMN IF NOT EXISTS apartada_at TIMESTAMPTZ;
+UPDATE cita SET apartada_at = creado_at WHERE apartada_at IS NULL;
+ALTER TABLE cita ALTER COLUMN apartada_at SET DEFAULT now();

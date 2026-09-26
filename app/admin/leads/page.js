@@ -7,7 +7,7 @@ import { PERFILES } from "@/lib/chatbot/perfiles";
 import { dbDisponible } from "@/lib/db/client";
 import { embudo, porCampana } from "@/lib/metricas/conversaciones";
 import { eventosRecientes } from "@/lib/alertas/eventos";
-import { citasProximas, HORAS_PARA_CONFIRMAR } from "@/lib/agenda/repo";
+import { citasProximas, confirmarAntesDe } from "@/lib/agenda/repo";
 import { bitacoraReciente } from "@/lib/leads/bitacora";
 import { ultimaFotografia } from "@/lib/precios/repo";
 import LeadEditor from "./LeadEditor";
@@ -127,7 +127,7 @@ export default async function Panel({ searchParams }) {
                   {c.ahorro != null && <span className="text-esmeralda/60">ahorro estimado {pesos(c.ahorro)}</span>}
                 </div>
                 {c.estado === "reservada" && c.tipo === "cita" && (
-                  <p className="mb-2 text-xs text-granate">Sin confirmar: se libera {citaMX.format(new Date(new Date(c.creado_at).getTime() + HORAS_PARA_CONFIRMAR * 3600_000))} si no se confirma.</p>
+                  <p className="mb-2 text-xs text-granate">Sin confirmar: se libera {citaMX.format(confirmarAntesDe(c.apartada_at))} si no se confirma.</p>
                 )}
                 <CitaEditor cita={{ id: c.id, estado: c.estado, lugar: c.lugar, tipo: c.tipo }} />
               </li>

@@ -23,10 +23,11 @@ Para quien opera el sitio y el chat. Todo se hace desde el navegador.
 1. Abrir el panel. Si hay recuadro rojo de alertas, seguir la tabla de arriba.
 2. **Por contactar** (arriba a la izquierda): leads nuevos sin atender. Si se pone rojo, hay alguien esperando más de 24 horas.
 3. **Agenda**: la agenda trabaja en uno de dos modos (variable `AGENDA_MODO` en Vercel):
-   - **`llamada`** (por defecto, mientras no haya local ni línea de WhatsApp activa): la persona deja día y franja (9–13 o 13–17) y en el panel aparece "Llamar: …". Llamarle en esa franja, acordar la cita y usar **Acordar cita** para ponerle día y hora; luego **Confirmada** con el **lugar**. Las llamadas que nadie atendió se marcan **Expirada** solas a los 7 días.
-   - **`citas`**: la persona aparta día y hora. Confirmarla por WhatsApp y en el panel ponerla en **Confirmada** con el **lugar**. Una cita que nadie confirma en 24 horas se libera sola (el panel avisa cuándo).
+   - **`llamada`** (por defecto, mientras no haya local ni línea de WhatsApp activa): la persona deja día y franja (9–13 o 13–17) y en el panel aparece "Llamar: …". Llamarle en esa franja, acordar la cita y usar **Acordar cita** para ponerle día y hora (queda **Confirmada**; escribir el **lugar**). Las llamadas que nadie atendió se marcan **Expirada** solas a los 7 días.
+   - **`citas`**: la persona aparta día y hora. Confirmarla por WhatsApp y en el panel ponerla en **Confirmada** con el **lugar**. Una cita que nadie confirma en un día hábil se libera sola (el panel dice la fecha límite).
    Después de la cita: **Atendida** o **No asistió** (este regresa el lead a "por contactar"). Para mover una cita, **Reprogramar**.
-   `CITA_CAPACIDAD` = citas al mismo tiempo (una por asesor; 1 por defecto). `CITA_TOPE_HORA` = reservas por hora de todo el sitio antes de frenar y alertar (20 por defecto).
+   `CITA_CAPACIDAD` = citas al mismo tiempo (una por asesor; 1 por defecto). `LLAMADAS_POR_FRANJA` = llamadas que el equipo alcanza por franja (8 por defecto). `CITA_TOPE_HORA` = reservas hechas por hora en todo el sitio antes de frenar y alertar (20 por defecto).
+   **Comisión:** `COMISION_FIJA_MXN` y/o `COMISION_PCT_AHORRO` en Vercel. Con ellas, el chat da el ahorro ya descontada la comisión y no propone cambios que no convengan. **Configurarlas antes del lanzamiento.**
 4. **Leads**: mover la etapa conforme avanza el caso:
    Cita solicitada → Cita confirmada → Atendido → **Cambio concretado** (anotar casa de destino) → **Comisión cobrada** (anotar el monto). Si no avanza: **Descartado** con el motivo.
    Todo se guarda solo al escribir. En notas no poner datos de la deuda ni de otras personas.

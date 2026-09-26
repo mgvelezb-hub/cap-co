@@ -4,9 +4,9 @@
 
 import { PATRON_CODIGO } from "@/lib/chatbot/codigo";
 import { validarContacto } from "@/lib/leads/validar";
-import { reservar, HORAS_PARA_CONFIRMAR } from "@/lib/agenda/repo";
+import { reservar, reservasUltimaHora, confirmarAntesDe } from "@/lib/agenda/repo";
 import { textoCita, textoFranja, modoAgenda } from "@/lib/agenda/horarios";
-import { revisarLimites, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
+import { permitir, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
 import { registrarEvento } from "@/lib/alertas/eventos";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 
@@ -20,18 +20,18 @@ const MOTIVOS = {
   ya_tiene_cita: "Ese WhatsApp ya tiene una cita apartada. Si quieres cambiarla, escríbenos por WhatsApp.",
   sin_db: "No pudimos apartar la cita. Escríbenos por WhatsApp.",
 };
+const TOPE_HORA = Number(process.env.CITA_TOPE_HORA) || 20;
 const STATUS = { ocupado: 409, ya_tiene_cita: 409, otro_telefono: 409, no_existe: 404, sin_db: 503 };
 
 export async function POST(request) {
-  const excedido = await revisarLimites([
-    ["cita", hashIp(ipDeRequest(request))],
-    ["citaGlobal", "sitio"],
-  ]);
-  if (excedido === "citaGlobal") {
-    await registrarEvento("tope_citas", "critico", "Se alcanzó el tope de reservas por hora de todo el sitio.").catch(() => {});
+  // Primero el límite por visitante. El tope del sitio cuenta solo reservas que sí se hicieron,
+  // para que una sola IP no pueda cerrar la agenda a todos con intentos fallidos.
+  if (!(await permitir("cita", hashIp(ipDeRequest(request))))) {
+    return Response.json({ error: "Demasiados intentos. Espera unos minutos o escríbenos por WhatsApp.", motivo: "limite" }, { status: 429 });
   }
-  if (excedido) {
-    return Response.json({ error: "Demasiados intentos. Espera unos minutos o escríbenos por WhatsApp." }, { status: 429 });
+  if ((await reservasUltimaHora().catch(() => 0)) >= TOPE_HORA) {
+    await registrarEvento("tope_citas", "critico", `Más de ${TOPE_HORA} reservas en la última hora.`).catch(() => {});
+    return Response.json({ error: "Tenemos muchas solicitudes en este momento. Intenta en un rato o escríbenos por WhatsApp.", motivo: "limite" }, { status: 429 });
   }
   let body;
   try {
@@ -40,16 +40,16 @@ export async function POST(request) {
     return Response.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
   const codigo = body?.codigo;
-  if (!PATRON_CODIGO.test(codigo || "")) return Response.json({ error: "Código inválido." }, { status: 400 });
+  if (!PATRON_CODIGO.test(codigo || "")) return Response.json({ error: "Código inválido.", motivo: "no_existe" }, { status: 400 });
   const v = validarContacto(body || {});
-  if (!v.ok) return Response.json({ error: v.error }, { status: 400 });
+  if (!v.ok) return Response.json({ error: v.error, motivo: "dato_invalido" }, { status: 400 });
 
   const modo = modoAgenda();
   const r =
     modo === "llamada"
       ? await reservar({ codigo, nombre: v.nombre, telefono: v.telefono, tipo: "llamada", fecha: body?.fecha, franja: body?.franja })
       : await reservar({ codigo, nombre: v.nombre, telefono: v.telefono, inicio: new Date(body?.inicio) });
-  if (!r.ok) return Response.json({ error: MOTIVOS[r.motivo] }, { status: STATUS[r.motivo] || 400 });
+  if (!r.ok) return Response.json({ error: MOTIVOS[r.motivo], motivo: r.motivo }, { status: STATUS[r.motivo] || 400 });
 
   const cuando = modo === "llamada" ? textoFranja(body.fecha, body.franja) : textoCita(new Date(r.cita.inicio));
   const texto =
@@ -61,7 +61,7 @@ export async function POST(request) {
     modo,
     cuando,
     lugar: r.cita.lugar,
-    horasParaConfirmar: HORAS_PARA_CONFIRMAR,
+    confirmarAntes: modo === "citas" ? textoCita(confirmarAntesDe(r.cita.apartada_at)) : null,
     whatsapp: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(texto)}`,
   });
 }
