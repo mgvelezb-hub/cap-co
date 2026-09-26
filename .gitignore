@@ -26,3 +26,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Base de datos local de desarrollo (npm run db:local)
+/.pgdata/
