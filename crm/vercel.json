@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/seguimiento?turno=manana", "schedule": "30 15 * * 1-5" },
+    { "path": "/api/cron/seguimiento?turno=tarde", "schedule": "30 19 * * 1-5" }
+  ]
+}

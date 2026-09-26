@@ -35,6 +35,7 @@ export default function AgendaForm({ codigo, onReservada }) {
   const [opcion, setOpcion] = useState(null); // hora ISO (citas) o franja (llamada)
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
   const [acepta, setAcepta] = useState(false);
   const [estado, setEstado] = useState({ tipo: "idle" });
   const campos = useRef(null);
@@ -70,7 +71,7 @@ export default function AgendaForm({ codigo, onReservada }) {
       const res = await fetch("/api/citas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo, nombre, telefono, acepta, ...cuando }),
+        body: JSON.stringify({ codigo, nombre, telefono, email, acepta, ...cuando }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -138,6 +139,7 @@ export default function AgendaForm({ codigo, onReservada }) {
         <div ref={campos} className="space-y-3">
           <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" autoComplete="name" maxLength={80} aria-label="Tu nombre" className={CLASE_CAMPO} />
           <input type="tel" inputMode="numeric" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="WhatsApp (10 dígitos)" autoComplete="tel" maxLength={20} aria-label="Tu número de WhatsApp" className={CLASE_CAMPO} />
+          <input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Correo (opcional, para mandarte tu confirmación)" autoComplete="email" maxLength={120} aria-label="Tu correo (opcional)" className={CLASE_CAMPO} />
           <label className="flex items-start gap-2 font-sans text-xs leading-snug text-esmeralda/75">
             <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-esmeralda" />
             <span>
@@ -145,7 +147,7 @@ export default function AgendaForm({ codigo, onReservada }) {
               <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                 aviso de privacidad
               </a>{" "}
-              y que me contacten por llamada o WhatsApp para {modo === "llamada" ? "agendar" : "confirmar"} mi cita.
+              y que me contacten por llamada, WhatsApp o correo para {modo === "llamada" ? "agendar" : "confirmar"} mi cita.
             </span>
           </label>
         </div>

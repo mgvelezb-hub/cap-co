@@ -84,6 +84,12 @@ test("ejecutarTool agendar_cita produce cta con código y link", async () => {
   assert.ok(r.cta.url.includes("wa.me/525568809606"));
   assert.ok(decodeURIComponent(r.cta.url).includes(r.cta.codigo));
   assert.equal(JSON.parse(r.resultado).codigo, r.cta.codigo);
+  // Con base local (npm run test:db) el lead sí se guarda: se borra para no ensuciar.
+  if (r.cta.persistido) {
+    const { query, cerrarPool } = await import("../lib/db/client.js");
+    await query(`DELETE FROM lead WHERE codigo = $1`, [r.cta.codigo]);
+    await cerrarPool();
+  }
 });
 
 import { normalizarTelefono, validarContacto, limpiarFuente } from "../lib/leads/validar.js";
@@ -100,7 +106,10 @@ test("validarContacto exige consentimiento, nombre y teléfono válidos", () => 
   assert.equal(validarContacto({ nombre: "Ana", telefono: "5512345678", acepta: false }).ok, false);
   assert.equal(validarContacto({ nombre: "A", telefono: "5512345678", acepta: true }).ok, false);
   const ok = validarContacto({ nombre: "  Ana   López ", telefono: "55-12-34-56-78", acepta: true });
-  assert.deepEqual(ok, { ok: true, nombre: "Ana López", telefono: "5512345678" });
+  assert.deepEqual(ok, { ok: true, nombre: "Ana López", telefono: "5512345678", email: null });
+  const conCorreo = validarContacto({ nombre: "Ana", telefono: "5512345678", email: " Ana@Correo.MX ", acepta: true });
+  assert.equal(conCorreo.email, "ana@correo.mx");
+  assert.equal(validarContacto({ nombre: "Ana", telefono: "5512345678", email: "ana@", acepta: true }).ok, false);
 });
 
 test("limpiarFuente solo conserva llaves conocidas y recorta", () => {

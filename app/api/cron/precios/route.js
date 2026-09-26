@@ -11,6 +11,7 @@ import { limpiarLimites } from "@/lib/chatbot/ratelimit";
 import { limpiarConversaciones } from "@/lib/metricas/conversaciones";
 import { anonimizarLeadsViejos } from "@/lib/leads/repo";
 import { expirarCitas } from "@/lib/agenda/repo";
+import { limpiarVisitas } from "@/lib/crm/trafico";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function GET(request) {
     // convierte en falla la toma de precios, que ya se guardó.
     if (sesion === "manana") {
       // Cada tarea por separado: si una falla, las demás corren.
-      for (const tarea of [limpiarLimites, limpiarEventos, limpiarConversaciones, anonimizarLeadsViejos, expirarCitas]) {
+      for (const tarea of [limpiarLimites, limpiarEventos, limpiarConversaciones, anonimizarLeadsViejos, expirarCitas, limpiarVisitas]) {
         try {
           await tarea();
         } catch (err) {

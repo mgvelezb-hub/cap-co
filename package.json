@@ -2,6 +2,9 @@
   "name": "capco-web",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "crm"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/migrate.mjs && next build",

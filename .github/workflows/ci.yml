@@ -1,4 +1,5 @@
-# Pruebas en cada push y pull request: unitarias, de base de datos (PostgreSQL de servicio) y build.
+# Pruebas en cada push y pull request: unitarias, de base de datos (PostgreSQL de servicio) y build
+# del sitio y del CRM (crm/, workspace de npm).
 # No llama a Anthropic: el eval del chat (npm run eval) se corre a mano porque cuesta dinero.
 name: CI
 
@@ -45,7 +46,12 @@ jobs:
         run: node scripts/migrate.mjs
       - name: Pruebas (unitarias y de base de datos)
         run: node --test tests/*.test.js
-      - name: Build
+      - name: Build del sitio
+        run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Build del CRM
+        working-directory: crm
         run: npx next build
         env:
           NEXT_TELEMETRY_DISABLED: "1"

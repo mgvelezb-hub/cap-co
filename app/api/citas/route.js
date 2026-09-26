@@ -9,6 +9,8 @@ import { textoCita, textoFranja, modoAgenda } from "@/lib/agenda/horarios";
 import { permitir, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
 import { registrarEvento } from "@/lib/alertas/eventos";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
+import { alGuardarContacto } from "@/lib/crm/automatizacion";
+import { diferir } from "@/lib/diferir";
 
 export const runtime = "nodejs";
 
@@ -47,9 +49,12 @@ export async function POST(request) {
   const modo = modoAgenda();
   const r =
     modo === "llamada"
-      ? await reservar({ codigo, nombre: v.nombre, telefono: v.telefono, tipo: "llamada", fecha: body?.fecha, franja: body?.franja })
-      : await reservar({ codigo, nombre: v.nombre, telefono: v.telefono, inicio: new Date(body?.inicio) });
+      ? await reservar({ codigo, nombre: v.nombre, telefono: v.telefono, email: v.email, tipo: "llamada", fecha: body?.fecha, franja: body?.franja })
+      : await reservar({ codigo, nombre: v.nombre, telefono: v.telefono, email: v.email, inicio: new Date(body?.inicio) });
   if (!r.ok) return Response.json({ error: MOTIVOS[r.motivo], motivo: r.motivo }, { status: STATUS[r.motivo] || 400 });
+
+  // CRM: clasificación, correo de bienvenida y tarea de WhatsApp, después de responder.
+  diferir(() => alGuardarContacto(codigo, { modo, cita: r.cita.id }));
 
   const cuando = modo === "llamada" ? textoFranja(body.fecha, body.franja) : textoCita(new Date(r.cita.inicio));
   const texto =

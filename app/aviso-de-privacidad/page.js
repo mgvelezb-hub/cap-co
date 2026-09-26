@@ -44,8 +44,9 @@ export default function AvisoPrivacidad() {
               sin datos identificables, la fecha y la fuente de la visita, asociados a un código de seguimiento.
             </p>
             <p>
-              Si decides dejarnos tu nombre y número de WhatsApp en el formulario, recabamos únicamente esos dos datos,
-              con tu consentimiento expreso.
+              Si decides dejarnos tu nombre, tu número de WhatsApp y, si quieres, tu correo en el formulario,
+              recabamos únicamente esos datos, con tu consentimiento expreso. También registramos, de forma anónima
+              (sin IP ni datos personales), qué páginas del sitio se visitan y de qué campaña vienen.
             </p>
             <p>
               Si subes una foto de tu boleta al asistente virtual, la imagen se envía en ese momento a nuestro
@@ -67,7 +68,7 @@ export default function AvisoPrivacidad() {
           </Seccion>
 
           <Seccion titulo="Para qué los usamos">
-            <p>Finalidades primarias: contactarte por WhatsApp cuando lo solicitas; revisar tu boleta y orientarte sobre tasas, plazos, costo total y opciones; dar seguimiento a tu consulta.</p>
+            <p>Finalidades primarias: contactarte por llamada, WhatsApp o correo cuando lo solicitas; revisar tu boleta y orientarte sobre tasas, plazos, costo total y opciones; dar seguimiento a tu consulta, incluidos hasta tres recordatorios si no coincidimos (cada correo trae un enlace para dejar de recibirlos). Para priorizar la atención, un sistema clasifica tu caso con los números de la cotización y un resumen sin tus datos personales; la decisión final la toma una persona del equipo.</p>
             <p>Finalidades secundarias: estadísticas internas anónimas sobre el tipo de consultas recibidas, para mejorar el servicio. Puedes oponerte a esta finalidad escribiendo al correo indicado abajo.</p>
             <p>No usamos tus datos para publicidad de terceros ni los vendemos.</p>
           </Seccion>

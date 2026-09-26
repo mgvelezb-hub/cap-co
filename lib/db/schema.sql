@@ -112,7 +112,7 @@ ALTER TABLE lead ADD COLUMN IF NOT EXISTS cerrado_at      TIMESTAMPTZ;  -- switc
 CREATE INDEX IF NOT EXISTS lead_conversacion_idx ON lead (conversacion_id);
 CREATE INDEX IF NOT EXISTS lead_etapa_idx ON lead (etapa);
 
--- Una cita por lead; un horario solo puede tener una cita activa (capacidad 1: un asesor).
+-- Una cita activa por lead. El cupo por horario lo controla lib/agenda/repo.js (CITA_CAPACIDAD).
 CREATE TABLE IF NOT EXISTS cita (
   id          BIGSERIAL PRIMARY KEY,
   lead_codigo TEXT        NOT NULL REFERENCES lead (codigo) ON DELETE CASCADE,
@@ -122,7 +122,8 @@ CREATE TABLE IF NOT EXISTS cita (
   creado_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizado_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS cita_horario_activo_idx ON cita (inicio) WHERE estado IN ('reservada', 'confirmada');
+-- (El índice único por horario de la fase 4 se quitó en la 4.1: el cupo lo cuida la reserva.
+--  No volver a crearlo aquí: con varias llamadas por franja, la migración fallaría.)
 CREATE UNIQUE INDEX IF NOT EXISTS cita_lead_activa_idx ON cita (lead_codigo) WHERE estado IN ('reservada', 'confirmada');
 CREATE INDEX IF NOT EXISTS cita_inicio_idx ON cita (inicio);
 
@@ -173,3 +174,97 @@ CREATE INDEX IF NOT EXISTS lead_telefono_idx ON lead (telefono) WHERE telefono I
 ALTER TABLE cita ADD COLUMN IF NOT EXISTS apartada_at TIMESTAMPTZ;
 UPDATE cita SET apartada_at = creado_at WHERE apartada_at IS NULL;
 ALTER TABLE cita ALTER COLUMN apartada_at SET DEFAULT now();
+
+-- ============================================================================================
+-- CRM (app crm/, admin.casa-ap.com). Mismas tablas del sitio más las de seguimiento.
+-- ============================================================================================
+
+-- Contacto y seguimiento del lead.
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS email                  TEXT;          -- opcional, con consentimiento
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS ultimo_contacto_at     TIMESTAMPTZ;   -- último mensaje o llamada nuestra
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS ultima_respuesta_at    TIMESTAMPTZ;   -- última vez que la persona respondió
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS seguimiento_paso       SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS proximo_seguimiento_at TIMESTAMPTZ;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS no_contactar_at        TIMESTAMPTZ;   -- pidió no recibir más mensajes
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS baja_token             TEXT;          -- para el link "no quiero más correos"
+-- Clasificación: la vigente (regla, IA aprobada o humano) y la sugerencia pendiente de aprobar.
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS clasificacion            TEXT;        -- aplica_auto | revision | no_aplica | taller
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS clasificacion_fuente     TEXT;        -- regla | ia | humano
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS clasificacion_motivo     TEXT;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS clasificacion_at         TIMESTAMPTZ;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS sugerencia               JSONB;       -- {clasificacion, motivo, confianza, fuente}
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS revision_pendiente       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS perfil_ia                JSONB;       -- urgencia, pieza, siguiente paso…
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS propension_taller        SMALLINT;    -- 0-100
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS traspaso                 JSONB NOT NULL DEFAULT '{}'::jsonb; -- checklist del cambio
+CREATE INDEX IF NOT EXISTS lead_revision_idx ON lead (revision_pendiente) WHERE revision_pendiente;
+CREATE INDEX IF NOT EXISTS lead_seguimiento_idx ON lead (proximo_seguimiento_at) WHERE proximo_seguimiento_at IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS lead_baja_token_idx ON lead (baja_token) WHERE baja_token IS NOT NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lead_email_con_consentimiento') THEN
+    ALTER TABLE lead ADD CONSTRAINT lead_email_con_consentimiento CHECK (email IS NULL OR consent_at IS NOT NULL);
+  END IF;
+END $$;
+
+-- Historial de todo lo que pasa con un lead (contactos, respuestas, cambios, correos).
+CREATE TABLE IF NOT EXISTS lead_evento (
+  id          BIGSERIAL PRIMARY KEY,
+  lead_codigo TEXT        NOT NULL REFERENCES lead (codigo) ON DELETE CASCADE,
+  creado_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  tipo        TEXT        NOT NULL,  -- ver lib/crm/eventos.js
+  canal       TEXT,                  -- whatsapp | llamada | correo | sistema | chat
+  usuario     TEXT,                  -- quién (null = sistema)
+  detalle     JSONB       NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS lead_evento_lead_idx ON lead_evento (lead_codigo, creado_at DESC);
+
+-- Tareas del equipo (WhatsApp por mandar, llamadas, revisiones).
+CREATE TABLE IF NOT EXISTS crm_tarea (
+  id          BIGSERIAL PRIMARY KEY,
+  lead_codigo TEXT        NOT NULL REFERENCES lead (codigo) ON DELETE CASCADE,
+  tipo        TEXT        NOT NULL,  -- whatsapp | llamar | revisar | confirmar_cita
+  titulo      TEXT        NOT NULL,
+  vence_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  creado_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  hecha_at    TIMESTAMPTZ,
+  hecha_por   TEXT,
+  detalle     JSONB       NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS crm_tarea_abierta_idx ON crm_tarea (vence_at) WHERE hecha_at IS NULL;
+DROP INDEX IF EXISTS crm_tarea_unica_idx;
+-- Una tarea abierta por lead, tipo y plantilla (primer contacto y oferta de taller conviven).
+CREATE UNIQUE INDEX IF NOT EXISTS crm_tarea_abierta_unica_idx ON crm_tarea (lead_codigo, tipo, (coalesce(detalle->>'plantilla', ''))) WHERE hecha_at IS NULL;
+
+-- Usuarios del CRM y tokens para el servidor MCP.
+CREATE TABLE IF NOT EXISTS crm_usuario (
+  usuario     TEXT        PRIMARY KEY,
+  nombre      TEXT        NOT NULL,
+  rol         TEXT        NOT NULL DEFAULT 'asesor', -- dueno | asesor
+  sal         TEXT        NOT NULL,
+  hash        TEXT        NOT NULL,                  -- PBKDF2-SHA256, 210 000 iteraciones
+  activo      BOOLEAN     NOT NULL DEFAULT true,
+  creado_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  acceso_at   TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS crm_token (
+  id          BIGSERIAL PRIMARY KEY,
+  usuario     TEXT        NOT NULL REFERENCES crm_usuario (usuario) ON DELETE CASCADE,
+  nombre      TEXT        NOT NULL,
+  hash        TEXT        NOT NULL UNIQUE,           -- sha256 del token; el token solo se muestra una vez
+  creado_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  vence_at    TIMESTAMPTZ NOT NULL,
+  usado_at    TIMESTAMPTZ,
+  revocado_at TIMESTAMPTZ
+);
+
+-- Visitas anónimas a la página (tráfico): sin IP ni datos personales.
+CREATE TABLE IF NOT EXISTS visita (
+  id        BIGSERIAL PRIMARY KEY,
+  creado_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sesion    TEXT        NOT NULL,   -- id aleatorio por pestaña
+  path      TEXT        NOT NULL,
+  fuente    JSONB       NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS visita_creado_idx ON visita (creado_at DESC);
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS esperando_respuesta_desde TIMESTAMPTZ; -- primer contacto nuestro sin respuesta
