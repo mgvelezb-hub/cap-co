@@ -280,7 +280,17 @@ ALTER TABLE lead ADD COLUMN IF NOT EXISTS ia_intentos        SMALLINT NOT NULL D
 ALTER TABLE lead ADD COLUMN IF NOT EXISTS email_confirmado_at TIMESTAMPTZ; -- confirmó su correo: recibe recordatorios por correo
 CREATE INDEX IF NOT EXISTS cita_lead_creado_idx ON cita (lead_codigo, creado_at DESC);
 CREATE INDEX IF NOT EXISTS lead_consent_idx ON lead (consent_at) WHERE consent_at IS NOT NULL;
--- Leads que dejaron datos antes del CRM (26-sep-2026): no entran al seguimiento automático;
--- el equipo los atiende desde la bandeja. Solo afecta filas anteriores a esa fecha.
-UPDATE lead SET seguimiento_paso = 4
- WHERE seguimiento_paso = 0 AND consent_at IS NOT NULL AND consent_at < '2026-09-26T20:00:00Z';
+-- Ajustes de datos que deben correr UNA sola vez (el resto del esquema se re-aplica en cada build).
+CREATE TABLE IF NOT EXISTS migracion_unica (
+  nombre    TEXT        PRIMARY KEY,
+  aplicada  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Leads que dejaron datos antes del CRM: no entran al seguimiento automático; el equipo los
+-- atiende desde la bandeja.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM migracion_unica WHERE nombre = 'crm_leads_previos') THEN
+    UPDATE lead SET seguimiento_paso = 4 WHERE seguimiento_paso = 0 AND consent_at IS NOT NULL;
+    INSERT INTO migracion_unica (nombre) VALUES ('crm_leads_previos');
+  END IF;
+END $$;
