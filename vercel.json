@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
   "crons": [
-    { "path": "/api/cron/precios", "schedule": "0 15 * * 1-5" },
-    { "path": "/api/cron/precios", "schedule": "0 21 * * 1-5" }
+    { "path": "/api/cron/precios?sesion=manana", "schedule": "0 15 * * 1-5" },
+    { "path": "/api/cron/precios?sesion=tarde", "schedule": "0 21 * * 1-5" }
   ]
 }

@@ -1,5 +1,6 @@
 // GET /api/cron/precios — toma una fotografía de precios de metales y la guarda.
-// Lo llama Vercel Cron dos veces al día entre semana (vercel.json). Protegido con
+// Lo llama Vercel Cron dos veces al día entre semana (vercel.json; una ruta por horario,
+// porque Vercel no registra dos crons con la misma ruta). Protegido con
 // Authorization: Bearer <CRON_SECRET>, que Vercel agrega solo en las llamadas del cron.
 
 import { obtenerPreciosUSD, obtenerTipoDeCambio, FUENTE } from "@/lib/precios/fuentes";
@@ -26,7 +27,9 @@ export async function GET(request) {
   }
   try {
     const [usd, fx] = await Promise.all([obtenerPreciosUSD(), obtenerTipoDeCambio()]);
-    const guardada = await guardarFotografia({ sesion: sesionActual(), usd, fx, fuente: FUENTE });
+    const pedida = new URL(request.url).searchParams.get("sesion");
+    const sesion = ["manana", "tarde"].includes(pedida) ? pedida : sesionActual();
+    const guardada = await guardarFotografia({ sesion, usd, fx, fuente: FUENTE });
     return Response.json({ ok: true, id: Number(guardada.id), capturado_at: guardada.capturado_at, usd, fx });
   } catch (err) {
     console.error("[precios] no se tomó la fotografía:", err.message);
