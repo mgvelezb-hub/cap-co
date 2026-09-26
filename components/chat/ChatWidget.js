@@ -9,7 +9,7 @@ import { WHATSAPP_URL } from "@/lib/constants";
 const STORAGE_KEY = "capco-chat-v1";
 const FUENTE_KEY = "capco-fuente-v1";
 const BIENVENIDA =
-  "Pregúntame lo que quieras sobre empeños: qué dice tu boleta, cuánto vas a pagar, cuánto debes hoy o si te conviene cambiar de institución. Aquí mismo lo resolvemos, sin costo. Si te conviene cambiar tu boleta, te agendo con un asesor.";
+  "Pregúntame lo que quieras sobre empeños: qué dice tu boleta, cuánto vas a pagar, cuánto vale tu oro o si te conviene cambiar de institución. También puedes subir una foto de tu boleta con el botón de la cámara y te hago el análisis completo. Sin costo.";
 const CHIPS = [
   "Explícame mi boleta",
   "¿Cuánto debo hoy?",
@@ -120,9 +120,10 @@ export default function ChatWidget() {
   }, []);
 
   const enviar = useCallback(
-    async (texto) => {
+    async (texto, imagen = null) => {
       if (cargando) return;
-      const historial = [...mensajes, { role: "user", content: texto }];
+      // La foto viaja solo en este envío; en el historial queda la marca, nunca la imagen.
+      const historial = [...mensajes, { role: "user", content: texto, adjunto: Boolean(imagen) }];
       setMensajes([...historial, { role: "assistant", content: "", pendiente: true }]);
       setCargando(true);
 
@@ -141,6 +142,7 @@ export default function ChatWidget() {
             messages: historial.map(({ role, content }) => ({ role, content })),
             hasCta: Boolean(cta),
             fuente: fuenteRef.current,
+            ...(imagen ? { imagen } : {}),
           }),
           signal: controller.signal,
         });
@@ -296,7 +298,7 @@ export default function ChatWidget() {
               </div>
             )}
             {mensajes.map((m, i) => (
-              <ChatMessage key={i} role={m.role} content={m.content} pendiente={m.pendiente} />
+              <ChatMessage key={i} role={m.role} content={m.content} pendiente={m.pendiente} adjunto={m.adjunto} />
             ))}
             {cta && (
               <div className="space-y-3">

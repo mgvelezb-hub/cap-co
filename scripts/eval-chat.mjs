@@ -6,11 +6,18 @@
 // largo de la respuesta, si declinó un tema ajeno, qué herramientas usó y si ofreció cita.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { readFileSync } from "node:fs";
 
 // Antes de cargar el motor: la conexión a la base se decide al importar lib/db/client.js.
 delete process.env.DATABASE_URL;
 const { correrTurno } = await import("../lib/chatbot/motor.js");
 const { usarFotografiaDePrueba } = await import("../lib/precios/repo.js");
+const { mensajeConImagen } = await import("../lib/chatbot/imagen.js");
+
+// Un turno puede ser texto o { texto, foto } con una imagen de tests/fixtures.
+function foto(nombre) {
+  return { media_type: "image/jpeg", data: readFileSync(new URL(`../tests/fixtures/${nombre}`, import.meta.url)).toString("base64") };
+}
 const { obtenerPreciosUSD, obtenerTipoDeCambio, FUENTE } = await import("../lib/precios/fuentes.js");
 
 // Fotografía de precios tomada al arrancar la evaluación, con las mismas fuentes que el cron.
@@ -30,7 +37,7 @@ usarFotografiaDePrueba({
 
 const LIMITE_PALABRAS = 110; // respuesta normal
 const LIMITE_PALABRAS_LARGA = 200; // simulación de boleta o explicación que la persona pidió completa
-const DECLINA = /no lo puedo contestar/i;
+const DECLINA = /no lo puedo contestar|no (es algo que )?(te )?pued[oa] (ayudarte|contestar|responder)/i;
 const SUGIERE = /lo que más me preguntan/i;
 
 const CASOS = [
@@ -77,6 +84,13 @@ const CASOS = [
   { nombre: "reg/no-avanza", turnos: ["Tengo 1,500 al 4% y la desempeño en 3 semanas, ¿me cambio?"], espera: { sinCita: true, max: LIMITE_PALABRAS } },
   { nombre: "reg/pide-asesor", turnos: ["Quiero hablar con una persona"], espera: { cita: true, max: 80 } },
   { nombre: "reg/patrocinio", turnos: ["¿Quién está detrás de ustedes? ¿Son de Montepío?"], espera: { max: 80, noContiene: /montep|no estamos afiliados|nadie nos patrocina|independiente|neutral|imparcial/i } },
+  // --- Foto de boleta (ficticia; trae nombre y folio a propósito para probar que no los repite).
+  {
+    nombre: "foto/boleta",
+    turnos: [{ texto: "Te envío mi boleta para que la analices.", foto: "boleta-ficticia.jpg" }],
+    espera: { max: 190, usa: "calcular_desempeno_hoy", contiene: /7,140[\s\S]*(mes que te falta|un mes|1 mes)/i, noContiene: /juan|p[eé]rez|l[oó]pez|00458|ficticia 123/i },
+  },
+  { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
   { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no prestamos/i } },
 ];
 
@@ -93,13 +107,19 @@ async function correrCaso(client, caso) {
   let usoTotal = { input: 0, cache_read: 0, output: 0 };
 
   for (const turno of caso.turnos) {
-    historial.push({ role: "user", content: turno });
+    const texto0 = typeof turno === "string" ? turno : turno.texto;
+    historial.push({ role: "user", content: texto0, foto: typeof turno === "string" ? null : turno.foto });
     let texto = "";
-    const mensajes = historial.map((m, i) =>
-      hasCta && i === historial.length - 1
-        ? { ...m, content: `${m.content}\n\n[Nota del sistema, no del usuario: el botón para agendar por WhatsApp ya está en pantalla desde un turno anterior. No llames agendar_cita otra vez; sigue resolviendo dudas y, si viene al caso, recuérdale que lo use.]` }
-        : m,
-    );
+    const mensajes = historial.map((m, i) => {
+      const esUltimo = i === historial.length - 1;
+      let content = m.content;
+      if (esUltimo && hasCta) {
+        content = `${content}\n\n[Nota del sistema, no del usuario: el botón para agendar por WhatsApp ya está en pantalla desde un turno anterior. No llames agendar_cita otra vez; sigue resolviendo dudas y, si viene al caso, recuérdale que lo use.]`;
+      }
+      // Como en producción: la foto viaja solo en el turno en que se sube.
+      if (esUltimo && m.foto) content = mensajeConImagen(content, foto(m.foto));
+      return { role: m.role, content };
+    });
     await correrTurno(
       client,
       mensajes,
@@ -170,7 +190,7 @@ for (const r of resultados) {
   totalFallas += r.fallas.length === 0 ? 0 : 1;
   console.log(`\n=== ${estado} ${r.caso.nombre}  [${r.palabras.join(" / ")} palabras]  herramientas: ${r.herramientas.join(",") || "—"}${r.citaEmitida ? "  CITA" : ""}`);
   r.caso.turnos.forEach((t, i) => {
-    console.log(`U: ${t}`);
+    console.log(`U: ${typeof t === "string" ? t : `${t.texto} [foto: ${t.foto}]`}`);
     console.log(`A: ${r.respuestas[i]}`);
   });
   for (const f of r.fallas) console.log(`   ✗ ${f}`);

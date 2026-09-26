@@ -1,6 +1,6 @@
 import { renderMarkdown } from "./markdown";
 
-export default function ChatMessage({ role, content, pendiente }) {
+export default function ChatMessage({ role, content, pendiente, adjunto }) {
   const esUsuario = role === "user";
   return (
     <div className={`flex ${esUsuario ? "justify-end" : "justify-start"}`}>
@@ -11,6 +11,9 @@ export default function ChatMessage({ role, content, pendiente }) {
             : "rounded-bl-md border border-esmeralda/10 bg-papel-alto text-esmeralda"
         }`}
       >
+        {adjunto && (
+          <div className="mb-1 font-sans text-xs uppercase tracking-[0.14em] text-sobre-verde/70">Foto de boleta adjunta</div>
+        )}
         {pendiente && content === "" ? <Puntos /> : renderMarkdown(content)}
       </div>
     </div>

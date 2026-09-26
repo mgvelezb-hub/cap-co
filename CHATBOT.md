@@ -40,12 +40,28 @@ Pedido de Mau tras probarlo: que no conteste nada fuera de lo prendario y que se
 - Reglas reforzadas: prohibidas las palabras "independiente/neutral/imparcial/objetivo" (apareció "asesoría independiente" en una corrida); ante "¿quién está detrás?" no se nombra ninguna institución (respuesta modelo en el prompt); si piden hablar con una persona, `agendar_cita` en ese mismo turno.
 - **Evaluación**: `npm run eval` (`scripts/eval-chat.mjs`, 28 casos: 8 fuera de tema, 8 en el borde del tema, 5 de concisión, 7 de regresión). Usa `lib/chatbot/motor.js`, el mismo ciclo que `/api/chat`. Antes: 8/26 y 148 palabras promedio; después: 28/28 en dos corridas seguidas y 62–64 palabras promedio.
 
+## 0.3 Precios de metales en vivo y foto de boleta (26-sep-2026)
+
+**Precios de metales (dos fotografías al día).** Pedido de Mau: precio real de oro, plata y metales, pero sin que una evaluación cambie cada minuto.
+- Cron de Vercel lunes a viernes a las **9:00 y 15:00 (CDMX)** → `GET /api/cron/precios` (protegido con `CRON_SECRET`) guarda una fila en `precio_metal`: oro, plata, platino y paladio en USD/oz + tipo de cambio USD/MXN, con fecha y fuente. Fin de semana se queda la del viernes (el mercado cierra).
+- Fuentes sin llave: **gold-api.com** (spot) y **tipo de cambio de referencia del BCE vía Frankfurter**. Rangos de cordura antes de guardar. Mejora sugerida: tipo de cambio FIX de Banxico (requiere token gratuito de Banxico, lo saca Mau).
+- Herramientas `precio_metales` (tabla por gramo en pesos: oro puro y por kilate, plata 925, platino 950, paladio 950) y `estimar_valor_metal` (metal + pureza + gramos → valor del metal y préstamo típico 40–60 %). El bot siempre dice fecha y hora del precio y que es referencia internacional, no lo que paga la casa de empeño. Si la última fotografía tiene más de 96 h, no da cifras.
+- La migración ahora corre en cada build (`npm run build` = `migrate` + `next build`).
+- Primera fotografía tomada a mano en producción el 26-sep (id 1).
+
+**Foto de boleta.** Pedido de Mau: que la persona suba su boleta y reciba un análisis completo. **Supera** la decisión del 21-ago "sin fotos en la web", con candados:
+- La foto se comprime en el teléfono (JPEG ≤ 1600 px) y viaja **solo en el turno en que se sube**; no se guarda en la base, en el navegador ni en logs. En el historial queda la marca "Foto de boleta adjunta".
+- Casilla de consentimiento la primera vez (aviso de privacidad actualizado, versión `2026-09-provisional`, menciona al proveedor de IA y servidores fuera de México). Sugiere tapar nombre y domicilio.
+- El bot lee solo datos del préstamo; nunca repite nombre, domicilio, folio, firmas ni INE. Si no es boleta o no se lee, lo dice. No valida autenticidad: la validación INE ↔ boleta sigue siendo en la cita (doc 01 §5).
+- Análisis (≤ 170 palabras): qué dice, cuánto debe hoy (fecha de hoy se inyecta en el mensaje, fuera del caché), valor del metal vs préstamo, cotización de traspaso con los meses que realmente faltan (y ofrece recalcular si lo necesitará más tiempo), recomendación.
+- Evaluación: `tests/fixtures/boleta-ficticia.jpg` (datos inventados, con nombre y folio para probar que no los repite) y `ticket-ficticio.jpg`. 31 casos en total.
+
 ## 1. Premisas y límites
 
 | Tema | Decisión | Por qué |
 |---|---|---|
 | Modelo | `claude-sonnet-5` en chat (configurable por env `CHAT_MODEL`); Opus 5 solo para trabajo offline (generar KB, evals) | Turnos cortos, KB fija cacheada, cálculos en tool determinista. Conversación de 10 turnos ≈ $0.02–0.04 USD. Opus 5 cuesta 2–3x sin mejora perceptible en FAQ educativo |
-| Fotos de boleta en el chat web | **No** | Doc 01 §5 exige validar INE ↔ boleta ↔ persona antes de operar; la web anónima no puede. Fotos y datos sensibles van a WhatsApp |
+| Fotos de boleta en el chat web | **Sí desde el 26-sep**, con consentimiento y sin guardarlas (§0.3). Antes: **No** | Doc 01 §5 exige validar INE ↔ boleta ↔ persona antes de operar; la web anónima no puede. Fotos y datos sensibles van a WhatsApp |
 | Datos personales | **Nunca por la conversación.** Desde la fase 2 solo por formulario con casilla del aviso de privacidad; la DB rechaza nombre/teléfono sin `consent_at` | LFPDPPP obliga aviso + consentimiento antes de recolectar. El aviso sigue siendo provisional (§4) |
 | Lead | Código corto (`CAP-7F3K`) + perfil en el texto prellenado de `wa.me`; desde la fase 2 además se guarda en la tabla `lead` (§4) | Permite al bot de WhatsApp (fase 3) recuperar el contexto con `GET /api/leads/CAP-XXXX` |
 | Base de conocimiento | Doc 04 (regulación, tasas, glosario NOM-179) + contenido actual de la página. Marcada como provisional | Ricardo aún no entrega contenido real. Cuando llegue, se reemplaza `lib/chatbot/knowledge.js` |

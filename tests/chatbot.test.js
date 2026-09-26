@@ -211,3 +211,22 @@ test("precios: una fotografía de más de 4 días no se usa", () => {
   assert.equal(fotografiaVigente(FOTO, new Date("2026-09-30T15:00:00Z")), false);
   assert.equal(fotografiaVigente(null), false);
 });
+
+import { validarImagen, mensajeConImagen } from "../lib/chatbot/imagen.js";
+
+test("imagen: acepta JPG/PNG/WebP en base64 y rechaza lo demás", () => {
+  const data = "A".repeat(200);
+  assert.deepEqual(validarImagen(null), { ok: true, imagen: null });
+  assert.equal(validarImagen({ media_type: "image/jpeg", data }).ok, true);
+  assert.equal(validarImagen({ media_type: "application/pdf", data }).ok, false);
+  assert.equal(validarImagen({ media_type: "image/png", data: "no es base64!!" + data }).ok, false);
+  assert.equal(validarImagen({ media_type: "image/png", data: "A".repeat(4_000_001) }).ok, false);
+});
+
+test("imagen: el mensaje lleva la foto y la fecha de hoy fuera del prompt", () => {
+  const m = mensajeConImagen("Analiza mi boleta", { media_type: "image/jpeg", data: "AAAA" }, new Date("2026-09-26T18:00:00Z"));
+  assert.equal(m[0].type, "image");
+  assert.equal(m[0].source.media_type, "image/jpeg");
+  assert.match(m[1].text, /^Analiza mi boleta/);
+  assert.match(m[1].text, /26 de septiembre de 2026/);
+});

@@ -1,5 +1,6 @@
 // POST /api/chat — un turno del chatbot.
-// Entrada: { messages: [{role:"user"|"assistant", content:string}, ...], hasCta?: boolean, fuente?: object }
+// Entrada: { messages: [{role:"user"|"assistant", content:string}, ...], hasCta?: boolean, fuente?: object,
+//           imagen?: {media_type, data} }  ← foto de boleta del último mensaje (base64, no se guarda)
 //   hasCta = el widget ya muestra el botón de WhatsApp de un turno anterior.
 //   fuente = utm_source/medium/campaign/referrer/path de la visita (para el lead).
 // Salida: stream de líneas JSON (NDJSON):
@@ -12,6 +13,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { correrTurno } from "@/lib/chatbot/motor";
 import { permitir, ipDeRequest } from "@/lib/chatbot/ratelimit";
 import { limpiarFuente } from "@/lib/leads/validar";
+import { validarImagen, mensajeConImagen } from "@/lib/chatbot/imagen";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,12 +48,20 @@ export async function POST(request) {
   if (!mensajes) {
     return Response.json({ error: "Formato de mensajes inválido." }, { status: 400 });
   }
+  const img = validarImagen(body?.imagen);
+  if (!img.ok) {
+    return Response.json({ error: img.error }, { status: 400 });
+  }
   const yaHayCta = body?.hasCta === true;
   const fuente = limpiarFuente(body?.fuente);
   if (yaHayCta) {
     // Va al final del último mensaje (fuera del prefijo cacheado). Es del servidor, no del usuario.
     const ultimo = mensajes[mensajes.length - 1];
     ultimo.content = `${ultimo.content}${NOTA_CTA_PREVIO}`;
+  }
+  if (img.imagen) {
+    const ultimo = mensajes[mensajes.length - 1];
+    ultimo.content = mensajeConImagen(ultimo.content, img.imagen);
   }
 
   const encoder = new TextEncoder();

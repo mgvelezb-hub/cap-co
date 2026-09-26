@@ -48,6 +48,13 @@ export default function AvisoPrivacidad() {
               con tu consentimiento expreso.
             </p>
             <p>
+              Si subes una foto de tu boleta al asistente virtual, la imagen se envía en ese momento a nuestro
+              proveedor de inteligencia artificial únicamente para leer los datos del préstamo (institución, montos,
+              tasa, fechas y descripción de la prenda). No guardamos la foto en nuestros sistemas ni en tu navegador,
+              y el asistente no usa ni repite tu nombre, domicilio o número de contrato. Puedes taparlos antes de
+              tomar la foto. Al subirla, se te pide tu consentimiento.
+            </p>
+            <p>
               Cuando nos escribes por WhatsApp y nos compartes tu boleta de empeño, recabamos los datos que aparezcan
               en ella (nombre, número de contrato, monto, institución) y los que tú nos proporciones para revisar tu caso.
             </p>
@@ -63,8 +70,8 @@ export default function AvisoPrivacidad() {
             <p>
               No transferimos tus datos a terceros, salvo cuando tú nos pidas acompañarte en un traspaso y sea
               necesario compartirlos con la institución que elijas, o cuando lo exija la ley. Nuestros proveedores
-              tecnológicos (alojamiento web, base de datos y mensajería) tratan los datos únicamente por cuenta
-              nuestra y bajo obligaciones de confidencialidad.
+              tecnológicos (alojamiento web, base de datos, mensajería e inteligencia artificial, algunos con servidores
+              fuera de México) tratan los datos únicamente por cuenta nuestra y bajo obligaciones de confidencialidad.
             </p>
           </Seccion>
 
