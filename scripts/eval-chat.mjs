@@ -1,12 +1,15 @@
 // Evaluación del chatbot contra el modelo real, con el mismo motor que producción.
-// Uso: node --env-file=.env.local scripts/eval-chat.mjs [filtro]
-// Sin DATABASE_URL los leads no se guardan (agendar_cita sigue funcionando).
+// Uso: npm run eval [-- filtro]
+// La evaluación nunca guarda leads: ignora DATABASE_URL (agendar_cita sigue funcionando).
 //
 // Cada caso es una conversación. Las verificaciones son automáticas y baratas:
 // largo de la respuesta, si declinó un tema ajeno, qué herramientas usó y si ofreció cita.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { correrTurno } from "../lib/chatbot/motor.js";
+
+// Antes de cargar el motor: la conexión a la base se decide al importar lib/db/client.js.
+delete process.env.DATABASE_URL;
+const { correrTurno } = await import("../lib/chatbot/motor.js");
 
 const LIMITE_PALABRAS = 110; // respuesta normal
 const LIMITE_PALABRAS_LARGA = 200; // simulación de boleta o explicación que la persona pidió completa
@@ -136,9 +139,12 @@ const filtro = process.argv[2];
 const casos = CASOS.filter((c) => !filtro || c.nombre.includes(filtro));
 const client = new Anthropic();
 const log = console.log;
+const avisar = console.warn;
 console.log = () => {}; // silencia el log de uso del motor
+console.warn = () => {}; // y el aviso de "lead no persistido"
 const resultados = await enParalelo(casos, 4, (c) => correrCaso(client, c));
 console.log = log;
+console.warn = avisar;
 
 let totalFallas = 0;
 for (const r of resultados) {
