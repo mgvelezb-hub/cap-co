@@ -1,10 +1,10 @@
-// Protege la vista interna /admin/* con Basic auth (ADMIN_USER / ADMIN_PASSWORD).
+// Protege la vista interna /admin/* y sus APIs /api/admin/* con Basic auth (ADMIN_USER / ADMIN_PASSWORD).
 // El navegador muestra su propio diálogo de usuario y contraseña.
 
 import { NextResponse } from "next/server";
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
 
 function pedirCredenciales() {

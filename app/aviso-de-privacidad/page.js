@@ -55,6 +55,12 @@ export default function AvisoPrivacidad() {
               tomar la foto. Al subirla, se te pide tu consentimiento.
             </p>
             <p>
+              Para proteger el servicio contra abusos registramos, por un máximo de 48 horas, un identificador
+              cifrado derivado de tu dirección IP (no la IP en sí) y cuántos mensajes has enviado. También llevamos
+              un registro anónimo de cada conversación (número de mensajes y si se hizo una cotización, sin el texto)
+              para medir el servicio, y un registro técnico de errores que se borra a los 90 días.
+            </p>
+            <p>
               Cuando nos escribes por WhatsApp y nos compartes tu boleta de empeño, recabamos los datos que aparezcan
               en ella (nombre, número de contrato, monto, institución) y los que tú nos proporciones para revisar tu caso.
             </p>

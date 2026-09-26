@@ -10,11 +10,23 @@
 //   {type:"error", message}      error recuperable (el cliente lo muestra como burbuja)
 
 import Anthropic from "@anthropic-ai/sdk";
+import { after } from "next/server";
+
+// Trabajo que no debe retrasar la respuesta (métricas, eventos). after() lo corre al terminar;
+// si no hay contexto de request disponible, se lanza sin esperar.
+function enDiferido(fn) {
+  try {
+    after(fn);
+  } catch {
+    Promise.resolve().then(fn).catch(() => {});
+  }
+}
 import { correrTurno } from "@/lib/chatbot/motor";
-import { permitir, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
+import { revisarLimites, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
 import { registrarEvento, tipoDeErrorAnthropic } from "@/lib/alertas/eventos";
 import { limpiarFuente } from "@/lib/leads/validar";
 import { validarImagen, mensajeConImagen } from "@/lib/chatbot/imagen";
+import { registrarTurno, idValido } from "@/lib/metricas/conversaciones";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,23 +38,21 @@ const NOTA_CTA_PREVIO =
   "\n\n[Nota del sistema, no del usuario: el botón para agendar por WhatsApp ya está en pantalla desde un turno anterior. No llames agendar_cita otra vez; sigue resolviendo dudas y, si viene al caso, recuérdale que lo use.]";
 
 const MENSAJE_CAIDA =
-  "Ahora mismo no puedo responder. Escríbenos por WhatsApp y un asesor te atiende.";
+  "Ahora mismo no puedo responder. Escríbenos por WhatsApp y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.";
 
 const client = new Anthropic();
 
-const MENSAJE_LIMITE = "Demasiados mensajes en poco tiempo. Espera unos minutos o escríbenos por WhatsApp.";
-const MENSAJE_SATURADO = "El asistente está saturado en este momento. Escríbenos por WhatsApp y un asesor te atiende.";
-const MENSAJE_FOTOS = "Ya analizamos varias fotos tuyas hoy. Escríbenos los datos de tu boleta o intenta mañana.";
+// Los bloqueos llevan whatsapp: true para que el widget muestre el botón y el prospecto no se pierda.
+const MENSAJES_LIMITE = {
+  chat: "Vamos muy rápido: dame unos minutos para seguir. Si prefieres, escríbenos por WhatsApp; respondemos de lunes a viernes de 9:00 a 17:00.",
+  chatDia: "Por hoy llegamos al máximo de mensajes en este chat. Escríbenos por WhatsApp y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.",
+  foto: "Por hoy ya analizamos varias fotos tuyas. Puedes escribirme los datos de tu boleta y seguimos, o mandarla por WhatsApp.",
+  chatGlobal: "El asistente está saturado en este momento. Escríbenos por WhatsApp; respondemos de lunes a viernes de 9:00 a 17:00.",
+  fotoGlobal: "Por hoy no podemos analizar más fotos. Escríbeme los datos de tu boleta y seguimos, o mándala por WhatsApp.",
+};
 
 export async function POST(request) {
   const visitante = hashIp(ipDeRequest(request));
-  if (!(await permitir("chat", visitante))) {
-    return Response.json({ error: MENSAJE_LIMITE }, { status: 429 });
-  }
-  if (!(await permitir("chatGlobal", "global"))) {
-    await registrarEvento("limite_anthropic", "critico", "Se alcanzó el tope diario de mensajes del sitio (freno de gasto).");
-    return Response.json({ error: MENSAJE_SATURADO }, { status: 429 });
-  }
 
   let body;
   try {
@@ -59,17 +69,22 @@ export async function POST(request) {
   if (!img.ok) {
     return Response.json({ error: img.error }, { status: 400 });
   }
-  if (img.imagen) {
-    if (!(await permitir("foto", visitante))) {
-      return Response.json({ error: MENSAJE_FOTOS }, { status: 429 });
+  const pares = [
+    ["chat", visitante],
+    ["chatDia", visitante],
+    ["chatGlobal", "global"],
+  ];
+  if (img.imagen) pares.push(["foto", visitante], ["fotoGlobal", "global"]);
+  const excedido = await revisarLimites(pares);
+  if (excedido) {
+    if (excedido === "chatGlobal" || excedido === "fotoGlobal") {
+      enDiferido(() => registrarEvento("tope_diario", "critico", `Se alcanzó el tope diario del sitio (${excedido}).`));
     }
-    if (!(await permitir("fotoGlobal", "global"))) {
-      await registrarEvento("limite_anthropic", "critico", "Se alcanzó el tope diario de fotos de boleta del sitio.");
-      return Response.json({ error: MENSAJE_SATURADO }, { status: 429 });
-    }
+    return Response.json({ error: MENSAJES_LIMITE[excedido], whatsapp: true }, { status: 429 });
   }
   const yaHayCta = body?.hasCta === true;
   const fuente = limpiarFuente(body?.fuente);
+  const conversacionId = idValido(body?.conversacionId) ? body.conversacionId : null;
   if (yaHayCta) {
     // Va al final del último mensaje (fuera del prefijo cacheado). Es del servidor, no del usuario.
     const ultimo = mensajes[mensajes.length - 1];
@@ -83,14 +98,39 @@ export async function POST(request) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const emitir = (obj) => controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
+      let texto = "";
+      let fin = null;
+      let cerrado = false;
+      const emitir = (obj) => {
+        if (obj.type === "text") texto += obj.text;
+        if (obj.type === "done") fin = obj;
+        if (cerrado) return;
+        try {
+          controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
+        } catch {
+          cerrado = true; // la persona cerró la pestaña: no es una falla del chat
+        }
+      };
       try {
-        await correrTurno(client, mensajes, emitir, { yaHayCta, fuente });
+        await correrTurno(client, mensajes, emitir, { yaHayCta, fuente, conversacionId });
+        enDiferido(() =>
+          registrarTurno({
+            id: conversacionId,
+            fuente,
+            foto: Boolean(img.imagen),
+            herramientas: fin?.herramientas || [],
+            avanzo: Boolean(fin?.avanzo),
+            fueraDeTema: /no lo puedo contestar/i.test(texto),
+          }),
+        );
       } catch (err) {
-        registrarError(err);
-        const { tipo, nivel } = tipoDeErrorAnthropic(err);
-        await registrarEvento(tipo, nivel, `${err?.status || ""} ${String(err?.message || err).slice(0, 300)}`.trim());
-        emitir({ type: "error", message: MENSAJE_CAIDA });
+        const abandono = cerrado || request.signal?.aborted || err?.name === "AbortError";
+        if (!abandono) {
+          registrarError(err);
+          emitir({ type: "error", message: MENSAJE_CAIDA, whatsapp: true });
+          const { tipo, nivel } = tipoDeErrorAnthropic(err);
+          enDiferido(() => registrarEvento(tipo, nivel, `${err?.status || ""} ${String(err?.message || err).slice(0, 300)}`.trim()));
+        }
       } finally {
         controller.close();
       }

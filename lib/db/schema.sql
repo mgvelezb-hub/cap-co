@@ -78,3 +78,27 @@ CREATE TABLE IF NOT EXISTS limite_uso (
   n       INTEGER     NOT NULL DEFAULT 0,
   PRIMARY KEY (clave, ventana)
 );
+
+-- Conversaciones anónimas del chat, para medir el embudo (interacciones → conversiones).
+-- No guarda texto ni datos personales: solo conteos y banderas.
+CREATE TABLE IF NOT EXISTS conversacion (
+  id              TEXT        PRIMARY KEY,           -- id aleatorio que genera el widget
+  creado_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  fuente          JSONB       NOT NULL DEFAULT '{}'::jsonb,
+  turnos          INTEGER     NOT NULL DEFAULT 0,
+  fotos           INTEGER     NOT NULL DEFAULT 0,
+  herramientas    TEXT[]      NOT NULL DEFAULT '{}',
+  cotizo          BOOLEAN     NOT NULL DEFAULT false, -- usó cotizar_traspaso
+  avanzo          BOOLEAN     NOT NULL DEFAULT false, -- la cotización dio "avanza"
+  fuera_de_tema   INTEGER     NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS conversacion_creado_idx ON conversacion (creado_at DESC);
+
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS conversacion_id TEXT;
+
+-- Silencio atómico de alertas: una fila por tipo; solo quien logra actualizarla envía el correo.
+CREATE TABLE IF NOT EXISTS alerta_silencio (
+  tipo      TEXT        PRIMARY KEY,
+  ultimo_at TIMESTAMPTZ NOT NULL
+);

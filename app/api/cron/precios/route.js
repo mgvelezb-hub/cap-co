@@ -6,7 +6,7 @@
 import { obtenerPreciosUSD, obtenerTipoDeCambio, FUENTE } from "@/lib/precios/fuentes";
 import { guardarFotografia } from "@/lib/precios/repo";
 import { dbDisponible } from "@/lib/db/client";
-import { registrarEvento } from "@/lib/alertas/eventos";
+import { registrarEvento, limpiarEventos } from "@/lib/alertas/eventos";
 import { limpiarLimites } from "@/lib/chatbot/ratelimit";
 
 export const runtime = "nodejs";
@@ -32,8 +32,16 @@ export async function GET(request) {
     const pedida = new URL(request.url).searchParams.get("sesion");
     const sesion = ["manana", "tarde"].includes(pedida) ? pedida : sesionActual();
     const guardada = await guardarFotografia({ sesion, usd, fx, fuente: FUENTE });
-    // Mantenimiento de una vez al día, aprovechando el cron de la mañana.
-    if (sesion === "manana") await limpiarLimites();
+    // Mantenimiento de una vez al día, aprovechando el cron de la mañana. Si falla, no
+    // convierte en falla la toma de precios, que ya se guardó.
+    if (sesion === "manana") {
+      try {
+        await limpiarLimites();
+        await limpiarEventos();
+      } catch (err) {
+        console.error("[precios] mantenimiento falló:", err.message);
+      }
+    }
     return Response.json({ ok: true, id: Number(guardada.id), capturado_at: guardada.capturado_at, usd, fx });
   } catch (err) {
     console.error("[precios] no se tomó la fotografía:", err.message);

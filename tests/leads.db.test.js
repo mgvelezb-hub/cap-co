@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const URL = process.env.DATABASE_URL;
+const URL = /@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "";
 
 test("repo de leads: crear, click, contacto, stats", { skip: !URL && "sin DATABASE_URL" }, async () => {
   const { crearLead, registrarClickWhatsApp, registrarContacto, obtenerLead, estadisticas } = await import(

@@ -8,6 +8,20 @@ import { WHATSAPP_URL } from "@/lib/constants";
 
 const STORAGE_KEY = "capco-chat-v1";
 const FUENTE_KEY = "capco-fuente-v1";
+const CONVERSACION_KEY = "capco-conversacion-v1";
+
+function idConversacion(nueva = false) {
+  try {
+    let id = nueva ? null : sessionStorage.getItem(CONVERSACION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      sessionStorage.setItem(CONVERSACION_KEY, id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 const BIENVENIDA =
   "Pregúntame lo que quieras sobre empeños: qué dice tu boleta, cuánto vas a pagar, cuánto vale tu oro o si te conviene cambiar de institución. También puedes subir una foto de tu boleta con el botón de la cámara y te hago el análisis completo. Sin costo.";
 const CHIPS = [
@@ -17,7 +31,7 @@ const CHIPS = [
   "Enséñame con un ejemplo",
 ];
 const MENSAJE_CAIDA =
-  "Ahora mismo no puedo responder. Escríbenos por WhatsApp y un asesor te atiende.";
+  "Ahora mismo no puedo responder. Escríbenos por WhatsApp y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.";
 
 // Fuente de la visita (primer toque): utm_* de la URL, referrer y ruta. Sin datos personales.
 function capturarFuente() {
@@ -131,8 +145,9 @@ export default function ChatWidget() {
       abortRef.current = controller;
 
       let acumulado = "";
+      let conWhatsApp = false;
       const pintar = (contenido, pendiente) =>
-        setMensajes([...historial, { role: "assistant", content: contenido, pendiente }]);
+        setMensajes([...historial, { role: "assistant", content: contenido, pendiente, whatsapp: conWhatsApp }]);
 
       try {
         const res = await fetch("/api/chat", {
@@ -142,6 +157,7 @@ export default function ChatWidget() {
             messages: historial.map(({ role, content }) => ({ role, content })),
             hasCta: Boolean(cta),
             fuente: fuenteRef.current,
+            conversacionId: idConversacion(),
             ...(imagen ? { imagen } : {}),
           }),
           signal: controller.signal,
@@ -152,6 +168,7 @@ export default function ChatWidget() {
           try {
             const data = await res.json();
             if (data?.error) msg = data.error;
+            conWhatsApp = data?.whatsapp === true || res.status >= 500;
           } catch {
             // respuesta sin JSON
           }
@@ -182,6 +199,7 @@ export default function ChatWidget() {
             } else if (evento.type === "cta" && evento.url) {
               setCta({ codigo: evento.codigo, url: evento.url, persistido: evento.persistido === true });
             } else if (evento.type === "error") {
+              conWhatsApp = true;
               acumulado = acumulado ? `${acumulado}\n\n${evento.message}` : evento.message;
               pintar(acumulado, true);
             }
@@ -190,6 +208,7 @@ export default function ChatWidget() {
         pintar(acumulado || MENSAJE_CAIDA, false);
       } catch (err) {
         if (err?.name === "AbortError") return;
+        conWhatsApp = true;
         pintar(acumulado || MENSAJE_CAIDA, false);
       } finally {
         setCargando(false);
@@ -200,6 +219,7 @@ export default function ChatWidget() {
   );
 
   function reiniciar() {
+    idConversacion(true);
     abortRef.current?.abort();
     setMensajes([]);
     setCta(null);
@@ -298,7 +318,19 @@ export default function ChatWidget() {
               </div>
             )}
             {mensajes.map((m, i) => (
-              <ChatMessage key={i} role={m.role} content={m.content} pendiente={m.pendiente} adjunto={m.adjunto} />
+              <div key={i} className="space-y-2">
+                <ChatMessage role={m.role} content={m.content} pendiente={m.pendiente} adjunto={m.adjunto} />
+                {m.whatsapp && !m.pendiente && (
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-esmeralda/25 px-4 py-2 font-sans text-sm text-esmeralda hover:border-esmeralda"
+                  >
+                    Escribir por WhatsApp
+                  </a>
+                )}
+              </div>
             ))}
             {cta && (
               <div className="space-y-3">
