@@ -1,8 +1,9 @@
 // Genera la entrada de un usuario para ADMIN_USUARIOS (panel /admin).
 // Uso: node scripts/crear-usuario.mjs <usuario> <dueno|operador>
-// Pide la contraseña sin mostrarla y imprime "usuario:rol:sal:hash". Pégala en ADMIN_USUARIOS
+// Pide la contraseña sin mostrarla y imprime "usuario:rol:sal:hash", con hash = PBKDF2-SHA256
+// (100 000 iteraciones, 32 bytes, hex), igual que verifica middleware.js. Pégala en ADMIN_USUARIOS
 // (Vercel → cap-co → Settings → Environment Variables), separando usuarios con ";".
-import { createHash, randomBytes } from "node:crypto";
+import { pbkdf2Sync, randomBytes } from "node:crypto";
 import readline from "node:readline";
 
 const [usuario, rol] = process.argv.slice(2);
@@ -20,6 +21,6 @@ rl.question("Contraseña (mínimo 12 caracteres): ", (clave) => {
     process.exit(1);
   }
   const sal = randomBytes(8).toString("hex");
-  const hash = createHash("sha256").update(`${sal}${clave}`).digest("hex");
+  const hash = pbkdf2Sync(clave, sal, 100_000, 32, "sha256").toString("hex");
   console.log(`${usuario}:${rol}:${sal}:${hash}`);
 });

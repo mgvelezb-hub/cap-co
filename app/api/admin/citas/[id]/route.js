@@ -1,4 +1,4 @@
-// POST /api/admin/citas/[id] — cambia estado y/o lugar de una cita. Protegido por middleware.js.
+// POST /api/admin/citas/[id] — cambia estado, lugar u horario (inicio) de una cita. Protegido por middleware.js.
 
 import { actualizarCita } from "@/lib/agenda/repo";
 import { usuarioPanel, rechazarSiOtroOrigen } from "@/lib/panel/auth";
@@ -17,8 +17,16 @@ export async function POST(request, { params }) {
   } catch {
     return Response.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
-  const r = await actualizarCita(Number(id), { estado: body?.estado, lugar: body?.lugar });
-  if (!r.ok) return Response.json({ error: r.motivo }, { status: r.motivo === "no_existe" ? 404 : 400 });
-  await registrarAccion(usuarioPanel(request).usuario, "cita_actualizada", r.cita.lead_codigo, { estado: body?.estado, lugar: body?.lugar });
+  const r = await actualizarCita(Number(id), { estado: body?.estado, lugar: body?.lugar, inicio: body?.inicio });
+  if (!r.ok) {
+    const status = r.motivo === "no_existe" ? 404 : r.motivo === "ocupado" ? 409 : 400;
+    const error = r.motivo === "ocupado" ? "ese horario ya está lleno" : r.motivo;
+    return Response.json({ error }, { status });
+  }
+  await registrarAccion(usuarioPanel(request).usuario, "cita_actualizada", r.cita.lead_codigo, {
+    estado: body?.estado,
+    lugar: body?.lugar,
+    inicio: body?.inicio,
+  });
   return Response.json(r);
 }

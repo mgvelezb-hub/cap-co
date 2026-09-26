@@ -349,11 +349,19 @@ function ChatWidgetPublico() {
             {cta && (
               <div className="space-y-3">
                 {cta.persistido && !citaApartada && (
-                  <AgendaForm codigo={cta.codigo} onReservada={(d) => setCitaApartada({ cuando: d.cuando, whatsapp: d.whatsapp })} />
+                  <AgendaForm codigo={cta.codigo} onReservada={(d) => setCitaApartada({ cuando: d.cuando, whatsapp: d.whatsapp, modo: d.modo })} />
                 )}
                 {citaApartada && (
                   <p className="rounded-xl border border-esmeralda/15 bg-papel-alto p-3 font-sans text-sm text-esmeralda">
-                    Tu cita: <strong>{citaApartada.cuando}</strong> · el lugar te lo confirmamos por WhatsApp.
+                    {citaApartada.modo === "llamada" ? (
+                      <>
+                        Te llamamos: <strong>{citaApartada.cuando}</strong> · no lleves tu pieza hasta que te confirmemos.
+                      </>
+                    ) : (
+                      <>
+                        Tu cita: <strong>{citaApartada.cuando}</strong> · el lugar te lo confirmamos por WhatsApp.
+                      </>
+                    )}
                   </p>
                 )}
                 <div className="flex justify-start">

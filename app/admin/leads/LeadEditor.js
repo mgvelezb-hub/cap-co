@@ -105,7 +105,7 @@ export default function LeadEditor({ lead }) {
             Comisión (pesos)
             <input
               value={valores.comision_mxn}
-              onChange={(e) => cambiar("comision_mxn", e.target.value.replace(/[^\d.]/g, ""))}
+              onChange={(e) => cambiar("comision_mxn", e.target.value.replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1"))}
               inputMode="decimal"
               className={CAMPO}
             />

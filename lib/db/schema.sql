@@ -150,3 +150,20 @@ CREATE TABLE IF NOT EXISTS bitacora_panel (
   detalle   JSONB       NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX IF NOT EXISTS bitacora_panel_creado_idx ON bitacora_panel (creado_at DESC);
+
+-- Fase 4.1 (QA de la agenda):
+-- · Capacidad por número de asesores (CITA_CAPACIDAD): el cupo lo cuida la reserva con un candado
+--   por horario, así que el índice único por horario sale.
+-- · tipo 'llamada': la persona deja día y franja y el asesor le llama para acordar cita (modo por
+--   defecto mientras no haya local ni línea de WhatsApp activa).
+-- · estado 'expirada': reservas no confirmadas que ya pasaron o que nadie confirmó a tiempo.
+DROP INDEX IF EXISTS cita_horario_activo_idx;
+ALTER TABLE cita ADD COLUMN IF NOT EXISTS tipo   TEXT NOT NULL DEFAULT 'cita';   -- cita | llamada
+ALTER TABLE cita ADD COLUMN IF NOT EXISTS franja TEXT;                          -- manana | tarde (solo llamada)
+CREATE INDEX IF NOT EXISTS cita_activa_inicio_idx ON cita (inicio) WHERE estado IN ('reservada', 'confirmada');
+
+-- Comisión: fecha de cobro propia (el mes de la comisión no es el del cierre) y última actividad
+-- del lead (la retención cuenta desde ahí).
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS cobrado_at     TIMESTAMPTZ;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS actualizado_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS lead_telefono_idx ON lead (telefono) WHERE telefono IS NOT NULL;

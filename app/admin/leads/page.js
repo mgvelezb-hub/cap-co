@@ -7,7 +7,7 @@ import { PERFILES } from "@/lib/chatbot/perfiles";
 import { dbDisponible } from "@/lib/db/client";
 import { embudo, porCampana } from "@/lib/metricas/conversaciones";
 import { eventosRecientes } from "@/lib/alertas/eventos";
-import { citasProximas } from "@/lib/agenda/repo";
+import { citasProximas, HORAS_PARA_CONFIRMAR } from "@/lib/agenda/repo";
 import { bitacoraReciente } from "@/lib/leads/bitacora";
 import { ultimaFotografia } from "@/lib/precios/repo";
 import LeadEditor from "./LeadEditor";
@@ -25,6 +25,7 @@ const NOMBRE_EVENTO = {
   llave_anthropic: "La llave de Anthropic falló",
   limite_anthropic: "Anthropic está limitando peticiones",
   tope_diario: "Se alcanzó el tope diario de uso del chat",
+  tope_citas: "Demasiadas reservas en una hora",
   chat_caido: "El chat está fallando",
   error_chat: "Error del chat",
   precios_fallo: "Falló la toma de precios",
@@ -32,6 +33,8 @@ const NOMBRE_EVENTO = {
 };
 
 const fechaMX = new Intl.DateTimeFormat("es-MX", { dateStyle: "short", timeStyle: "short", timeZone: "America/Mexico_City" });
+const diaMX = new Intl.DateTimeFormat("es-MX", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Mexico_City" });
+const FRANJA_TEXTO = { manana: "9:00 a 13:00", tarde: "13:00 a 17:00" };
 const citaMX = new Intl.DateTimeFormat("es-MX", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "America/Mexico_City" });
 const pesos = (n) => Number(n || 0).toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const fmt = (f) => (f ? fechaMX.format(new Date(f)) : "—");
@@ -111,7 +114,9 @@ export default async function Panel({ searchParams }) {
             {citas.map((c) => (
               <li key={c.id} className="rounded-xl border border-esmeralda/10 bg-papel-alto p-3 font-sans text-sm">
                 <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
-                  <strong>{citaMX.format(new Date(c.inicio))}</strong>
+                  <strong>
+                    {c.tipo === "llamada" ? `Llamar: ${diaMX.format(new Date(c.inicio))}, ${FRANJA_TEXTO[c.franja] || ""}` : citaMX.format(new Date(c.inicio))}
+                  </strong>
                   <span className="font-mono text-xs">{c.lead_codigo}</span>
                   <span>{c.nombre || "sin nombre"}</span>
                   {c.telefono && (
@@ -121,7 +126,10 @@ export default async function Panel({ searchParams }) {
                   )}
                   {c.ahorro != null && <span className="text-esmeralda/60">ahorro estimado {pesos(c.ahorro)}</span>}
                 </div>
-                <CitaEditor cita={{ id: c.id, estado: c.estado, lugar: c.lugar }} />
+                {c.estado === "reservada" && c.tipo === "cita" && (
+                  <p className="mb-2 text-xs text-granate">Sin confirmar: se libera {citaMX.format(new Date(new Date(c.creado_at).getTime() + HORAS_PARA_CONFIRMAR * 3600_000))} si no se confirma.</p>
+                )}
+                <CitaEditor cita={{ id: c.id, estado: c.estado, lugar: c.lugar, tipo: c.tipo }} />
               </li>
             ))}
           </ul>
@@ -154,6 +162,7 @@ export default async function Panel({ searchParams }) {
                 <th>IA</th>
                 <th>Costo por cita</th>
                 <th>Costo por cambio</th>
+                <th title="Comisión cobrada menos publicidad e IA">Margen</th>
               </tr>
             </thead>
             <tbody className="[&_tr+tr]:border-t [&_tr+tr]:border-esmeralda/5">
@@ -170,12 +179,13 @@ export default async function Panel({ searchParams }) {
                     <td className="tabular-nums">{pesos(c.costo_ia_usd * usdMxn)}</td>
                     <td className="tabular-nums">{c.citas ? pesos(costo / c.citas) : "—"}</td>
                     <td className="tabular-nums">{c.switcheos ? pesos(costo / c.switcheos) : "—"}</td>
+                    <td className={`tabular-nums ${c.comision_mxn - costo < 0 ? "text-granate" : ""}`}>{pesos(c.comision_mxn - costo)}</td>
                   </tr>
                 );
               })}
               {campanas.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-esmeralda/60">
+                  <td colSpan={10} className="text-esmeralda/60">
                     Sin datos todavía.
                   </td>
                 </tr>

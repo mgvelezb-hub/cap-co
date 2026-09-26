@@ -10,10 +10,26 @@ async function enviar(url, cuerpo) {
   return res.ok ? "Guardado" : `No se guardó${data.error ? `: ${data.error}` : ""}`;
 }
 
+// Fecha local de la Ciudad de México "AAAA-MM-DD" (no la UTC: después de las 18:00 ya sería mañana).
+function hoyCDMX() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date());
+}
+
+const HORAS = Array.from({ length: 8 }, (_, i) => 9 + i);
+
+/** Instante UTC (ISO) de una fecha y hora de la Ciudad de México (UTC−6 fijo). */
+function isoCDMX(fecha, hora) {
+  const [a, m, d] = fecha.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d, hora + 6)).toISOString();
+}
+
 export function CitaEditor({ cita }) {
   const [estadoCita, setEstadoCita] = useState(cita.estado);
   const [lugar, setLugar] = useState(cita.lugar);
   const [aviso, setAviso] = useState("");
+  const [reprogramar, setReprogramar] = useState(false);
+  const [fecha, setFecha] = useState(hoyCDMX());
+  const [hora, setHora] = useState(10);
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
@@ -31,6 +47,7 @@ export function CitaEditor({ cita }) {
           ["atendida", "Atendida"],
           ["no_asistio", "No asistió"],
           ["cancelada", "Cancelada"],
+          ["expirada", "Expirada"],
         ].map(([v, t]) => (
           <option key={v} value={v}>
             {t}
@@ -45,13 +62,39 @@ export function CitaEditor({ cita }) {
         className={`${CAMPO} min-w-[12rem] flex-1`}
         aria-label="Lugar de la cita"
       />
+      <button type="button" onClick={() => setReprogramar(!reprogramar)} className="rounded-full border border-esmeralda/25 px-3 py-1.5 text-xs">
+        {cita.tipo === "llamada" ? "Acordar cita" : "Reprogramar"}
+      </button>
+      {reprogramar && (
+        <form
+          className="flex w-full flex-wrap items-center gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const r = await enviar(`/api/admin/citas/${cita.id}`, { inicio: isoCDMX(fecha, Number(hora)) });
+            setAviso(r === "Guardado" ? "Guardado; recarga para verla en su lugar" : r);
+            if (r === "Guardado") setReprogramar(false);
+          }}
+        >
+          <input type="date" value={fecha} min={hoyCDMX()} onChange={(e) => setFecha(e.target.value)} className={CAMPO} aria-label="Nuevo día" />
+          <select value={hora} onChange={(e) => setHora(e.target.value)} className={CAMPO} aria-label="Nueva hora">
+            {HORAS.map((h) => (
+              <option key={h} value={h}>
+                {h}:00
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="rounded-full bg-esmeralda px-3 py-1.5 text-xs text-sobre-verde">
+            Guardar horario
+          </button>
+        </form>
+      )}
       {aviso && <span className="text-xs text-esmeralda/60">{aviso}</span>}
     </div>
   );
 }
 
 export function GastoForm() {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyCDMX();
   const [f, setF] = useState({ fecha: hoy, utm_campaign: "", monto_mxn: "", nota: "" });
   const [aviso, setAviso] = useState("");
   return (

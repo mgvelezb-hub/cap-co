@@ -10,6 +10,7 @@ import { registrarEvento, limpiarEventos } from "@/lib/alertas/eventos";
 import { limpiarLimites } from "@/lib/chatbot/ratelimit";
 import { limpiarConversaciones } from "@/lib/metricas/conversaciones";
 import { anonimizarLeadsViejos } from "@/lib/leads/repo";
+import { expirarCitas } from "@/lib/agenda/repo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,13 +38,13 @@ export async function GET(request) {
     // Mantenimiento de una vez al día, aprovechando el cron de la mañana. Si falla, no
     // convierte en falla la toma de precios, que ya se guardó.
     if (sesion === "manana") {
-      try {
-        await limpiarLimites();
-        await limpiarEventos();
-        await limpiarConversaciones();
-        await anonimizarLeadsViejos();
-      } catch (err) {
-        console.error("[precios] mantenimiento falló:", err.message);
+      // Cada tarea por separado: si una falla, las demás corren.
+      for (const tarea of [limpiarLimites, limpiarEventos, limpiarConversaciones, anonimizarLeadsViejos, expirarCitas]) {
+        try {
+          await tarea();
+        } catch (err) {
+          console.error(`[precios] mantenimiento ${tarea.name} falló:`, err.message);
+        }
       }
     }
     return Response.json({ ok: true, id: Number(guardada.id), capturado_at: guardada.capturado_at, usd, fx });
