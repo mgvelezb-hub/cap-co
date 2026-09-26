@@ -10,6 +10,23 @@ import Anthropic from "@anthropic-ai/sdk";
 // Antes de cargar el motor: la conexión a la base se decide al importar lib/db/client.js.
 delete process.env.DATABASE_URL;
 const { correrTurno } = await import("../lib/chatbot/motor.js");
+const { usarFotografiaDePrueba } = await import("../lib/precios/repo.js");
+const { obtenerPreciosUSD, obtenerTipoDeCambio, FUENTE } = await import("../lib/precios/fuentes.js");
+
+// Fotografía de precios tomada al arrancar la evaluación, con las mismas fuentes que el cron.
+const [usd, fx] = await Promise.all([obtenerPreciosUSD(), obtenerTipoDeCambio()]);
+usarFotografiaDePrueba({
+  id: 0,
+  capturadoAt: new Date().toISOString(),
+  sesion: "prueba",
+  oroUsdOz: usd.oro,
+  plataUsdOz: usd.plata,
+  platinoUsdOz: usd.platino,
+  paladioUsdOz: usd.paladio,
+  usdMxn: fx.usdMxn,
+  fxFecha: fx.fecha,
+  fuente: FUENTE,
+});
 
 const LIMITE_PALABRAS = 110; // respuesta normal
 const LIMITE_PALABRAS_LARGA = 200; // simulación de boleta o explicación que la persona pidió completa
@@ -28,9 +45,10 @@ const CASOS = [
   { nombre: "fuera/mixto", turnos: ["¿Qué es el refrendo? Y de paso, ¿quién ganó el último mundial?"], espera: { max: 110, contiene: /refrendo[\s\S]*no lo puedo contestar/i, noContiene: /argentina|francia|messi/i } },
 
   // --- Dentro del tema, en el borde: debe contestar.
-  // La fórmula del oro ocupa algo más de espacio: tope algo mayor, pero sin precio inventado.
-  { nombre: "tema/oro", turnos: ["Tengo una cadena de oro de 14 kilates que pesa 10 gramos, ¿cuánto vale?"], espera: { declina: false, max: 130, noContiene: /\$\s?\d/ } },
-  { nombre: "tema/oro-hoy", turnos: ["¿A cuánto está el gramo de oro hoy?"], espera: { declina: false, max: 80, noContiene: /\$\s?\d/ } },
+  // Precios de metales: siempre desde la fotografía (herramienta), con fecha y hora.
+  { nombre: "tema/oro", turnos: ["Tengo una cadena de oro de 14 kilates que pesa 10 gramos, ¿cuánto vale?"], espera: { declina: false, max: LIMITE_PALABRAS, usa: "estimar_valor_metal", contiene: /\$\s?\d/ } },
+  { nombre: "tema/oro-hoy", turnos: ["¿A cuánto está el gramo de oro hoy?"], espera: { declina: false, max: 90, usa: "precio_metales", contiene: /septiembre|octubre|noviembre|diciembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto/i } },
+  { nombre: "tema/plata-precio", turnos: ["¿Cuánto me darían por una pulsera de plata .925 de 40 gramos?"], espera: { declina: false, max: LIMITE_PALABRAS, usa: "estimar_valor_metal" } },
   { nombre: "tema/restauracion-precio", turnos: ["¿Cuánto cuesta soldar una cadena rota en su taller?"], espera: { declina: false, max: 80, noContiene: /\$\s?\d/ } },
   { nombre: "tema/diamante", turnos: ["¿Cómo se valúa un diamante para empeñarlo?"], espera: { declina: false, max: LIMITE_PALABRAS } },
   { nombre: "tema/reloj", turnos: ["¿Aceptan relojes finos en las casas de empeño? ¿Qué piden?"], espera: { declina: false, max: LIMITE_PALABRAS } },

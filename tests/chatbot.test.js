@@ -63,7 +63,7 @@ test("perfiles: seis perfiles válidos", () => {
 import { TOOLS, ejecutarTool } from "../lib/chatbot/tools.js";
 
 test("tools: definiciones estrictas y nombres estables", () => {
-  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "comparar_instituciones", "cotizar_traspaso", "agendar_cita"]);
+  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "comparar_instituciones", "cotizar_traspaso", "precio_metales", "estimar_valor_metal", "agendar_cita"]);
   for (const t of TOOLS) {
     assert.equal(t.strict, true);
     assert.equal(t.input_schema.additionalProperties, false);
@@ -171,4 +171,43 @@ test("instituciones: ranking por CAT ascendente con fuente; piso por valor de pi
   assert.equal(pisoTasa(30000), 2.5);
   assert.equal(pisoTasa(7000), 3.0);
   assert.equal(pisoTasa(null), 3.25);
+});
+
+import { normalizarPureza, precioGramoPuroMXN, estimarValorMetal, tablaPorGramo, fotografiaVigente } from "../lib/precios/calculo.js";
+
+const FOTO = { capturadoAt: "2026-09-25T15:00:00Z", oroUsdOz: 3110.34768, plataUsdOz: 31.1034768, platinoUsdOz: 1555.17384, paladioUsdOz: 1244.139072, usdMxn: 20 };
+
+test("precios: onza troy en dólares a gramo en pesos", () => {
+  assert.equal(Math.round(precioGramoPuroMXN(3110.34768, 20) * 100) / 100, 2000);
+  const t = tablaPorGramo(FOTO);
+  assert.equal(t.oro.puro, 2000);
+  assert.equal(t.oro["14k"], 1170);
+  assert.equal(t.plata["925"], 18.5);
+});
+
+test("precios: normaliza kilataje y ley", () => {
+  assert.equal(normalizarPureza("oro", "14k"), "14k");
+  assert.equal(normalizarPureza("oro", "14 kilates"), "14k");
+  assert.equal(normalizarPureza("oro", "585"), "14k");
+  assert.equal(normalizarPureza("oro", "18"), "18k");
+  assert.equal(normalizarPureza("plata", ".925"), "925");
+  assert.equal(normalizarPureza("plata", "ley 925"), "925");
+  assert.equal(normalizarPureza("platino", "PT950"), "950");
+  assert.equal(normalizarPureza("oro", "15k"), null);
+});
+
+test("precios: valor de una cadena de 14k y rango de préstamo", () => {
+  const r = estimarValorMetal({ metal: "oro", pureza: "14k", gramos: 10, foto: FOTO });
+  assert.equal(r.ok, true);
+  assert.equal(r.valorMetal, 11700);
+  assert.equal(r.prestamoBajo, 4680);
+  assert.equal(r.prestamoAlto, 7020);
+  assert.equal(estimarValorMetal({ metal: "cobre", pureza: "x", gramos: 1, foto: FOTO }).ok, false);
+  assert.equal(estimarValorMetal({ metal: "oro", pureza: "14k", gramos: -1, foto: FOTO }).ok, false);
+});
+
+test("precios: una fotografía de más de 4 días no se usa", () => {
+  assert.equal(fotografiaVigente(FOTO, new Date("2026-09-28T15:00:00Z")), true);
+  assert.equal(fotografiaVigente(FOTO, new Date("2026-09-30T15:00:00Z")), false);
+  assert.equal(fotografiaVigente(null), false);
 });

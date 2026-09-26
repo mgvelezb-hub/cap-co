@@ -40,3 +40,19 @@ BEGIN
       CHECK ((nombre IS NULL AND telefono IS NULL) OR consent_at IS NOT NULL);
   END IF;
 END $$;
+
+-- Fotografías de precios de metales (dos al día, entre semana). El chat usa siempre la última,
+-- para que una misma evaluación no cambie cada minuto.
+CREATE TABLE IF NOT EXISTS precio_metal (
+  id            BIGSERIAL PRIMARY KEY,
+  capturado_at  TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  sesion        TEXT          NOT NULL,              -- manana | tarde | manual
+  oro_usd_oz    NUMERIC(12,4) NOT NULL,
+  plata_usd_oz  NUMERIC(12,4) NOT NULL,
+  platino_usd_oz NUMERIC(12,4) NOT NULL,
+  paladio_usd_oz NUMERIC(12,4) NOT NULL,
+  usd_mxn       NUMERIC(10,4) NOT NULL,
+  fx_fecha      DATE          NOT NULL,              -- fecha del tipo de cambio publicado
+  fuente        TEXT          NOT NULL               -- p. ej. "gold-api.com + BCE (Frankfurter)"
+);
+CREATE INDEX IF NOT EXISTS precio_metal_capturado_idx ON precio_metal (capturado_at DESC);
