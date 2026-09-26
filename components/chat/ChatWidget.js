@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import ContactoForm from "./ContactoForm";
+import AgendaForm from "./AgendaForm";
 import { WHATSAPP_URL } from "@/lib/constants";
 
 const STORAGE_KEY = "capco-chat-v1";
@@ -67,13 +68,20 @@ function cargarEstado() {
 }
 
 export default function ChatWidget() {
+  // El panel interno no lleva el chat público.
+  const ruta = usePathname();
+  if (ruta?.startsWith("/admin")) return null;
+  return <ChatWidgetPublico />;
+}
+
+function ChatWidgetPublico() {
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState([]);
   const [cta, setCta] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [hidratado, setHidratado] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [contactoEnviado, setContactoEnviado] = useState(false);
+  const [citaApartada, setCitaApartada] = useState(null);
   const fuenteRef = useRef({});
   const listaRef = useRef(null);
   const panelRef = useRef(null);
@@ -84,7 +92,7 @@ export default function ChatWidget() {
     if (guardado) {
       setMensajes(guardado.mensajes);
       setCta(guardado.cta || null);
-      setContactoEnviado(guardado.contactoEnviado === true);
+      setCitaApartada(guardado.citaApartada || null);
     }
     fuenteRef.current = capturarFuente();
     setHidratado(true);
@@ -93,11 +101,11 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!hidratado) return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ mensajes, cta, contactoEnviado }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ mensajes, cta, citaApartada }));
     } catch {
       // sin almacenamiento: el chat sigue funcionando en memoria
     }
-  }, [mensajes, cta, contactoEnviado, hidratado]);
+  }, [mensajes, cta, citaApartada, hidratado]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -223,7 +231,7 @@ export default function ChatWidget() {
     abortRef.current?.abort();
     setMensajes([]);
     setCta(null);
-    setContactoEnviado(false);
+    setCitaApartada(null);
     setCargando(false);
   }
 
@@ -334,26 +342,30 @@ export default function ChatWidget() {
             ))}
             {cta && (
               <div className="space-y-3">
+                {cta.persistido && !citaApartada && (
+                  <AgendaForm codigo={cta.codigo} onReservada={(d) => setCitaApartada({ cuando: d.cuando, whatsapp: d.whatsapp })} />
+                )}
+                {citaApartada && (
+                  <p className="rounded-xl border border-esmeralda/15 bg-papel-alto p-3 font-sans text-sm text-esmeralda">
+                    Tu cita: <strong>{citaApartada.cuando}</strong> · el lugar te lo confirmamos por WhatsApp.
+                  </p>
+                )}
                 <div className="flex justify-start">
                   <a
-                    href={cta.url}
+                    href={citaApartada?.whatsapp || cta.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={registrarClick}
-                    className="inline-flex items-center gap-2 rounded-full bg-esmeralda px-5 py-3 font-sans text-sm font-medium text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
+                    className={
+                      cta.persistido && !citaApartada
+                        ? "inline-flex items-center gap-2 font-sans text-sm text-esmeralda/70 underline underline-offset-4 hover:text-esmeralda"
+                        : "inline-flex items-center gap-2 rounded-full bg-esmeralda px-5 py-3 font-sans text-sm font-medium text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
+                    }
                   >
                     <IconoWhatsApp className="h-5 w-5" />
-                    Confirmar cita por WhatsApp
+                    {cta.persistido && !citaApartada ? "Prefiero agendar por WhatsApp" : "Confirmar cita por WhatsApp"}
                   </a>
                 </div>
-                {cta.persistido && !contactoEnviado && (
-                  <ContactoForm codigo={cta.codigo} onEnviado={() => setContactoEnviado(true)} />
-                )}
-                {cta.persistido && contactoEnviado && (
-                  <p className="font-sans text-xs text-esmeralda/60">
-                    Ya tenemos tu contacto. Te escribimos por WhatsApp.
-                  </p>
-                )}
               </div>
             )}
           </div>

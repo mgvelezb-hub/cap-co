@@ -51,6 +51,8 @@ const MENSAJES_LIMITE = {
   fotoGlobal: "Por hoy no podemos analizar más fotos. Escríbeme los datos de tu boleta y seguimos, o mándala por WhatsApp.",
 };
 
+let ultimoAvisoTope = 0;
+
 export async function POST(request) {
   const visitante = hashIp(ipDeRequest(request));
 
@@ -69,15 +71,18 @@ export async function POST(request) {
   if (!img.ok) {
     return Response.json({ error: img.error }, { status: 400 });
   }
-  const pares = [
+  // Primero los límites del visitante; el global solo cuenta a quien pasó, para que una sola
+  // IP no pueda agotar el tope del día para todos.
+  const delVisitante = [
     ["chat", visitante],
     ["chatDia", visitante],
-    ["chatGlobal", "global"],
   ];
-  if (img.imagen) pares.push(["foto", visitante], ["fotoGlobal", "global"]);
-  const excedido = await revisarLimites(pares);
+  if (img.imagen) delVisitante.push(["foto", visitante]);
+  let excedido = await revisarLimites(delVisitante);
+  if (!excedido) excedido = await revisarLimites(img.imagen ? [["chatGlobal", "global"], ["fotoGlobal", "global"]] : [["chatGlobal", "global"]]);
   if (excedido) {
-    if (excedido === "chatGlobal" || excedido === "fotoGlobal") {
+    if ((excedido === "chatGlobal" || excedido === "fotoGlobal") && Date.now() - ultimoAvisoTope > 10 * 60_000) {
+      ultimoAvisoTope = Date.now();
       enDiferido(() => registrarEvento("tope_diario", "critico", `Se alcanzó el tope diario del sitio (${excedido}).`));
     }
     return Response.json({ error: MENSAJES_LIMITE[excedido], whatsapp: true }, { status: 429 });
@@ -112,7 +117,7 @@ export async function POST(request) {
         }
       };
       try {
-        await correrTurno(client, mensajes, emitir, { yaHayCta, fuente, conversacionId });
+        await correrTurno(client, mensajes, emitir, { yaHayCta, fuente, conversacionId, signal: request.signal });
         enDiferido(() =>
           registrarTurno({
             id: conversacionId,
@@ -121,6 +126,7 @@ export async function POST(request) {
             herramientas: fin?.herramientas || [],
             avanzo: Boolean(fin?.avanzo),
             fueraDeTema: /no lo puedo contestar/i.test(texto),
+            costoUsd: fin?.costoUsd || 0,
           }),
         );
       } catch (err) {

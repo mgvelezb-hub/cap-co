@@ -91,7 +91,7 @@ const CASOS = [
     espera: { max: 190, usa: "calcular_desempeno_hoy", contiene: /7,140[\s\S]*(mes que te falta|un mes|1 mes)/i, noContiene: /juan|p[eé]rez|l[oó]pez|00458|ficticia 123/i },
   },
   { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
-  { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no prestamos/i } },
+  { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no (damos|da|otorga(mos)?) pr[eé]stamos|no prestamos/i } },
 ];
 
 function palabras(texto) {

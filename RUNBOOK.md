@@ -19,10 +19,23 @@ Para quien opera el sitio y el chat. Todo se hace desde el navegador.
 | **El chat está fallando** | Probar el chat en casa-ap.com. Si no responde, avisar a Mau con la hora. |
 | **Precio de metales** | No es urgente: el chat deja de dar cifras y explica la fórmula. Avisar a Mau en horario laboral. |
 
-## Todos los días (2 minutos)
+## Todos los días
 1. Abrir el panel. Si hay recuadro rojo de alertas, seguir la tabla de arriba.
-2. En "Últimos leads", cambiar la **etapa** de cada lead contactado (cita confirmada, atendido o descartado) y anotar lo importante en **notas**.
-3. Una vez por semana: "Descargar en Excel (CSV)" para el reporte.
+2. **Por contactar** (arriba a la izquierda): leads nuevos sin atender. Si se pone rojo, hay alguien esperando más de 24 horas.
+3. **Agenda**: por cada cita nueva, escribir por WhatsApp a la persona, confirmar el lugar, y en el panel poner la cita en **Confirmada** y escribir el **lugar**. Después de la cita: **Atendida** o **No asistió**.
+4. **Leads**: mover la etapa conforme avanza el caso:
+   Cita solicitada → Cita confirmada → Atendido → **Cambio concretado** (anotar casa de destino) → **Comisión cobrada** (anotar el monto). Si no avanza: **Descartado** con el motivo.
+   Todo se guarda solo al escribir. En notas no poner datos de la deuda ni de otras personas.
+5. Cada vez que se pague publicidad: **Registrar gasto** en "Por campaña" con el mismo nombre de campaña que lleva el link (utm_campaign).
+6. Una vez por semana (solo el dueño): "Descargar leads (CSV)" para el reporte.
+
+## Usuarios del panel
+Cada persona tiene su usuario (el panel guarda en la bitácora quién cambió qué). Para dar de alta a alguien, Mau corre `node scripts/crear-usuario.mjs <usuario> <dueno|operador>` y agrega la línea en `ADMIN_USUARIOS` en Vercel. El rol **operador** no puede descargar el CSV.
+
+## Links de campaña
+Cada publicación o anuncio debe llevar su etiqueta para que el panel sepa de dónde vino la gente, por ejemplo:
+`https://casa-ap.com/?utm_source=facebook&utm_campaign=afectados-monte-de-piedad`
+`https://casa-ap.com/?utm_source=tiktok&utm_campaign=video-refrendo`
 
 ## Horario
 El chat funciona las 24 horas. Los mensajes a personas prometen respuesta de **lunes a viernes de 9:00 a 17:00**.

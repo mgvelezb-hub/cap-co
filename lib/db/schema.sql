@@ -102,3 +102,51 @@ CREATE TABLE IF NOT EXISTS alerta_silencio (
   tipo      TEXT        PRIMARY KEY,
   ultimo_at TIMESTAMPTZ NOT NULL
 );
+
+-- Fase 4: agenda de citas y cierre del embudo hasta el dinero.
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS casa_destino    TEXT;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS comision_mxn    NUMERIC(12,2);
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS motivo_descarte TEXT;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS asesor          TEXT;
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS cerrado_at      TIMESTAMPTZ;  -- switcheo concretado
+CREATE INDEX IF NOT EXISTS lead_conversacion_idx ON lead (conversacion_id);
+CREATE INDEX IF NOT EXISTS lead_etapa_idx ON lead (etapa);
+
+-- Una cita por lead; un horario solo puede tener una cita activa (capacidad 1: un asesor).
+CREATE TABLE IF NOT EXISTS cita (
+  id          BIGSERIAL PRIMARY KEY,
+  lead_codigo TEXT        NOT NULL REFERENCES lead (codigo) ON DELETE CASCADE,
+  inicio      TIMESTAMPTZ NOT NULL,
+  estado      TEXT        NOT NULL DEFAULT 'reservada', -- reservada | confirmada | atendida | cancelada | no_asistio
+  lugar       TEXT        NOT NULL DEFAULT 'Por confirmar',
+  creado_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS cita_horario_activo_idx ON cita (inicio) WHERE estado IN ('reservada', 'confirmada');
+CREATE UNIQUE INDEX IF NOT EXISTS cita_lead_activa_idx ON cita (lead_codigo) WHERE estado IN ('reservada', 'confirmada');
+CREATE INDEX IF NOT EXISTS cita_inicio_idx ON cita (inicio);
+
+-- Costo de IA por conversación (USD), para costo por lead y por switcheo.
+ALTER TABLE conversacion ADD COLUMN IF NOT EXISTS costo_usd NUMERIC(10,5) NOT NULL DEFAULT 0;
+
+-- Gasto de publicidad capturado a mano por campaña.
+CREATE TABLE IF NOT EXISTS gasto_campana (
+  id           BIGSERIAL PRIMARY KEY,
+  fecha        DATE        NOT NULL,
+  utm_campaign TEXT        NOT NULL,
+  monto_mxn    NUMERIC(12,2) NOT NULL CHECK (monto_mxn >= 0),
+  nota         TEXT,
+  creado_por   TEXT,
+  creado_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Bitácora del panel: quién cambió qué.
+CREATE TABLE IF NOT EXISTS bitacora_panel (
+  id        BIGSERIAL PRIMARY KEY,
+  creado_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  usuario   TEXT        NOT NULL,
+  accion    TEXT        NOT NULL,   -- lead_actualizado | cita_actualizada | csv_descargado | gasto_capturado
+  objetivo  TEXT,
+  detalle   JSONB       NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS bitacora_panel_creado_idx ON bitacora_panel (creado_at DESC);

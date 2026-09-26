@@ -56,6 +56,16 @@ Pedido de Mau tras probarlo: que no conteste nada fuera de lo prendario y que se
 - Análisis (≤ 170 palabras): qué dice, cuánto debe hoy (fecha de hoy se inyecta en el mensaje, fuera del caché), valor del metal vs préstamo, cotización de traspaso con los meses que realmente faltan (y ofrece recalcular si lo necesitará más tiempo), recomendación.
 - Evaluación: `tests/fixtures/boleta-ficticia.jpg` (datos inventados, con nombre y folio para probar que no los repite) y `ticket-ficticio.jpg`. 31 casos en total.
 
+## 0.4 Operación: alertas, límites, panel y agenda (26-sep-2026)
+
+Construido con revisión de dos agentes por pieza (QA técnico y "comité" dueño/operaciones/marketing/HR/legal/finanzas/UX); sus hallazgos se aplicaron antes de cada commit. Detalle de operación en `RUNBOOK.md`.
+- **Alertas** (`lib/alertas/*`): tabla `evento_sistema`, correo por Resend (`RESEND_API_KEY`, `ALERTA_EMAIL`; sin ellas solo se registra), silencio atómico de 6 h por tipo (`alerta_silencio`), reintento a 15 min si el correo falla, 5 errores en 15 min = `chat_caido`. `/api/salud` público mínimo (ok/degradado/caido; 503 solo si el chat no atiende) y `/api/admin/salud` con detalle. Retención 90 días.
+- **Límites** (`lib/chatbot/ratelimit.js`): en PostgreSQL (`limite_uso`), hash de IP con `RATE_SALT`; 30 mensajes/10 min, 150/día y 6 fotos/día por visitante; topes del sitio `CHAT_TOPE_DIARIO` (3,000) y `FOTO_TOPE_DIARIO` (300) que solo cuentan a quien pasó sus propios límites; días en hora CDMX; corte de 60 s si la base no responde. Bloqueos con botón de WhatsApp y horario real.
+- **Métricas** (`lib/metricas/conversaciones.js`): tabla `conversacion` anónima (turnos, fotos, herramientas, cotizó, avanzó, fuera de tema, costo de IA en USD); retención 180 días.
+- **Panel** (`/admin/leads`): por contactar, citas próximas, cambios y comisión del mes, tiempo a primer contacto; agenda editable; embudo del chat y resultados hasta comisión cobrada; tabla por campaña con gasto de publicidad capturado (`gasto_campana`), costo de IA, costo por cita y por cambio; leads en tarjetas con etapa, asesor, casa destino, comisión, motivo de descarte y notas con guardado automático; bitácora (`bitacora_panel`). Usuarios por persona `ADMIN_USUARIOS` (roles dueño/operador; respaldo `ADMIN_USER`/`ADMIN_PASSWORD`), CSV solo dueño, protección CSRF en los POST. Leads: nombre, teléfono y notas se borran 12 meses después de la última actividad.
+- **Agenda** (`lib/agenda/*`, tabla `cita`): lunes a viernes 9–17 h CDMX, bloques de 1 h, 10 días hábiles, 2 h de anticipación, días oficiales bloqueados, una cita activa por horario y por lead. Tras `agendar_cita` el chat muestra el selector de día y hora con nombre, WhatsApp y consentimiento (`POST /api/citas`); el lugar queda "Por confirmar" y se confirma por WhatsApp. Confirmar o atender la cita en el panel mueve la etapa del lead.
+- `npm run build:local` compila en `.next-build` para no pisar el servidor de desarrollo.
+
 ## 1. Premisas y límites
 
 | Tema | Decisión | Por qué |

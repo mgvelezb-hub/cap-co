@@ -8,6 +8,8 @@ import { guardarFotografia } from "@/lib/precios/repo";
 import { dbDisponible } from "@/lib/db/client";
 import { registrarEvento, limpiarEventos } from "@/lib/alertas/eventos";
 import { limpiarLimites } from "@/lib/chatbot/ratelimit";
+import { limpiarConversaciones } from "@/lib/metricas/conversaciones";
+import { anonimizarLeadsViejos } from "@/lib/leads/repo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +40,8 @@ export async function GET(request) {
       try {
         await limpiarLimites();
         await limpiarEventos();
+        await limpiarConversaciones();
+        await anonimizarLeadsViejos();
       } catch (err) {
         console.error("[precios] mantenimiento falló:", err.message);
       }

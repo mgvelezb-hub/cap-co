@@ -11,7 +11,8 @@
     "eval": "node --env-file=.env.local --no-warnings scripts/eval-chat.mjs",
     "db:local": "pg_ctl -D .pgdata -o \"-p 5499 -k /tmp\" -l .pgdata/log start && node --env-file=.env.local scripts/migrate.mjs",
     "db:local:init": "initdb -D .pgdata -U capco --auth=trust -E UTF8 --locale=C && pg_ctl -D .pgdata -o \"-p 5499 -k /tmp\" -l .pgdata/log start && sleep 2 && psql -h 127.0.0.1 -p 5499 -U capco -d postgres -c \"create database capco\" && node --env-file=.env.local scripts/migrate.mjs",
-    "test:db": "node --env-file=.env.local --test tests/*.test.js"
+    "test:db": "node --env-file=.env.local --test tests/*.test.js",
+    "build:local": "NEXT_DIST_DIR=.next-build next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

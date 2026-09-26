@@ -8,6 +8,9 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: root,
+  // Un build local con el servidor de desarrollo prendido pisaba .next (404 en los chunks):
+  // npm run build:local compila en .next-build.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
 };
 
 export default nextConfig;

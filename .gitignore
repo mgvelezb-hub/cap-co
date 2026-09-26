@@ -29,3 +29,4 @@ yarn-error.log*
 
 # Base de datos local de desarrollo (npm run db:local)
 /.pgdata/
+/.next-build/
