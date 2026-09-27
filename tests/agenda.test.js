@@ -39,8 +39,6 @@ test("agenda: horarios de 9 a 16 h, con 2 h hábiles de anticipación, 10 días 
   assert.equal(horarioValido(new Date("2026-12-28T15:00:00Z"), sabado), false, "fuera de los 10 días");
 });
 
-
-
 test("agenda: la anticipación cuenta solo horas hábiles", () => {
   // Viernes 16:30 CDMX: queda media hora del viernes y hora y media del lunes.
   assert.equal(limiteAnticipacion(new Date("2026-09-25T22:30:00Z")).toISOString(), "2026-09-28T16:30:00.000Z");
@@ -73,5 +71,4 @@ test("agenda: el panel puede reprogramar sin anticipación, pero en horario y a 
   assert.equal(horarioAtendible(new Date("2026-09-28T23:00:00Z"), lunes10), false, "17:00");
   assert.equal(horarioAtendible(new Date("2026-10-03T17:00:00Z"), lunes10), false, "sábado");
 });
-
 

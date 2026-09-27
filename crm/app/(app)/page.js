@@ -9,6 +9,7 @@ import FormAccion from "@/components/FormAccion";
 import { fechaHora, hace, NOMBRE_ESTADO_CITA } from "@/lib/formato";
 import { accionTarea, accionContacto } from "./acciones";
 import { eventosRecientes, TITULOS } from "@lib/alertas/eventos";
+import { diagnostico } from "@lib/alertas/salud";
 
 export const metadata = { title: "Hoy" };
 
@@ -30,13 +31,15 @@ export default async function Hoy({ searchParams }) {
   const s = await requireSesion();
   const equipo = (await searchParams).ver === "equipo";
   const finDeHoy = new Date(Date.now() + 12 * 3600_000);
-  const [r, tareas, citas, eventos] = await Promise.all([
+  const [r, tareas, citas, eventos, salud] = await Promise.all([
     resumenHoy(),
     tareasAbiertas({ hasta: finDeHoy, asesor: equipo ? null : s.usuario }),
     citasProximas({ dias: 2 }),
     eventosRecientes({ horas: 24, limite: 20 }),
+    diagnostico({ revisarLlave: false }).catch(() => ({ estado: "ok" })),
   ]);
-  const criticos = [...new Set(eventos.filter((ev) => ev.nivel === "critico").map((ev) => ev.tipo))];
+  // El aviso solo se muestra mientras el problema siga: si el sitio ya está bien, no estorba.
+  const criticos = salud.estado === "ok" ? [] : [...new Set(eventos.filter((ev) => ev.nivel === "critico").map((ev) => ev.tipo))];
   const presenciales = citas.filter((c) => c.tipo !== "llamada");
   const asesor = s.nombre.split(" ")[0];
   return (

@@ -12,7 +12,8 @@ import {
 } from "@lib/crm/leads";
 import { clasificarLead, aprobarClasificacion } from "@lib/crm/clasificacion";
 import { completarTarea } from "@lib/crm/tareas";
-import { actualizarCita } from "@lib/agenda/repo";
+import { actualizarCita, acordarCitaNueva } from "@lib/agenda/repo";
+import { crearLeadManual } from "@lib/crm/leads";
 import { registrarAccion as bitacora } from "@lib/leads/bitacora";
 import { query } from "@lib/db/client";
 
@@ -40,6 +41,9 @@ const MOTIVOS = {
   metodo_invalido: "Elige cómo se cobró.",
   fecha_invalida: "Revisa la fecha del cobro.",
   solo_dueno: "Solo el dueño puede hacer esto.",
+  caso_cerrado: "El caso está cerrado (descartado o cobrado).",
+  sin_consentimiento: "Confirma que la persona aceptó el aviso de privacidad.",
+  canal_invalido: "Elige por dónde llegó.",
 };
 
 function resultado(r, exito) {
@@ -200,10 +204,43 @@ export async function accionCita(_previo, f) {
     cambios.inicio = new Date(Date.UTC(a, m - 1, d, Number(hora) + 6)).toISOString(); // CDMX = UTC−6
   }
   const r = await actualizarCita(id, cambios);
-  if (r.ok) await bitacora(s.usuario, "cita_actualizada", r.cita.lead_codigo, cambios);
+  if (r.ok) await bitacora(s.usuario, "cita_actualizada", r.cita.lead_codigo, { ...cambios, nota: cambios.nota ? "(con nota)" : undefined, usuario: undefined });
   refrescar(r.cita?.lead_codigo);
   revalidatePath("/citas");
   return resultado(r, cambios.inicio ? "Cita en su nuevo horario." : "Cita actualizada.");
+}
+
+export async function accionAcordarCita(_previo, f) {
+  const s = await requireSesion();
+  const codigo = texto(f, "codigo");
+  const dia = texto(f, "dia");
+  const hora = texto(f, "hora");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || !/^(9|1[0-6])$/.test(hora)) return { ok: false, mensaje: "Elige día y hora de la cita." };
+  const [a, m, d] = dia.split("-").map(Number);
+  const inicio = new Date(Date.UTC(a, m - 1, d, Number(hora) + 6)).toISOString(); // CDMX = UTC−6
+  const r = await acordarCitaNueva({ codigo, inicio, lugar: texto(f, "lugar") || null, usuario: s.usuario });
+  if (r.ok) await bitacora(s.usuario, "cita_acordada", codigo, { inicio });
+  refrescar(codigo);
+  revalidatePath("/citas");
+  return resultado(r, "Cita acordada y confirmada.");
+}
+
+export async function accionNuevoLead(_previo, f) {
+  const s = await requireSesion();
+  const r = await crearLeadManual({
+    nombre: texto(f, "nombre"),
+    telefono: texto(f, "telefono"),
+    email: texto(f, "email") || null,
+    perfil: texto(f, "perfil"),
+    resumen: texto(f, "resumen"),
+    canal: texto(f, "canal"),
+    consentimiento: texto(f, "consentimiento") === "1",
+    usuario: s.usuario,
+  });
+  if (!r.ok) return { ok: false, mensaje: r.error || MOTIVOS[r.motivo] || `No se pudo (${r.motivo}).` };
+  await bitacora(s.usuario, "lead_alta_manual", r.codigo, { canal: texto(f, "canal") });
+  revalidatePath("/leads");
+  redirect(`/leads/${r.codigo}`);
 }
 
 export async function accionGasto(_previo, f) {

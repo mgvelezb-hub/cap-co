@@ -129,6 +129,7 @@ function ChatWidgetPublico() {
   // Al cerrar, el foco regresa a lo que abrió el chat (o al botón flotante), para no perder el
   // lugar con teclado o lector de pantalla.
   const origenFocoRef = useRef(null);
+  const mensajePendienteRef = useRef(null);
   const lanzadorRef = useRef(null);
   const estabaAbierto = useRef(false);
   useEffect(() => {
@@ -145,8 +146,9 @@ function ChatWidgetPublico() {
   }, [abierto]);
 
   useEffect(() => {
-    const abrir = () => {
+    const abrir = (e) => {
       origenFocoRef.current = document.activeElement;
+      if (typeof e?.detail?.mensaje === "string") mensajePendienteRef.current = e.detail.mensaje.slice(0, 200);
       setAbierto(true);
     };
     window.addEventListener("capco:abrir-chat", abrir);
@@ -252,6 +254,14 @@ function ChatWidgetPublico() {
     },
     [cargando, mensajes, cta],
   );
+
+  // Abrir el chat con una pregunta ya escrita (p. ej. "mi boleta vence en días" desde el hero).
+  useEffect(() => {
+    if (!abierto || !hidratado || cargando || !mensajePendienteRef.current) return;
+    const texto = mensajePendienteRef.current;
+    mensajePendienteRef.current = null;
+    enviar(texto);
+  }, [abierto, hidratado, cargando, enviar]);
 
   function reiniciar() {
     idConversacion(true);

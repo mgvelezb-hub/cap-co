@@ -25,8 +25,9 @@ export default async function Leads({ searchParams }) {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-serif text-3xl">Leads</h1>
-          <p className="text-sm text-esmeralda/70">{leads.length} {leads.length === 1 ? "caso" : "casos"} con estos filtros.</p>
+          <p className="text-sm text-esmeralda/75">{leads.length} {leads.length === 1 ? "caso" : "casos"} con estos filtros.</p>
         </div>
+        <a href="/leads/nuevo" className="inline-flex min-h-[44px] items-center rounded-full bg-esmeralda px-4 text-sm font-medium text-sobre-verde">+ Nuevo lead</a>
       </header>
       <form className="grid grid-cols-2 items-end gap-2 rounded-xl sm:flex sm:flex-wrap border border-esmeralda/10 bg-papel-alto p-3 text-sm" role="search">
         <label className="flex flex-col text-xs text-esmeralda/70">

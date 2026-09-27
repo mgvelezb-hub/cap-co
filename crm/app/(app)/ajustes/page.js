@@ -29,7 +29,7 @@ export default async function Ajustes() {
   ]);
   const comision = comisionCambio(2000);
   const [salud, eventos, bitacora] = s.rol === "dueno"
-    ? await Promise.all([diagnostico(), eventosRecientes({ horas: 72, limite: 30 }), bitacoraReciente(40)])
+    ? await Promise.all([diagnostico({ revisarLlave: false }), eventosRecientes({ horas: 72, limite: 30 }), bitacoraReciente(40)])
     : [null, [], []];
   const ESTADO = { ok: "Todo bien", degradado: "Funciona con problemas", caido: "El chat no está respondiendo" };
   return (

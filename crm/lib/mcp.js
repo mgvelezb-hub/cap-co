@@ -3,13 +3,14 @@
 import { z } from "zod";
 import {
   listarLeads, fichaLead, registrarAccion, actualizarCaso, marcarTraspaso, prepararWhatsApp, resumenHoy, CHECKLIST_TRASPASO, ACCIONES_CONTACTO,
-  marcarNoContactar, asignarAsesor, registrarCobro, METODOS_COBRO,
+  marcarNoContactar, asignarAsesor, registrarCobro, METODOS_COBRO, crearLeadManual, CANALES_ALTA,
 } from "@lib/crm/leads";
 import { clasificarLead, aprobarClasificacion, colaRevision } from "@lib/crm/clasificacion";
 import { tareasAbiertas, completarTarea } from "@lib/crm/tareas";
 import { CLASES } from "@lib/crm/reglas";
 import { WHATSAPP } from "@lib/crm/plantillas";
-import { citasProximas, actualizarCita, ESTADOS_CITA } from "@lib/agenda/repo";
+import { citasProximas, actualizarCita, acordarCitaNueva, ESTADOS_CITA } from "@lib/agenda/repo";
+import { PERFIL_IDS } from "@lib/chatbot/perfiles";
 import { serieDiaria, porFuente } from "@lib/crm/trafico";
 import { embudo } from "@lib/metricas/conversaciones";
 import { ETAPAS } from "@lib/leads/repo";
@@ -246,8 +247,46 @@ export function registrarHerramientas(server) {
     async (i, ctx) =>
       correr(async () => {
         const r = await actualizarCita(i.id, { estado: i.estado, lugar: i.lugar, inicio: i.inicio, nota: i.nota, usuario: usuario(ctx) });
-        if (r.ok) await bitacora(usuario(ctx), "cita_actualizada", r.cita.lead_codigo, { estado: i.estado, lugar: i.lugar, inicio: i.inicio, via: "mcp" });
+        if (r.ok) await bitacora(usuario(ctx), "cita_actualizada", r.cita.lead_codigo, { estado: i.estado, lugar: i.lugar, inicio: i.inicio, nota: i.nota ? "(con nota)" : undefined, via: "mcp" });
         return r;
+      }),
+  );
+
+  server.registerTool(
+    "acordar_cita",
+    {
+      title: "Acordar cita nueva",
+      description: "Crea una cita confirmada ya hablada con la persona (reagendar a quien no asistió o un lead sin cita). inicio en ISO, en punto, lunes a viernes 9:00–16:00 CDMX.",
+      inputSchema: z.object({ codigo: CODIGO, inicio: z.string().datetime({ offset: true }), lugar: z.string().max(200).optional() }),
+    },
+    async (i, ctx) =>
+      correr(async () => {
+        const r = await acordarCitaNueva({ codigo: i.codigo, inicio: i.inicio, lugar: i.lugar ?? null, usuario: usuario(ctx) });
+        if (r.ok) await bitacora(usuario(ctx), "cita_acordada", i.codigo, { inicio: i.inicio, via: "mcp" });
+        return r;
+      }),
+  );
+
+  server.registerTool(
+    "crear_lead",
+    {
+      title: "Alta manual de lead",
+      description: "Da de alta a alguien que llegó por WhatsApp, llamada o recomendación. Solo si la persona aceptó el aviso de privacidad (consentimiento: true) y el usuario lo confirmó.",
+      inputSchema: z.object({
+        nombre: z.string().min(2).max(80),
+        telefono: z.string().max(20),
+        email: z.string().max(120).optional(),
+        perfil: z.enum(PERFIL_IDS),
+        resumen: z.string().max(400).optional(),
+        canal: z.enum(Object.keys(CANALES_ALTA)),
+        consentimiento: z.literal(true),
+      }),
+    },
+    async (i, ctx) =>
+      correr(async () => {
+        const r = await crearLeadManual({ ...i, resumen: i.resumen ?? "", usuario: usuario(ctx) });
+        if (r.ok) await bitacora(usuario(ctx), "lead_alta_manual", r.codigo, { canal: i.canal, via: "mcp" });
+        return r.ok ? r : { ok: false, motivo: r.error || r.motivo };
       }),
   );
 

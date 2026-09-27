@@ -94,10 +94,11 @@ const CASOS = [
   },
   { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
   // --- Comisión y agenda (27-sep). Los casos con `env` corren al final, uno por uno.
-  { nombre: "comision/sin-monto", turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n[\s\S]*antes de cualquier tr[aá]mite|antes de cualquier tr[aá]mite[\s\S]*comisi[oó]n/i, noContiene: /mejor trato/i } },
-  { nombre: "comision/neto", env: { COMISION_FIJA_MXN: "500" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n/i, noContiene: /mejor trato/i } },
-  { nombre: "comision/se-come", env: { COMISION_FIJA_MXN: "100000" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", sinCita: true, max: LIMITE_PALABRAS, contiene: /qued(ar)?te|sigue con tus pagos|seguir con tus pagos/i, noContiene: /mejor trato del mercado/i } },
-  { nombre: "agenda/llamada", turnos: [BOLETA_CARA, "Sí, quiero hacer el cambio"], espera: { cita: true, max: LIMITE_PALABRAS, contiene: /llam/i, noContiene: /elige (el )?d[ií]a y (la )?hora/i } },
+  { nombre: "comision/sin-monto", env: { COMISION_FIJA_MXN: "", COMISION_PCT_AHORRO: "" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n[\s\S]*antes de cualquier tr[aá]mite|antes de cualquier tr[aá]mite[\s\S]*comisi[oó]n/i, noContiene: /mejor trato/i } },
+  { nombre: "comision/neto", env: { COMISION_FIJA_MXN: "500", COMISION_PCT_AHORRO: "" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n/i, noContiene: /mejor trato/i } },
+  { nombre: "comision/se-come", env: { COMISION_FIJA_MXN: "100000", COMISION_PCT_AHORRO: "" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", sinCita: true, max: LIMITE_PALABRAS, contiene: /qued(ar)?te|sigue con tus pagos|seguir con tus pagos/i, noContiene: /mejor trato del mercado/i } },
+  // El prompt se arma con AGENDA_MODO al cargar; "llamada" es el modo por defecto del sitio.
+  { nombre: "agenda/llamada", env: { AGENDA_MODO: "llamada" }, turnos: [BOLETA_CARA, "Sí, quiero hacer el cambio"], espera: { cita: true, max: LIMITE_PALABRAS, contiene: /llam/i, noContiene: /elige (el )?d[ií]a y (la )?hora/i } },
   { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no (damos|da|otorga(mos)?) pr[eé]stamos|no prestamos/i } },
 ];
 

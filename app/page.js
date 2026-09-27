@@ -7,7 +7,7 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import Boleta from "@/components/Boleta";
 import Calculadora from "@/components/Calculadora";
-import { WHATSAPP_URL, WHATSAPP_NUMBER, BRAND } from "@/lib/constants";
+import { WHATSAPP_URL, BRAND } from "@/lib/constants";
 import AbrirChat from "@/components/chat/AbrirChat";
 import { PREGUNTAS } from "@/lib/contenido/preguntas";
 import Footer from "@/components/Footer";
@@ -34,19 +34,14 @@ function Hero() {
           <p className="mt-4 font-sans text-sm uppercase tracking-[0.28em] text-esmeralda/55 md:text-[15px]">
             {BRAND.slogan}
           </p>
-          <h1 className="mx-auto mt-9 max-w-[24ch] font-serif text-[clamp(1.5rem,2.6vw,2rem)] leading-snug lg:mx-0">
-            ¡No pierdas tu empeño!
+          <h1 className="mx-auto mt-9 max-w-[26ch] font-serif leading-snug lg:mx-0">
+            <span className="block text-[clamp(1.5rem,2.6vw,2rem)]">¡No pierdas tu empeño!</span>
+            <span className="mt-1 block text-[clamp(1.1rem,1.8vw,1.35rem)] text-esmeralda/80">Revisa tu boleta de empeño sin costo.</span>
           </h1>
           <p className="mx-auto mt-3 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 lg:mx-0">
-            Revisamos tu boleta de empeño sin costo: te decimos cuánto vas a pagar, si hay una opción que te
-            convenga más y, si está por vencer, qué puedes hacer para recuperar tu pieza.
+            Te decimos cuánto vas a pagar, si hay una opción que te convenga más y, si está por vencer, qué
+            puedes hacer para recuperar tu pieza.
           </p>
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola, mi boleta de empeño vence en días. ¿Me ayudan a revisarla?")}`}
-            className="mx-auto mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-granate/40 bg-granate/5 px-4 font-sans text-sm text-granate lg:mx-0"
-          >
-            ¿Tu boleta vence en días? Escríbenos hoy →
-          </a>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
             <a
               href={WHATSAPP_URL}
@@ -58,8 +53,14 @@ function Hero() {
               o analízala aquí con nuestro asistente
             </AbrirChat>
           </div>
+          <AbrirChat
+            mensaje="Mi boleta de empeño vence en unos días, ¿qué puedo hacer?"
+            className="mx-auto mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-granate/40 bg-granate/5 px-4 font-sans text-sm text-granate lg:mx-0"
+          >
+            ¿Tu boleta vence en días? Revísala ahora →
+          </AbrirChat>
           <p className="mt-6 font-sans text-sm tracking-wide text-esmeralda/75">
-            Análisis de tu boleta sin costo · Discreción total · Lunes a viernes, 9:00 a 17:00
+            Análisis sin costo · Si te conviene cambiarte, te decimos nuestra comisión antes de cualquier trámite · Lunes a viernes, 9:00 a 17:00
           </p>
         </Reveal>
       </div>

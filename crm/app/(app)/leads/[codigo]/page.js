@@ -15,7 +15,7 @@ import Enviar from "@/components/Enviar";
 import { pesos, fecha, fechaHora, hace, etapaNombre, ETAPAS_PANEL, NOMBRE_CLASE, PERFILES, hoyCDMX, NOMBRE_ESTADO_CITA } from "@/lib/formato";
 import {
   accionContacto, accionReclasificar, accionAprobar, accionCaso, accionTraspaso, accionCita, accionTarea,
-  accionAsignar, accionCobro, accionNoContactar, accionAnonimizar, accionDescartarRapido,
+  accionAsignar, accionCobro, accionNoContactar, accionAnonimizar, accionDescartarRapido, accionAcordarCita,
 } from "../../acciones";
 
 export async function generateMetadata({ params }) {
@@ -46,6 +46,7 @@ function Dato({ etiqueta, children }) {
 
 function GuionLlamada({ lead }) {
   const g = guionPara(lead);
+  if (!g) return null;
   return (
     <details className="rounded-lg bg-esmeralda/[0.04] p-3 text-sm">
       <summary className="inline-flex min-h-[44px] cursor-pointer items-center font-medium">Guion de llamada: {g.titulo}</summary>
@@ -275,6 +276,28 @@ export default async function Ficha({ params }) {
           <Seccion titulo="Cita del cambio">
             <div className="space-y-3">
               {citas.length === 0 && <Vacio>Todavía no hay cita ni llamada.</Vacio>}
+              {!citaActiva && !cerrado && (
+                <FormAccion accion={accionAcordarCita} className="flex flex-wrap items-end gap-2 rounded-xl border border-esmeralda/15 bg-papel-alto p-3 text-sm">
+                  <input type="hidden" name="codigo" value={l.codigo} />
+                  <p className="basis-full font-medium">{citas.length ? "Acordar nueva fecha" : "Acordar cita"} (ya hablada con la persona)</p>
+                  <label className="flex flex-col text-xs text-esmeralda/75">
+                    Día
+                    <input type="date" name="dia" min={hoyCDMX()} required className={CAMPO} />
+                  </label>
+                  <label className="flex flex-col text-xs text-esmeralda/75">
+                    Hora
+                    <select name="hora" required defaultValue="" className={CAMPO}>
+                      <option value="" disabled>—</option>
+                      {HORAS.map((h) => (<option key={h} value={h}>{h}:00</option>))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[12rem] flex-1 flex-col text-xs text-esmeralda/75">
+                    Lugar
+                    <input name="lugar" maxLength={200} placeholder="Por confirmar" className={CAMPO} />
+                  </label>
+                  <Enviar className={BOTON}>Acordar</Enviar>
+                </FormAccion>
+              )}
               {citas.map((c) => (
                 <FormAccion key={c.id} accion={accionCita} className="space-y-2 rounded-xl border border-esmeralda/15 bg-papel-alto p-3 text-sm">
                   <input type="hidden" name="id" value={c.id} />

@@ -294,3 +294,5 @@ BEGIN
     INSERT INTO migracion_unica (nombre) VALUES ('crm_leads_previos');
   END IF;
 END $$;
+
+CREATE INDEX IF NOT EXISTS visita_tiktok_idx ON visita ((lower(fuente->>'utm_campaign'))) WHERE lower(fuente->>'utm_source') = 'tiktok';

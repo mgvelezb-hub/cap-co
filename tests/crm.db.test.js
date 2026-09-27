@@ -246,3 +246,31 @@ test("CRM en la base: no asistió deja tarea de reagendar y la nota de la cita v
     await cerrarPool();
   }
 });
+
+test("CRM en la base: alta manual y acordar cita nueva", { skip: !URL && "sin base local" }, async () => {
+  const { crearLeadManual } = await import("../lib/crm/leads.js");
+  const { acordarCitaNueva, disponibilidad } = await import("../lib/agenda/repo.js");
+  const { query, cerrarPool } = await import("../lib/db/client.js");
+  let codigo = null;
+  try {
+    assert.equal((await crearLeadManual({ nombre: "Manual", telefono: tel(), perfil: "quiere_traspaso", canal: "whatsapp", consentimiento: false, usuario: "qa" })).motivo, "sin_consentimiento");
+    assert.equal((await crearLeadManual({ nombre: "Manual", telefono: "123", perfil: "quiere_traspaso", canal: "whatsapp", consentimiento: true, usuario: "qa" })).motivo, "dato_invalido");
+    const r = await crearLeadManual({ nombre: "Manual Prueba", telefono: tel(), perfil: "quiere_traspaso", resumen: "llegó por WhatsApp", canal: "whatsapp", consentimiento: true, usuario: "qa" });
+    assert.equal(r.ok, true);
+    codigo = r.codigo;
+    const l = (await query(`SELECT * FROM lead WHERE codigo = $1`, [codigo])).rows[0];
+    assert.equal(l.asesor_usuario, "qa");
+    assert.equal(l.seguimiento_paso, 4, "sin seguimiento automático");
+    assert.ok(l.consent_at && l.clasificacion);
+    const libre = (await disponibilidad()).at(-1).horas.at(-1);
+    assert.equal((await acordarCitaNueva({ codigo, inicio: new Date(libre.getTime() + 1), usuario: "qa" })).motivo, "horario_invalido");
+    const c = await acordarCitaNueva({ codigo, inicio: libre.toISOString(), lugar: "Oficina", usuario: "qa" });
+    assert.equal(c.ok, true);
+    assert.equal(c.cita.estado, "confirmada");
+    assert.equal((await query(`SELECT etapa FROM lead WHERE codigo = $1`, [codigo])).rows[0].etapa, "cita_confirmada");
+    assert.equal((await acordarCitaNueva({ codigo, inicio: libre.toISOString(), usuario: "qa" })).motivo, "lead_con_otra_cita");
+  } finally {
+    if (codigo) await query(`DELETE FROM lead WHERE codigo = $1`, [codigo]);
+    await cerrarPool();
+  }
+});
