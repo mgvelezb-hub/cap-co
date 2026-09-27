@@ -1,5 +1,7 @@
 # Chatbot web CAP & Co. — Diseño y plan
 
+> **27-sep-2026:** el panel `/admin/leads` se retiró; toda la operación está en el CRM (`crm/`, ver `crm/README.md`). Las menciones al panel más abajo son históricas.
+
 **Estado (verificado 11-sep-2026):** fases 1 y 2 en producción en **https://casa-ap.com** (alias `cap-co-kappa.vercel.app`); leads en Neon; panel `/admin/leads`; 21 pruebas (19 unitarias + 2 contra DB). Último cambio de código: `1cae839` (22-ago). Pendiente: tasas reales del aliado, datos del aviso de privacidad, feedback de la clienta, fase 3 (WhatsApp).
 **Decisiones del usuario:** chatbot con IA · resuelve solo hasta el 90 % (educa, simula, cotiza, evalúa, capacita) · compara instituciones con datos públicos · tasa preferente con Montepío Luz Saviñón para boletas evaluadas · leads con perfil para estadística · WhatsApp **solo** para confirmar cita presencial cuando el traspaso conviene (≥ 70 %) o la persona lo pide · el bot de WhatsApp (fase 3) reutiliza el mismo cerebro · contenido provisional mientras Ricardo no entregue el suyo.
 

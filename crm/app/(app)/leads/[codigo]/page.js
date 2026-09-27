@@ -6,6 +6,7 @@ import { TIPOS_TAREA } from "@lib/crm/tareas";
 import { comisionCambio } from "@lib/chatbot/comision";
 import { PATRON_CODIGO } from "@lib/chatbot/codigo";
 import { query } from "@lib/db/client";
+import { guionPara, DOCUMENTOS, OBJECIONES } from "@lib/crm/guiones";
 import { requireSesion } from "@/lib/auth";
 import { Clase, SinContestar, Seccion, Vacio, CAMPO, BOTON, BOTON_SUAVE } from "@/components/ui";
 import WhatsAppBoton from "@/components/WhatsAppBoton";
@@ -43,12 +44,38 @@ function Dato({ etiqueta, children }) {
   );
 }
 
+function GuionLlamada({ lead }) {
+  const g = guionPara(lead);
+  return (
+    <details className="rounded-lg bg-esmeralda/[0.04] p-3 text-sm">
+      <summary className="inline-flex min-h-[44px] cursor-pointer items-center font-medium">Guion de llamada: {g.titulo}</summary>
+      <ol className="mt-2 list-decimal space-y-1 pl-5">
+        {g.pasos.map((p) => (<li key={p}>{p}</li>))}
+      </ol>
+      <p className="mt-3 font-medium">Documentos para el cambio</p>
+      <ul className="list-disc pl-5">
+        {DOCUMENTOS.map((d) => (<li key={d}>{d}</li>))}
+      </ul>
+      <p className="mt-3 font-medium">Si pregunta…</p>
+      <dl className="space-y-1">
+        {OBJECIONES.map(([q, a]) => (
+          <div key={q}>
+            <dt className="italic">{q}</dt>
+            <dd className="text-esmeralda/80">{a}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}
+
 /** Qué mensajes de WhatsApp tienen sentido ahora para este caso. */
 function plantillasQueAplican(l, citaPresencial) {
   const lista = [l.ultimo_contacto_at ? "recordatorio" : "primer_contacto"];
   if (citaPresencial) lista.push("confirmar_cita");
   if (l.clasificacion === "taller" || Number(l.propension_taller) >= 50) lista.push("taller");
   if (["atendido", "switcheo_concretado"].includes(l.etapa)) lista.push("seguimiento_cita");
+  if (l.etapa === "cita_solicitada" && l.ultima_cita_estado === "no_asistio") lista.push("reagendar");
   return lista;
 }
 
@@ -62,6 +89,7 @@ function detalleEvento(e) {
   if (e.tipo === "correo_fallido") partes.push(d.motivo === "sin_configurar" ? "correo sin configurar" : d.motivo);
   if (e.tipo === "seguimiento" && typeof d.paso === "number") partes.push(`paso ${d.paso + 1} de 4`);
   if (e.tipo === "asignado") partes.push(d.a ? `a ${d.a}${d.por === "turno" ? " (por turno)" : ""}` : "sin asesor");
+  if (e.tipo === "cita" && d.estado) partes.push(NOMBRE_ESTADO_CITA[d.estado] || d.estado);
   if (e.tipo === "cobro") partes.push(`${pesos(d.monto)} · ${METODO[d.metodo] || d.metodo}`);
   return partes.filter(Boolean).join(" · ");
 }
@@ -81,6 +109,7 @@ export default async function Ficha({ params }) {
   const asesor = s.nombre.split(" ")[0];
   const comision = l.ahorro !== null ? comisionCambio(Number(l.ahorro)) : null;
   const citaActiva = citas.find((c) => ["reservada", "confirmada"].includes(c.estado));
+  l.ultima_cita_estado = citas[0]?.estado ?? null;
   const citaPresencial = citaActiva && citaActiva.tipo === "cita" ? citaActiva : null;
   const lugar = citaPresencial?.lugar && citaPresencial.lugar !== "Por confirmar" ? citaPresencial.lugar : null;
   const sug = l.sugerencia;
@@ -159,6 +188,7 @@ export default async function Ficha({ params }) {
                   </label>
                   <Enviar className={BOTON}>Registrar</Enviar>
                 </FormAccion>
+                <GuionLlamada lead={l} />
                 <details className="text-sm">
                   <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-esmeralda/75 underline underline-offset-2">Pidió que no lo contactemos</summary>
                   <FormAccion accion={accionNoContactar} className="mt-2 flex flex-wrap items-end gap-2">
@@ -275,6 +305,10 @@ export default async function Ficha({ params }) {
                           <option value="">—</option>
                           {HORAS.map((h) => (<option key={h} value={h}>{h}:00</option>))}
                         </select>
+                      </label>
+                      <label className="flex min-w-[12rem] flex-1 flex-col text-xs text-esmeralda/75">
+                        Qué pasó (opcional)
+                        <input name="nota" maxLength={1000} className={CAMPO} placeholder="Resultado de la cita o la llamada" />
                       </label>
                       <Enviar className={BOTON}>Guardar</Enviar>
                     </div>

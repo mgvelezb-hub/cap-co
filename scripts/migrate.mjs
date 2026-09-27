@@ -7,6 +7,18 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import pg from "pg";
 
+// El SSL va en la opción ssl; sin sslmode en la URL, pg no muestra su aviso de cambio de versión.
+function sinModoSsl(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("channel_binding");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const sql = readFileSync(path.join(aqui, "..", "lib", "db", "schema.sql"), "utf8");
 const url = process.env.DATABASE_URL;
@@ -17,7 +29,7 @@ if (!url) {
 }
 
 const esLocal = /localhost|127\.0\.0\.1/.test(url);
-const client = new pg.Client({ connectionString: url, ssl: esLocal ? false : { rejectUnauthorized: true } });
+const client = new pg.Client({ connectionString: sinModoSsl(url), ssl: esLocal ? false : { rejectUnauthorized: true } });
 await client.connect();
 try {
   await client.query(sql);

@@ -7,7 +7,7 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import Boleta from "@/components/Boleta";
 import Calculadora from "@/components/Calculadora";
-import { WHATSAPP_URL, SOCIAL, BRAND } from "@/lib/constants";
+import { WHATSAPP_URL, WHATSAPP_NUMBER, BRAND } from "@/lib/constants";
 import AbrirChat from "@/components/chat/AbrirChat";
 import { PREGUNTAS } from "@/lib/contenido/preguntas";
 import Footer from "@/components/Footer";
@@ -29,19 +29,24 @@ function Hero() {
           <RayaRombo className="raya-fade hidden w-auto lg:block lg:h-[21rem]" />
         </div>
         <Reveal delay={250} className="text-center lg:text-left">
-          <h1 className="font-serif text-[clamp(2.75rem,6vw,4.75rem)] leading-[1.05] tracking-wide">
-            {BRAND.nombre}
-          </h1>
+          {/* La marca se ve como título, pero el <h1> es la promesa: es lo que busca la gente. */}
+          <p className="font-serif text-[clamp(2.75rem,6vw,4.75rem)] leading-[1.05] tracking-wide">{BRAND.nombre}</p>
           <p className="mt-4 font-sans text-sm uppercase tracking-[0.28em] text-esmeralda/55 md:text-[15px]">
             {BRAND.slogan}
           </p>
-          <p className="mx-auto mt-9 max-w-[24ch] font-serif text-[clamp(1.5rem,2.6vw,2rem)] leading-snug lg:mx-0">
+          <h1 className="mx-auto mt-9 max-w-[24ch] font-serif text-[clamp(1.5rem,2.6vw,2rem)] leading-snug lg:mx-0">
             ¡No pierdas tu empeño!
-          </p>
+          </h1>
           <p className="mx-auto mt-3 max-w-[42ch] font-sans text-lg leading-relaxed text-esmeralda/75 lg:mx-0">
-            Te ayudamos a recuperar tus joyas pagando menos: revisamos tu boleta, te decimos
-            cuánto vas a pagar y si hay una opción que te convenga más.
+            Revisamos tu boleta de empeño sin costo: te decimos cuánto vas a pagar, si hay una opción que te
+            convenga más y, si está por vencer, qué puedes hacer para recuperar tu pieza.
           </p>
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola, mi boleta de empeño vence en días. ¿Me ayudan a revisarla?")}`}
+            className="mx-auto mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-granate/40 bg-granate/5 px-4 font-sans text-sm text-granate lg:mx-0"
+          >
+            ¿Tu boleta vence en días? Escríbenos hoy →
+          </a>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
             <a
               href={WHATSAPP_URL}

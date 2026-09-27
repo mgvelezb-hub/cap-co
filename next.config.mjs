@@ -11,6 +11,11 @@ const nextConfig = {
   // Un build local con el servidor de desarrollo prendido pisaba .next (404 en los chunks):
   // npm run build:local compila en .next-build.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // El panel interno se mudó al CRM (app crm/). Los links viejos llevan ahí.
+  async redirects() {
+    const crm = process.env.CRM_URL || "https://capco-crm.vercel.app";
+    return [{ source: "/admin/:ruta*", destination: `${crm}/`, permanent: false }];
+  },
 };
 
 export default nextConfig;

@@ -26,9 +26,14 @@ function easeOutCubic(t) {
 
 function Gema({ girando }) {
   const ref = useRef();
+  // El rombo se carga aparte (Gem3DDiferida): el retraso se cuenta desde que abrió la página, no
+  // desde que llegó el código, para que no aparezca tarde y desfasado del trazo del logo en
+  // conexiones lentas. Con "reducir movimiento" aparece sin animación.
+  const yaTranscurrido = useMemo(() => performance.now() / 1000, []);
   useFrame(({ clock }, delta) => {
     if (!ref.current) return;
-    const t = Math.min(Math.max((clock.elapsedTime - POP_DELAY) / POP_DURATION, 0), 1);
+    const tiempo = clock.elapsedTime + yaTranscurrido;
+    const t = girando ? Math.min(Math.max((tiempo - POP_DELAY) / POP_DURATION, 0), 1) : 1;
     const s = easeOutCubic(t);
     ref.current.scale.set(TARGET_SCALE[0] * s, TARGET_SCALE[1] * s, TARGET_SCALE[2] * s);
     if (girando && t >= 1) ref.current.rotation.y += delta * 1.1;

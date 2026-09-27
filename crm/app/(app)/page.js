@@ -8,6 +8,7 @@ import WhatsAppBoton from "@/components/WhatsAppBoton";
 import FormAccion from "@/components/FormAccion";
 import { fechaHora, hace, NOMBRE_ESTADO_CITA } from "@/lib/formato";
 import { accionTarea, accionContacto } from "./acciones";
+import { eventosRecientes, TITULOS } from "@lib/alertas/eventos";
 
 export const metadata = { title: "Hoy" };
 
@@ -29,11 +30,13 @@ export default async function Hoy({ searchParams }) {
   const s = await requireSesion();
   const equipo = (await searchParams).ver === "equipo";
   const finDeHoy = new Date(Date.now() + 12 * 3600_000);
-  const [r, tareas, citas] = await Promise.all([
+  const [r, tareas, citas, eventos] = await Promise.all([
     resumenHoy(),
     tareasAbiertas({ hasta: finDeHoy, asesor: equipo ? null : s.usuario }),
     citasProximas({ dias: 2 }),
+    eventosRecientes({ horas: 24, limite: 20 }),
   ]);
+  const criticos = [...new Set(eventos.filter((ev) => ev.nivel === "critico").map((ev) => ev.tipo))];
   const presenciales = citas.filter((c) => c.tipo !== "llamada");
   const asesor = s.nombre.split(" ")[0];
   return (
@@ -48,6 +51,12 @@ export default async function Hoy({ searchParams }) {
           <a href="/?ver=equipo" aria-current={equipo ? "page" : undefined} className={`inline-flex min-h-[44px] items-center rounded-full px-4 ${equipo ? "bg-esmeralda text-sobre-verde" : "border border-esmeralda/40"}`}>Todo el equipo</a>
         </nav>
       </header>
+      {criticos.length > 0 && (
+        <p role="alert" className="rounded-xl border border-granate/30 bg-granate/5 p-3 text-sm">
+          <strong className="text-granate">Alertas en las últimas 24 h:</strong> {criticos.map((t) => TITULOS[t] || t).join(" · ")}.{" "}
+          {s.rol === "dueno" && <a href="/ajustes" className="underline">Ver qué hacer</a>}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         <Cifra etiqueta="Sin atender" valor={r.sin_atender} nota="dejaron datos, nadie les ha escrito" href="/leads?pendiente=sin_atender" alerta={r.sin_atender > 0} />
         <Cifra etiqueta="3+ días sin contestar" valor={r.sin_respuesta_3d} nota="sin atender o sin respuesta" href="/leads?contestar=3" alerta={r.sin_respuesta_3d > 0} />

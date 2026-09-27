@@ -190,6 +190,8 @@ export async function accionCita(_previo, f) {
   const cambios = {};
   if (texto(f, "estado")) cambios.estado = texto(f, "estado");
   if (f.has("lugar")) cambios.lugar = texto(f, "lugar");
+  if (texto(f, "nota")) cambios.nota = texto(f, "nota");
+  cambios.usuario = s.usuario;
   const dia = texto(f, "dia");
   const hora = texto(f, "hora");
   if (dia || hora) {

@@ -6,7 +6,10 @@ import { correoPersonasConfigurado } from "@lib/crm/correo";
 import { comisionCambio } from "@lib/chatbot/comision";
 import { Seccion, Vacio } from "@/components/ui";
 import NuevoToken from "@/components/NuevoToken";
-import { fecha, hace } from "@/lib/formato";
+import { fecha, hace, fechaHora } from "@/lib/formato";
+import { diagnostico } from "@lib/alertas/salud";
+import { eventosRecientes, TITULOS, QUE_HACER } from "@lib/alertas/eventos";
+import { bitacoraReciente } from "@lib/leads/bitacora";
 import { accionRevocarToken, accionUsuarioActivo, accionRecibeLeads } from "../acciones";
 import FormAccion from "@/components/FormAccion";
 
@@ -25,11 +28,42 @@ export default async function Ajustes() {
     s.rol === "dueno" ? query(`SELECT usuario, nombre, rol, activo, acceso_at, recibe_leads FROM crm_usuario ORDER BY usuario`).then((r) => r.rows) : [],
   ]);
   const comision = comisionCambio(2000);
+  const [salud, eventos, bitacora] = s.rol === "dueno"
+    ? await Promise.all([diagnostico(), eventosRecientes({ horas: 72, limite: 30 }), bitacoraReciente(40)])
+    : [null, [], []];
+  const ESTADO = { ok: "Todo bien", degradado: "Funciona con problemas", caido: "El chat no está respondiendo" };
   return (
     <>
       <header>
         <h1 className="font-serif text-3xl">Ajustes</h1>
       </header>
+
+      {salud && (
+        <Seccion titulo="Estado del sitio y el chat">
+          <div className="space-y-3 rounded-xl border border-esmeralda/15 bg-papel-alto p-4 text-sm">
+            <p className={salud.estado === "ok" ? "text-esmeralda" : "font-medium text-granate"}>
+              {ESTADO[salud.estado]}
+              {salud.problemas.length > 0 && ` (${salud.problemas.join(", ")})`}
+              {salud.precio && ` · precio de metales de ${hace(salud.precio.capturado_at)}`}
+            </p>
+            {eventos.length === 0 ? (
+              <p className="text-esmeralda/75">Sin alertas en los últimos 3 días.</p>
+            ) : (
+              <ul className="divide-y divide-esmeralda/10">
+                {eventos.map((ev) => (
+                  <li key={ev.id} className="py-2">
+                    <p>
+                      <span className={ev.nivel === "critico" ? "font-medium text-granate" : ""}>{TITULOS[ev.tipo] || ev.tipo}</span>
+                      <span className="text-esmeralda/70"> · {fechaHora(ev.creado_at)}</span>
+                    </p>
+                    {QUE_HACER[ev.tipo] && <p className="text-xs text-esmeralda/75">{QUE_HACER[ev.tipo]}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Seccion>
+      )}
 
       <Seccion titulo="Estado de la automatización">
         <ul className="space-y-1 rounded-xl border border-esmeralda/10 bg-papel-alto p-4 text-sm">
@@ -75,6 +109,26 @@ export default async function Ajustes() {
           </p>
         </div>
       </Seccion>
+      )}
+
+      {s.rol === "dueno" && (
+        <Seccion titulo="Datos" accion={<a href="/api/exportar" className="inline-flex min-h-[44px] items-center rounded-full border border-esmeralda/40 px-4 text-sm">Descargar leads (CSV)</a>}>
+          <p className="text-sm text-esmeralda/75">El archivo trae nombres y teléfonos: guárdalo en un lugar seguro y bórralo cuando ya no lo necesites. La descarga queda en la bitácora.</p>
+          {bitacora.length > 0 && (
+            <details className="rounded-xl border border-esmeralda/15 bg-papel-alto p-4 text-sm">
+              <summary className="inline-flex min-h-[44px] cursor-pointer items-center font-medium">Bitácora: quién cambió qué</summary>
+              <ul className="mt-2 space-y-1 text-xs">
+                {bitacora.map((b, i) => (
+                  <li key={i}>
+                    {fechaHora(b.creado_at)} · <strong>{b.usuario}</strong> · {b.accion.replaceAll("_", " ")} {b.objetivo || ""}
+                    {b.detalle?.etapa ? ` → ${b.detalle.etapa}` : ""}
+                    {b.detalle?.via === "mcp" || b.accion === "mcp_lectura" ? " (Claude)" : ""}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </Seccion>
       )}
 
       {s.rol === "dueno" && (

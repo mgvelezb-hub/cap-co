@@ -11,7 +11,6 @@ import {
   franjasPosibles,
   franjaValida,
 } from "../lib/agenda/horarios.js";
-import { rechazarSiOtroOrigen } from "../lib/panel/auth.js";
 
 test("agenda: días hábiles sin fines de semana ni días oficiales", () => {
   assert.equal(esDiaHabil("2026-09-28"), true); // lunes
@@ -40,13 +39,7 @@ test("agenda: horarios de 9 a 16 h, con 2 h hábiles de anticipación, 10 días 
   assert.equal(horarioValido(new Date("2026-12-28T15:00:00Z"), sabado), false, "fuera de los 10 días");
 });
 
-test("panel: rechaza peticiones de otro sitio o que no son JSON", () => {
-  const req = (h) => new Request("https://casa-ap.com/api/admin/x", { method: "POST", headers: { host: "casa-ap.com", ...h } });
-  assert.equal(rechazarSiOtroOrigen(req({ "content-type": "text/plain" })).status, 415);
-  assert.equal(rechazarSiOtroOrigen(req({ "content-type": "application/json", "sec-fetch-site": "cross-site" })).status, 403);
-  assert.equal(rechazarSiOtroOrigen(req({ "content-type": "application/json", origin: "https://malo.com" })).status, 403);
-  assert.equal(rechazarSiOtroOrigen(req({ "content-type": "application/json", "sec-fetch-site": "same-origin", origin: "https://casa-ap.com" })), null);
-});
+
 
 test("agenda: la anticipación cuenta solo horas hábiles", () => {
   // Viernes 16:30 CDMX: queda media hora del viernes y hora y media del lunes.
@@ -81,10 +74,4 @@ test("agenda: el panel puede reprogramar sin anticipación, pero en horario y a 
   assert.equal(horarioAtendible(new Date("2026-10-03T17:00:00Z"), lunes10), false, "sábado");
 });
 
-test("panel: Origin null se rechaza con 403, no con error", () => {
-  const req = new Request("https://casa-ap.com/api/admin/x", {
-    method: "POST",
-    headers: { host: "casa-ap.com", "content-type": "application/json", origin: "null" },
-  });
-  assert.equal(rechazarSiOtroOrigen(req).status, 403);
-});
+

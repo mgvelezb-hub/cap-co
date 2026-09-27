@@ -223,3 +223,26 @@ test("CRM en la base: carreras, decisiones humanas, reparto, no contactar y borr
     await cerrarPool();
   }
 });
+
+test("CRM en la base: no asistió deja tarea de reagendar y la nota de la cita va al historial", { skip: !URL && "sin base local" }, async () => {
+  const { crearLead } = await import("../lib/leads/repo.js");
+  const { reservar, actualizarCita } = await import("../lib/agenda/repo.js");
+  const { franjasPosibles } = await import("../lib/agenda/horarios.js");
+  const { videosTikTok } = await import("../lib/crm/trafico.js");
+  const { query, cerrarPool } = await import("../lib/db/client.js");
+  const { codigo } = await crearLead({ perfil: "quiere_traspaso", resumen: "no asistio", fuente: { utm_source: "tiktok", utm_campaign: "prueba-video" } });
+  try {
+    const dia = franjasPosibles()[1];
+    const r = await reservar({ codigo, nombre: "Prueba", telefono: tel(), tipo: "llamada", fecha: dia.fecha, franja: "tarde" });
+    assert.equal(r.ok, true);
+    assert.equal((await actualizarCita(r.cita.id, { estado: "no_asistio", nota: "No contestó ni llegó", usuario: "qa" })).ok, true);
+    const t = await query(`SELECT detalle->>'plantilla' AS p FROM crm_tarea WHERE lead_codigo = $1 AND hecha_at IS NULL`, [codigo]);
+    assert.ok(t.rows.some((x) => x.p === "reagendar"));
+    const e = await query(`SELECT detalle FROM lead_evento WHERE lead_codigo = $1 AND tipo = 'cita'`, [codigo]);
+    assert.equal(e.rows[0].detalle.nota, "No contestó ni llegó");
+    assert.ok((await videosTikTok()).some((v) => v.video === "prueba-video" && v.leads === 1));
+  } finally {
+    await query(`DELETE FROM lead WHERE codigo = $1`, [codigo]);
+    await cerrarPool();
+  }
+});

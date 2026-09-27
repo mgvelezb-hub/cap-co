@@ -17,11 +17,11 @@ const inter = Inter({
 const indexable = process.env.SITE_INDEXABLE === "true";
 
 export const metadata = {
-  title: "CAP & Co. — Casa de Asesoramiento Prendario",
+  title: "Revisa tu boleta de empeño sin costo — CAP & Co.",
   // Mientras el contenido sea provisional, no se indexa (SITE_INDEXABLE=true cuando sea definitivo).
   robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
   description:
-    "Te explicamos exactamente qué firmaste al empeñar, cuánto vas a pagar y qué opciones tienes — con datos reales y evaluación justa, sin letras chiquitas.",
+    "Revisamos tu boleta de empeño sin costo: qué firmaste, cuánto vas a pagar y si hay una opción que te convenga más. Asesoría prendaria en la Ciudad de México.",
 };
 
 export default function RootLayout({ children }) {

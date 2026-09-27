@@ -1,6 +1,6 @@
 // GET /api/salud — estado público y mínimo para un monitor externo (UptimeRobot u otro):
 // 200 con "ok" o "degradado"; 503 con "caido" solo si el chat no puede atender
-// (sin saldo, llave inválida o errores repetidos). El detalle está en /api/admin/salud.
+// (sin saldo, llave inválida o errores repetidos). El detalle está en Ajustes del CRM.
 
 import { diagnostico } from "@/lib/alertas/salud";
 

@@ -1,10 +1,10 @@
 import { requireSesion } from "@/lib/auth";
-import { serieDiaria, porFuente, paginas, embudoLeads, dineroPorCampana, finanzasMes } from "@lib/crm/trafico";
+import { serieDiaria, porFuente, paginas, embudoLeads, dineroPorCampana, finanzasMes, videosTikTok } from "@lib/crm/trafico";
 import { ultimaFotografia } from "@lib/precios/repo";
 import { Seccion, Vacio, Cifra, CAMPO, BOTON } from "@/components/ui";
 import FormAccion from "@/components/FormAccion";
 import Enviar from "@/components/Enviar";
-import { pesos, hoyCDMX } from "@/lib/formato";
+import { pesos, hoyCDMX, fecha } from "@/lib/formato";
 import { accionGasto } from "../acciones";
 
 export const metadata = { title: "Tráfico" };
@@ -16,7 +16,7 @@ export default async function Trafico({ searchParams }) {
   const s = await requireSesion();
   const pedido = Number((await searchParams).dias);
   const dias = [7, 30, 90].includes(pedido) ? pedido : 30;
-  const [serie, fuentes, pags, e, dinero, fin, foto] = await Promise.all([
+  const [serie, fuentes, pags, e, dinero, fin, foto, videos] = await Promise.all([
     serieDiaria({ dias }),
     porFuente({ dias }),
     paginas({ dias }),
@@ -24,6 +24,7 @@ export default async function Trafico({ searchParams }) {
     dineroPorCampana({ dias }),
     finanzasMes(),
     ultimaFotografia().catch(() => null),
+    videosTikTok(),
   ]);
   const usdMxn = foto?.usdMxn || null;
   const max = Math.max(1, ...serie.map((d) => Math.max(d.visitas, d.conversaciones)));
@@ -140,6 +141,35 @@ export default async function Trafico({ searchParams }) {
             </label>
             <Enviar className={BOTON}>Registrar gasto</Enviar>
           </FormAccion>
+        )}
+      </Seccion>
+
+      <Seccion titulo="Videos de TikTok">
+        <p className="text-sm text-esmeralda/75">Cada video con su link corto casa-ap.com/v/&lt;código&gt;. «Primera visita» es cuándo llegó la primera persona por ese link (casi siempre, el día que se publicó). Totales de siempre.</p>
+        {videos.length === 0 ? (
+          <Vacio>Todavía no llega nadie por un link de video.</Vacio>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-esmeralda/15 bg-papel-alto">
+            <table className="w-full min-w-[40rem] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
+              <thead className="text-left text-xs uppercase tracking-[0.08em] text-esmeralda/75">
+                <tr><th>Video</th><th>Primera visita</th><th>Visitas</th><th>Chats</th><th>Leads</th><th>Con datos</th><th>Cambios</th><th>Comisión</th></tr>
+              </thead>
+              <tbody className="[&_tr]:border-t [&_tr]:border-esmeralda/10">
+                {videos.map((v) => (
+                  <tr key={v.video}>
+                    <td><a href={`/leads?campana=${encodeURIComponent(v.video)}`} className="font-mono text-xs underline-offset-2 hover:underline">/v/{v.video}</a></td>
+                    <td>{v.primera ? fecha(v.primera) : "—"}</td>
+                    <td className="tabular-nums">{v.visitas}</td>
+                    <td className="tabular-nums">{v.chats}</td>
+                    <td className="tabular-nums">{v.leads}</td>
+                    <td className="tabular-nums">{v.con_datos}</td>
+                    <td className="tabular-nums">{v.cambios}</td>
+                    <td className="tabular-nums">{pesos(v.comision_mxn)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Seccion>
 

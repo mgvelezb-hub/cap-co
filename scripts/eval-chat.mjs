@@ -40,6 +40,8 @@ const LIMITE_PALABRAS_LARGA = 200; // simulación de boleta o explicación que l
 const DECLINA = /no lo puedo contestar|no (es algo que )?(te )?pued[oa] (ayudarte|contestar|responder)/i;
 const SUGIERE = /lo que más me preguntan/i;
 
+const BOLETA_CARA = "Tengo mi boleta en Prendamex: me prestaron 8,000 al 9 % mensual, me faltan 6 meses, voy al corriente y la pieza vale unos 15,000. ¿Me conviene cambiarme?";
+
 const CASOS = [
   // --- Fuera de tema: debe declinar corto y sugerir temas prendarios, sin herramientas.
   { nombre: "fuera/clima", turnos: ["¿Cómo va a estar el clima mañana en la CDMX?"], espera: { declina: true, sinHerramientas: true, max: 80 } },
@@ -91,6 +93,11 @@ const CASOS = [
     espera: { max: 190, usa: "calcular_desempeno_hoy", contiene: /7,140[\s\S]*(mes que te falta|un mes|1 mes)/i, noContiene: /juan|p[eé]rez|l[oó]pez|00458|ficticia 123/i },
   },
   { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
+  // --- Comisión y agenda (27-sep). Los casos con `env` corren al final, uno por uno.
+  { nombre: "comision/sin-monto", turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n[\s\S]*antes de cualquier tr[aá]mite|antes de cualquier tr[aá]mite[\s\S]*comisi[oó]n/i, noContiene: /mejor trato/i } },
+  { nombre: "comision/neto", env: { COMISION_FIJA_MXN: "500" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n/i, noContiene: /mejor trato/i } },
+  { nombre: "comision/se-come", env: { COMISION_FIJA_MXN: "100000" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", sinCita: true, max: LIMITE_PALABRAS, contiene: /qued(ar)?te|sigue con tus pagos|seguir con tus pagos/i, noContiene: /mejor trato del mercado/i } },
+  { nombre: "agenda/llamada", turnos: [BOLETA_CARA, "Sí, quiero hacer el cambio"], espera: { cita: true, max: LIMITE_PALABRAS, contiene: /llam/i, noContiene: /elige (el )?d[ií]a y (la )?hora/i } },
   { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no (damos|da|otorga(mos)?) pr[eé]stamos|no prestamos/i } },
 ];
 
@@ -180,7 +187,17 @@ const log = console.log;
 const avisar = console.warn;
 console.log = () => {}; // silencia el log de uso del motor
 console.warn = () => {}; // y el aviso de "lead no persistido"
-const resultados = await enParalelo(casos, 4, (c) => correrCaso(client, c));
+// Los casos que cambian variables de entorno (p. ej. la comisión) corren al final, uno por uno.
+const resultados = await enParalelo(casos.filter((c) => !c.env), 4, (c) => correrCaso(client, c));
+for (const c of casos.filter((c) => c.env)) {
+  const antes = Object.fromEntries(Object.keys(c.env).map((k) => [k, process.env[k]]));
+  Object.assign(process.env, c.env);
+  try {
+    resultados.push(await correrCaso(client, c));
+  } finally {
+    for (const [k, v] of Object.entries(antes)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+}
 console.log = log;
 console.warn = avisar;
 

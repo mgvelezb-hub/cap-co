@@ -7,7 +7,8 @@ const tel = () => `55${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}
 test("agenda en la base: reserva atómica, cupo, teléfonos, reprogramación y etapa del lead", { skip: !URL && "sin base local" }, async () => {
   delete process.env.CITA_CAPACIDAD;
   const { reservar, disponibilidad, actualizarCita, expirarCitas } = await import("../lib/agenda/repo.js");
-  const { crearLead, actualizarLead, resumenOperacion } = await import("../lib/leads/repo.js");
+  const { crearLead, actualizarLead } = await import("../lib/leads/repo.js");
+  const { finanzasMes } = await import("../lib/crm/trafico.js");
   const { query, cerrarPool } = await import("../lib/db/client.js");
   const creados = [];
   const nuevo = async () => {
@@ -94,11 +95,11 @@ test("agenda en la base: reserva atómica, cupo, teléfonos, reprogramación y e
     assert.equal(await activas(b), 0);
 
     // Comisión del mes por fecha de cobro.
-    const antes = await resumenOperacion();
+    const antes = await finanzasMes();
     const r = await actualizarLead(a, { etapa: "comision_cobrada", comision_mxn: "1500", casa_destino: "Montepío Luz Saviñón", asesor: "ana" });
     assert.equal(r.ok, true);
     assert.ok(r.lead.cerrado_at);
-    assert.equal((await resumenOperacion()).comision_mes - antes.comision_mes, 1500);
+    assert.equal((await finanzasMes()).cobrado - antes.cobrado, 1500);
     assert.equal((await actualizarLead(a, { comision_mxn: "-5" })).ok, false);
   } finally {
     for (const codigo of creados) await query(`DELETE FROM lead WHERE codigo = $1`, [codigo]);

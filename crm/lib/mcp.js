@@ -235,11 +235,17 @@ export function registrarHerramientas(server) {
     {
       title: "Actualizar cita",
       description: "Cambia estado, lugar u horario de una cita. inicio en ISO, en punto, lunes a viernes 9:00–16:00 CDMX. Poner horario a una llamada la vuelve cita confirmada.",
-      inputSchema: z.object({ id: z.number().int().positive(), estado: z.enum(ESTADOS_CITA).optional(), lugar: z.string().max(200).optional(), inicio: z.string().datetime({ offset: true }).optional() }),
+      inputSchema: z.object({
+        id: z.number().int().positive(),
+        estado: z.enum(ESTADOS_CITA).optional(),
+        lugar: z.string().max(200).optional(),
+        inicio: z.string().datetime({ offset: true }).optional(),
+        nota: z.string().max(1000).optional().describe("Qué pasó en la cita o la llamada; queda en el historial."),
+      }),
     },
     async (i, ctx) =>
       correr(async () => {
-        const r = await actualizarCita(i.id, { estado: i.estado, lugar: i.lugar, inicio: i.inicio });
+        const r = await actualizarCita(i.id, { estado: i.estado, lugar: i.lugar, inicio: i.inicio, nota: i.nota, usuario: usuario(ctx) });
         if (r.ok) await bitacora(usuario(ctx), "cita_actualizada", r.cita.lead_codigo, { estado: i.estado, lugar: i.lugar, inicio: i.inicio, via: "mcp" });
         return r;
       }),

@@ -7,6 +7,18 @@ import { pbkdf2Sync, randomBytes } from "node:crypto";
 import readline from "node:readline";
 import pg from "pg";
 
+// El SSL va en la opción ssl; sin sslmode en la URL, pg no muestra su aviso de cambio de versión.
+function sinModoSsl(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("channel_binding");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 const [usuarioCrudo, rol, nombre] = process.argv.slice(2);
 const usuario = (usuarioCrudo || "").toLowerCase();
 if (!/^[a-z0-9._-]{2,30}$/.test(usuario) || !["dueno", "asesor"].includes(rol) || !nombre) {
@@ -25,7 +37,7 @@ rl.question("Contraseña (mínimo 12 caracteres): ", async (clave) => {
   const sal = randomBytes(16).toString("hex");
   const hash = pbkdf2Sync(clave, sal, 210_000, 32, "sha256").toString("hex");
   const url = process.env.DATABASE_URL;
-  const cliente = new pg.Client({ connectionString: url, ssl: /localhost|127\.0\.0\.1/.test(url) ? false : { rejectUnauthorized: true } });
+  const cliente = new pg.Client({ connectionString: sinModoSsl(url), ssl: /localhost|127\.0\.0\.1/.test(url) ? false : { rejectUnauthorized: true } });
   await cliente.connect();
   await cliente.query(
     `INSERT INTO crm_usuario (usuario, nombre, rol, sal, hash) VALUES ($1, $2, $3, $4, $5)
