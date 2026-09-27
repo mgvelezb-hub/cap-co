@@ -1,6 +1,6 @@
-// Aviso legal. Redacción de la relación con el aliado aprobada por Mau el 27-sep-2026; el resto
-// es provisional y pendiente de revisión del abogado de Ricardo. Nunca decir "independiente":
-// hay tasa preferente negociada con Montepío Luz Saviñón y CAP & Co. cobra comisión por el cambio.
+// Aviso legal. Provisional, pendiente de revisión del abogado de Ricardo. Nunca decir
+// "independiente" (hay tasas preferentes negociadas y CAP & Co. cobra comisión por el cambio) ni
+// nombrar a la casa aliada: su nombre es interno (decisión de Mau, 27-sep-2026).
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BRAND, CORREO_CONTACTO } from "@/lib/constants";
@@ -32,9 +32,10 @@ export default function AvisoLegal() {
           <Seccion titulo="Qué somos">
             <p>
               {BRAND.nombre} ({BRAND.slogan}) es asesoría prendaria: <strong>no otorgamos préstamos</strong> ni
-              recibimos prendas. Comparamos tu caso con datos públicos de varias instituciones. Con Montepío Luz
-              Saviñón tenemos una tasa preferente negociada, por eso hoy suele ser la opción que más te ahorra; si
-              en tu caso no conviene, te lo decimos.
+              recibimos prendas. Comparamos tu caso con datos públicos de varias instituciones. Con algunas casas de
+              empeño aliadas tenemos tasas preferentes negociadas; por eso, con frecuencia, la opción que más te
+              ahorra es una de ellas. Te decimos cuál y sus condiciones antes de cualquier trámite; si en tu caso no
+              conviene, te lo decimos.
             </p>
           </Seccion>
           <Seccion titulo="Cómo cobramos">
