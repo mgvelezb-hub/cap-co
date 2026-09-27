@@ -254,14 +254,26 @@ function QuienesSomos() {
           </p>
         </Reveal>
 
+        {/* Cómo empezamos. PROPUESTA pendiente de aprobación de Ricardo (cuestionario 22-sep: "me
+            gustaría agregarla a tu consideración"). Solo usa lo que sabemos: el negocio nació al ver
+            las dudas de personas afectadas por sus empeños; sin fechas, nombres ni cifras inventadas. */}
+        <Reveal delay={40} className="mt-10 max-w-3xl">
+          <h2 className="font-serif text-2xl">Cómo empezamos</h2>
+          <p className="mt-3 font-sans text-[17px] leading-relaxed text-esmeralda/75">
+            CAP &amp; Co. nació al ver, en grupos de personas afectadas por sus empeños, las mismas preguntas
+            una y otra vez: ¿cuánto debo en realidad?, ¿qué pasa si se vence mi boleta?, ¿hay una opción mejor?
+            Muchas de esas personas estaban por perder su pieza o no sabían cuánto iban a terminar pagando,
+            porque nadie les había explicado su boleta. Decidimos dedicarnos a eso: revisar cada caso con
+            números claros y, cuando conviene, acompañar el cambio a una casa de empeño con mejores condiciones.
+          </p>
+        </Reveal>
         {/* Qué hacemos */}
         <Reveal delay={80} className="mt-10 max-w-[62ch]">
           <p className="font-sans text-lg leading-relaxed text-esmeralda/75 text-justify">
-            Revisamos tu boleta cláusula por cláusula, la comparamos contra
-            otras opciones reales del mercado y te acompañamos si conviene
-            moverte a una mejor. CONDUSEF recomienda comparar como mínimo tres
-            instituciones antes de decidir: esa comparación es exactamente lo
-            que hacemos por ti, sin costo.
+            Revisamos tu boleta cláusula por cláusula, la comparamos con datos
+            públicos de otras instituciones y, cuando conviene, te acompañamos
+            en el cambio a una casa con mejores condiciones. CONDUSEF recomienda
+            comparar antes de decidir: esa revisión la hacemos contigo, sin costo.
           </p>
         </Reveal>
 

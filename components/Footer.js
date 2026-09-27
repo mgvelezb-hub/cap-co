@@ -1,6 +1,6 @@
 import Logo from "@/components/Logo";
 import Reveal from "@/components/Reveal";
-import { WHATSAPP_URL, SOCIAL, BRAND } from "@/lib/constants";
+import { WHATSAPP_URL, SOCIAL, BRAND, CORREO_CONTACTO } from "@/lib/constants";
 
 function IconFacebook(props) {
   return (
@@ -36,26 +36,33 @@ export default function Footer() {
             >
               Escríbenos por WhatsApp
             </a>
-            <p className="mt-4 font-sans text-sm text-sobre-verde/70">Lunes a viernes, de 9:00 a 17:00.</p>
+            <p className="mt-4 font-sans text-sm text-sobre-verde/70">
+              Lunes a viernes, de 9:00 a 17:00 ·{" "}
+              <a href={`mailto:${CORREO_CONTACTO}`} className="underline underline-offset-4">
+                {CORREO_CONTACTO}
+              </a>
+            </p>
+            {(SOCIAL.facebook !== "#" || SOCIAL.instagram !== "#") && (
             <div className="mt-10 flex items-center gap-4">
               <span className="font-sans text-xs uppercase tracking-[0.2em] text-sobre-verde/50">
                 Síguenos
               </span>
-              <a
+              {SOCIAL.facebook !== "#" && <a
                 href={SOCIAL.facebook}
                 aria-label="Facebook de CAP & Co."
                 className="text-sobre-verde/70 transition-colors hover:text-sobre-verde"
               >
                 <IconFacebook className="h-6 w-6" />
-              </a>
-              <a
+              </a>}
+              {SOCIAL.instagram !== "#" && <a
                 href={SOCIAL.instagram}
                 aria-label="Instagram de CAP & Co."
                 className="text-sobre-verde/70 transition-colors hover:text-sobre-verde"
               >
                 <IconInstagram className="h-6 w-6" />
-              </a>
+              </a>}
             </div>
+            )}
           </Reveal>
           <Reveal delay={200} className="hidden justify-end lg:col-span-4 lg:flex">
             <Logo className="h-40 w-auto" color="#F4F6F1" />

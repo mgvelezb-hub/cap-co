@@ -5,13 +5,14 @@
 import Header from "@/components/Header";
 import { BRAND } from "@/lib/constants";
 import { AVISO_VERSION } from "@/lib/leads/validar";
+import { CORREO_CONTACTO } from "@/lib/constants";
 
 export const metadata = {
   title: "Aviso de privacidad — CAP & Co.",
   robots: { index: false, follow: false },
 };
 
-const CORREO_PRIVACIDAD = "[correo de privacidad pendiente]";
+const CORREO_PRIVACIDAD = CORREO_CONTACTO;
 const RESPONSABLE = "[razón social pendiente]";
 const DOMICILIO = "[domicilio pendiente], Ciudad de México";
 
