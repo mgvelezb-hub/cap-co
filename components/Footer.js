@@ -79,6 +79,9 @@ export default function Footer() {
             <a href="/glosario" className="inline-block py-2 underline-offset-4 hover:underline">
               Glosario
             </a>
+            <a href="/aviso-legal" className="inline-block py-2 underline-offset-4 hover:underline">
+              Aviso legal
+            </a>
             <a href="/aviso-de-privacidad" className="inline-block py-2 underline-offset-4 hover:underline">
               Aviso de privacidad
             </a>
