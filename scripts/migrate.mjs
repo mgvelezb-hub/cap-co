@@ -32,6 +32,9 @@ const esLocal = /localhost|127\.0\.0\.1/.test(url);
 const client = new pg.Client({ connectionString: sinModoSsl(url), ssl: esLocal ? false : { rejectUnauthorized: true } });
 await client.connect();
 try {
+  // Si el sitio en vivo tiene ocupada una tabla, mejor que falle el build (producción sigue igual)
+  // a que la migración se quede esperando y bloquee al sitio.
+  await client.query("SET lock_timeout = '5s'");
   await client.query(sql);
   const { rows } = await client.query(
     "select (select count(*)::int from lead) as leads, (select count(*)::int from precio_metal) as fotos",

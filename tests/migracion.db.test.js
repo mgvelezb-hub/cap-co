@@ -1,25 +1,36 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import pg from "pg";
 
-const URL = /@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "";
+const URL_BASE = /@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "";
 
-test("migración: se puede volver a aplicar con varias llamadas en la misma franja", { skip: !URL && "sin base local" }, async () => {
-  const { crearLead } = await import("../lib/leads/repo.js");
-  const { query, cerrarPool } = await import("../lib/db/client.js");
-  const creados = [];
+// Corre en su propia base temporal: re-aplicar el esquema toma candados de tabla que, en la base
+// compartida, chocaban con las pruebas que corren en paralelo (deadlock).
+test("migración: se puede volver a aplicar con varias llamadas en la misma franja", { skip: !URL_BASE && "sin base local" }, async () => {
+  const nombre = `capco_mig_${process.pid}_${Date.now()}`;
+  const admin = new pg.Client({ connectionString: URL_BASE });
+  await admin.connect();
+  await admin.query(`CREATE DATABASE ${nombre}`);
+  const url = new URL(URL_BASE);
+  url.pathname = `/${nombre}`;
+  const c = new pg.Client({ connectionString: url.toString() });
   try {
+    await c.connect();
+    const sql = readFileSync(new URL("../lib/db/schema.sql", import.meta.url), "utf8");
+    await c.query(sql);
     const inicio = new Date(Date.now() + 5 * 86_400_000);
     inicio.setUTCMinutes(0, 0, 0);
-    for (let i = 0; i < 2; i += 1) {
-      const { codigo } = await crearLead({ perfil: "curioso", resumen: "migracion", fuente: {} });
-      creados.push(codigo);
-      await query(`INSERT INTO cita (lead_codigo, inicio, tipo, franja) VALUES ($1, $2, 'llamada', 'manana')`, [codigo, inicio]);
+    for (const codigo of ["CAP-MIG2", "CAP-MIG3"]) {
+      await c.query(`INSERT INTO lead (codigo, perfil) VALUES ($1, 'curioso')`, [codigo]);
+      await c.query(`INSERT INTO cita (lead_codigo, inicio, tipo, franja) VALUES ($1, $2, 'llamada', 'manana')`, [codigo, inicio]);
     }
-    const sql = readFileSync(new globalThis.URL("../lib/db/schema.sql", import.meta.url), "utf8");
-    await assert.doesNotReject(() => query(sql));
+    await assert.doesNotReject(() => c.query(sql));
+    // El ajuste de datos "de una vez" no se repite.
+    assert.equal((await c.query(`SELECT count(*)::int AS n FROM migracion_unica`)).rows[0].n, 1);
   } finally {
-    await query(`DELETE FROM lead WHERE codigo = ANY($1)`, [creados]);
-    await cerrarPool();
+    await c.end().catch(() => {});
+    await admin.query(`DROP DATABASE IF EXISTS ${nombre}`);
+    await admin.end();
   }
 });
