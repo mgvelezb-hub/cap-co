@@ -7,6 +7,8 @@ import { useState } from "react";
 const ZONAS = [
   {
     id: "monto",
+    etiqueta: "PRÉSTAMO",
+    valor: "$2,000.00",
     titulo: "El préstamo",
     texto:
       "Lo que te dieron en la mano por tu pieza. No es lo que debes: es el punto de partida de tu deuda, calculado sobre el avalúo.",
@@ -14,6 +16,8 @@ const ZONAS = [
   },
   {
     id: "cat",
+    etiqueta: "TASA MENSUAL · CAT",
+    valor: "8.0% · CAT 187%",
     titulo: "La tasa y el CAT",
     texto:
       "La tasa es el interés mensual. El CAT (Costo Anual Total) suma esa tasa más comisiones, almacenaje y seguro: es el número real que deberías comparar entre instituciones.",
@@ -21,6 +25,8 @@ const ZONAS = [
   },
   {
     id: "vence",
+    etiqueta: "VENCE",
+    valor: "15 · AGO · 2026",
     titulo: "El vencimiento",
     texto:
       "La fecha límite para pagar o refrendar. Pasado ese plazo, tu pieza puede pasar a venta pública.",
@@ -28,6 +34,8 @@ const ZONAS = [
   },
   {
     id: "refrendo",
+    etiqueta: "REFRENDO MENSUAL",
+    valor: "$160.00",
     titulo: "El refrendo",
     texto:
       "Pagar para que tu pieza siga guardada un mes más. Cubre solo intereses: tu deuda original no baja un peso.",
@@ -35,6 +43,8 @@ const ZONAS = [
   },
   {
     id: "demasia",
+    etiqueta: "SI NO RECUPERAS TU PIEZA",
+    valor: "Derecho de demasía",
     titulo: "El derecho de demasía",
     texto:
       "Si no logras recuperar tu pieza y termina vendiéndose en más de lo que debías, esa diferencia es legalmente tuya.",
@@ -133,12 +143,39 @@ function PapelBoleta({ activa }) {
   );
 }
 
+// Celular: sin espacio para la boleta junto a la explicación, cada dato se muestra como un recorte
+// de la boleta (etiqueta y cifra, con su número) seguido de lo que significa. Todo abierto, de arriba
+// abajo, sin depender de tocar ni de una boleta que quedó fuera de pantalla.
+function RecorridoMovil() {
+  return (
+    <ol className="space-y-10 lg:hidden">
+      {ZONAS.map((z, i) => (
+        <li key={z.id}>
+          <div className="flex items-center gap-4 rounded-xl border border-dashed border-esmeralda/25 bg-papel-alto px-4 py-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-granate font-sans text-sm text-sobre-verde">
+              {i + 1}
+            </span>
+            <div className="min-w-0">
+              <p className="text-left font-sans text-[11px] tracking-[0.12em] text-esmeralda/70">{z.etiqueta}</p>
+              <p className="text-left font-serif text-xl text-esmeralda">{z.valor}</p>
+            </div>
+          </div>
+          <h3 className="mt-4 font-serif text-2xl">{z.titulo}</h3>
+          <p className="mt-2 font-sans leading-relaxed text-esmeralda/80">{z.texto}</p>
+          <p className="mt-3 rounded-lg bg-granate/[0.07] px-3 py-2 text-left font-sans text-sm font-medium text-granate">{z.alerta}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export default function Boleta() {
   const [activa, setActiva] = useState("monto");
 
   return (
     <div>
-      <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-20">
+      <RecorridoMovil />
+      <div className="hidden items-start gap-12 lg:grid lg:grid-cols-2 lg:gap-20">
         <div className="lg:sticky lg:top-28">
           <PapelBoleta activa={activa} />
         </div>

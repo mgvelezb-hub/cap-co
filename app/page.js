@@ -121,8 +121,8 @@ function SeccionBoleta() {
           Así se lee una boleta de empeño.
         </h2>
         <p className="mt-5 font-sans text-lg leading-relaxed text-esmeralda/75">
-          Cuatro datos determinan cuánto vas a pagar. Toca cada uno para
-          conocer su significado.
+          Cinco datos de tu boleta deciden cuánto vas a pagar y qué derechos tienes.
+          <span className="hidden lg:inline"> Toca cada uno para conocer su significado.</span>
         </p>
       </Reveal>
       <Reveal delay={150} className="mt-14">
