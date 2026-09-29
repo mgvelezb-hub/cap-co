@@ -29,8 +29,10 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
     setConsentido(leerConsentimiento());
   }, []);
 
+  // Solo con mouse y teclado físico: en el celular, enfocar abre el teclado de golpe y tapa la
+  // bienvenida y las opciones antes de que la persona las lea.
   useEffect(() => {
-    if (autoFocus && ref.current) ref.current.focus();
+    if (autoFocus && ref.current && window.matchMedia("(hover: hover) and (pointer: fine)").matches) ref.current.focus();
   }, [autoFocus]);
 
   // Autoajuste de altura. Se mide en el siguiente frame para leer el DOM ya actualizado.

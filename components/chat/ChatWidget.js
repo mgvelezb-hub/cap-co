@@ -168,6 +168,43 @@ function ChatWidgetPublico() {
     return () => abortRef.current?.abort();
   }, []);
 
+  // Celular (pantalla completa): la ventana se ajusta al área visible cuando sale el teclado y la
+  // página de atrás no se desplaza. Sin esto, en iPhone el chat no se encoge y entre el teclado y
+  // el chat se asoma el sitio.
+  useEffect(() => {
+    if (!abierto || !window.matchMedia("(max-width: 767px)").matches) return;
+    const html = document.documentElement;
+    const antes = { html: html.style.overflow, body: document.body.style.overflow };
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    const vv = window.visualViewport;
+    function ajustar() {
+      const el = panelRef.current;
+      if (!el || !vv) return;
+      el.style.top = `${vv.offsetTop}px`;
+      el.style.bottom = "auto";
+      el.style.height = `${vv.height}px`;
+      // Si ya había plática, lo último sigue a la vista al encogerse por el teclado.
+      const lista = listaRef.current;
+      if (lista && lista.scrollTop > 0) lista.scrollTop = lista.scrollHeight;
+    }
+    ajustar();
+    vv?.addEventListener("resize", ajustar);
+    vv?.addEventListener("scroll", ajustar);
+    return () => {
+      vv?.removeEventListener("resize", ajustar);
+      vv?.removeEventListener("scroll", ajustar);
+      html.style.overflow = antes.html;
+      document.body.style.overflow = antes.body;
+      const el = panelRef.current;
+      if (el) {
+        el.style.top = "";
+        el.style.bottom = "";
+        el.style.height = "";
+      }
+    };
+  }, [abierto]);
+
   // Al cerrar, el foco regresa a lo que abrió el chat (o al botón flotante), para no perder el
   // lugar con teclado o lector de pantalla.
   const origenFocoRef = useRef(null);
