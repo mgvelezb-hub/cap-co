@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CAMPOS_PERFIL, etiquetaPerfil, NO_DICE } from "@lib/chatbot/perfil-visita";
 import { fichaLead, duplicados, CHECKLIST_TRASPASO, METODOS_COBRO } from "@lib/crm/leads";
 import { linkWhatsApp, NOMBRE_WHATSAPP } from "@lib/crm/plantillas";
 import { TIPOS_EVENTO } from "@lib/crm/eventos";
@@ -265,8 +266,13 @@ export default async function Ficha({ params }) {
               <Dato etiqueta="Ahorro neto">{comision !== null && l.ahorro !== null ? pesos(Number(l.ahorro) - comision) : "—"}</Dato>
               <Dato etiqueta="Probabilidad (chat)">{l.probabilidad !== null ? `${l.probabilidad} %` : null}</Dato>
               {conversacion && <Dato etiqueta="Conversación">{conversacion.turnos} mensajes{conversacion.fotos ? ` · ${conversacion.fotos} foto` : ""}</Dato>}
+              {conversacion?.perfil && !conversacion.perfil.omitido && (
+                <Dato etiqueta="Perfil (chat)">
+                  {CAMPOS_PERFIL.filter((c) => conversacion.perfil[c] && conversacion.perfil[c] !== NO_DICE).map((c) => etiquetaPerfil(c, conversacion.perfil[c])).join(" · ")}
+                </Dato>
+              )}
             </dl>
-            <p className="rounded-lg bg-esmeralda/[0.04] p-3 text-sm">{l.resumen || "Sin resumen."}</p>
+            <p className="rounded-lg bg-esmeralda/[0.04] p-3 text-sm">{l.resumen || conversacion?.resumen_chat || "Sin resumen."}</p>
           </div>
         </Seccion>
       </div>

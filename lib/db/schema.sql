@@ -130,6 +130,23 @@ CREATE INDEX IF NOT EXISTS cita_inicio_idx ON cita (inicio);
 -- Costo de IA por conversación (USD), para costo por lead y por switcheo.
 ALTER TABLE conversacion ADD COLUMN IF NOT EXISTS costo_usd NUMERIC(10,5) NOT NULL DEFAULT 0;
 
+-- Perfil opcional y anónimo del formulario de bienvenida (lib/chatbot/perfil-visita.js) y resumen breve
+-- sin datos identificables (lib/metricas/resumen.js). Nunca el texto de la conversación.
+ALTER TABLE conversacion ADD COLUMN IF NOT EXISTS perfil  JSONB;
+ALTER TABLE conversacion ADD COLUMN IF NOT EXISTS resumen TEXT;
+
+-- Aperturas del chat, escriba o no la persona: sirve para saber si el formulario de bienvenida
+-- espanta gente. id = el mismo id de conversación que genera el widget. Anónima; se borra a los 180 días.
+CREATE TABLE IF NOT EXISTS chat_apertura (
+  id             TEXT        PRIMARY KEY,
+  creado_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  fuente         JSONB       NOT NULL DEFAULT '{}'::jsonb,
+  estado         TEXT        NOT NULL DEFAULT 'abrio', -- abrio | omitio | contesto
+  perfil         JSONB
+);
+CREATE INDEX IF NOT EXISTS chat_apertura_creado_idx ON chat_apertura (creado_at DESC);
+
 -- Gasto de publicidad capturado a mano por campaña.
 CREATE TABLE IF NOT EXISTS gasto_campana (
   id           BIGSERIAL PRIMARY KEY,

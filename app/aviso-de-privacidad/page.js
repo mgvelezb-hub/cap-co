@@ -58,9 +58,24 @@ export default function AvisoPrivacidad() {
             </p>
             <p>
               Para proteger el servicio contra abusos registramos, por un máximo de 48 horas, un identificador
-              cifrado derivado de tu dirección IP (no la IP en sí) y cuántos mensajes has enviado. También llevamos
-              un registro anónimo de cada conversación (número de mensajes y si se hizo una cotización, sin el texto)
-              para medir el servicio, y un registro técnico de errores que se borra a los 90 días.
+              cifrado derivado de tu dirección IP (no la IP en sí) y cuántos mensajes has enviado. Además, guardamos
+              un registro técnico de errores que se borra a los 90 días.
+            </p>
+            <p>De cada conversación con el asistente virtual guardamos, sin tu nombre ni tu teléfono:</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>que abriste el chat, cuántos mensajes enviaste, si subiste una foto y si se hizo una cotización;</li>
+              <li>
+                un resumen breve generado automáticamente, sin datos que te identifiquen ni motivos personales
+                sensibles;
+              </li>
+              <li>
+                si decides contestarlo, el perfil opcional del chat: tu caso, rango de edad, qué empeñaste, alcaldía o
+                estado y cómo nos conociste (cada pregunta admite &ldquo;Prefiero no decir&rdquo;).
+              </li>
+            </ul>
+            <p>
+              No guardamos el texto de la conversación. Este registro se borra a los 180 días. Si después nos dejas
+              tus datos para una cita, lo vinculamos a tu caso y se conserva con él.
             </p>
             <p>
               Cuando nos escribes por WhatsApp y nos compartes tu boleta de empeño, recabamos los datos que aparezcan
@@ -70,7 +85,7 @@ export default function AvisoPrivacidad() {
 
           <Seccion titulo="Para qué los usamos">
             <p>Finalidades primarias: contactarte por llamada, WhatsApp o correo cuando lo solicitas; revisar tu boleta y orientarte sobre tasas, plazos, costo total y opciones; dar seguimiento a tu consulta: si no coincidimos, hasta tres recordatorios en una semana hábil por WhatsApp o llamada y, si confirmaste tu correo, por correo (cada correo trae un enlace para dejar de recibirlos). Puedes pedir en cualquier momento que no te contactemos. Para priorizar la atención, un sistema clasifica tu caso con los números de la cotización y un resumen sin tus datos personales; si el sistema concluye que el cambio no te conviene, una persona del equipo lo revisa antes de dejar de contactarte. El equipo organiza los casos en un sistema interno y puede usar asistentes de inteligencia artificial de nuestro proveedor para consultarlos, bajo las mismas obligaciones de confidencialidad.</p>
-            <p>Finalidades secundarias: estadísticas internas anónimas sobre el tipo de consultas recibidas, para mejorar el servicio. Puedes oponerte a esta finalidad escribiendo al correo indicado abajo.</p>
+            <p>Finalidades secundarias: estadísticas internas anónimas sobre el tipo de consultas recibidas y el perfil opcional del chat, para mejorar el servicio y decidir dónde y cómo darlo a conocer (por ejemplo, en qué redes o zonas anunciarnos). Puedes oponerte a esta finalidad escribiendo al correo indicado abajo.</p>
             <p>No usamos tus datos para publicidad de terceros ni los vendemos.</p>
           </Seccion>
 

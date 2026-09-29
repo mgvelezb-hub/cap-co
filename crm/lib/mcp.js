@@ -13,6 +13,8 @@ import { citasProximas, actualizarCita, acordarCitaNueva, ESTADOS_CITA } from "@
 import { PERFIL_IDS } from "@lib/chatbot/perfiles";
 import { serieDiaria, porFuente } from "@lib/crm/trafico";
 import { embudo } from "@lib/metricas/conversaciones";
+import { listarConversaciones, distribucionPerfil } from "@lib/crm/conversaciones";
+import { PREGUNTAS_PERFIL, NO_DICE } from "@lib/chatbot/perfil-visita";
 import { ETAPAS } from "@lib/leads/repo";
 import { PATRON_CODIGO } from "@lib/chatbot/codigo";
 import { registrarAccion as bitacora } from "@lib/leads/bitacora";
@@ -330,6 +332,41 @@ export function registrarHerramientas(server) {
         const d = dias ?? 30;
         const [e, serie, fuentes] = await Promise.all([embudo({ dias: d }), serieDiaria({ dias: Math.min(d, 90) }), porFuente({ dias: d })]);
         return { embudo: e, por_dia: serie, por_fuente: fuentes };
+      }),
+  );
+
+  server.registerTool(
+    "conversaciones",
+    {
+      title: "Conversaciones del chat",
+      description: "Chats del sitio aunque no hayan dejado datos: perfil anónimo (caso, edad, prenda, alcaldía o estado, cómo nos conoció), indicadores, resumen sin datos personales y lead si lo hubo. Incluye aperturas del chat (cuántos se fueron sin escribir), la distribución del perfil y el resultado por origen.",
+      inputSchema: z.object({
+        dias: z.number().int().min(1).max(365).optional(),
+        caso: z.enum(PREGUNTAS_PERFIL.caso.opciones.map(([v]) => v).concat(NO_DICE)).optional(),
+        limite: z.number().int().min(1).max(200).optional(),
+      }),
+      ...lectura,
+    },
+    async ({ dias, caso, limite }) =>
+      correr(async () => {
+        const d = dias ?? 30;
+        const [lista, dist] = await Promise.all([listarConversaciones({ dias: d, caso: caso ?? null, limite: limite ?? 50 }), distribucionPerfil({ dias: d })]);
+        return {
+          perfil: dist,
+          conversaciones: lista.map((c) => ({
+            inicio: c.creado_at,
+            ultima_actividad: c.actualizado_at,
+            fuente: c.fuente,
+            perfil: c.perfil,
+            mensajes: c.turnos,
+            fotos: c.fotos,
+            cotizo: c.cotizo,
+            conviene: c.avanzo,
+            fuera_de_tema: c.fuera_de_tema,
+            resumen: c.resumen,
+            lead: c.lead_codigo,
+          })),
+        };
       }),
   );
 }

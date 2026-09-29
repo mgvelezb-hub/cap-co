@@ -3,6 +3,7 @@
 //           imagen?: {media_type, data} }  ← foto de boleta del último mensaje (base64, no se guarda)
 //   hasCta = el widget ya muestra el botón de WhatsApp de un turno anterior.
 //   fuente = utm_source/medium/campaign/referrer/path de la visita (para el lead).
+//   perfil = respuestas opcionales y anónimas del formulario de bienvenida (lib/chatbot/perfil-visita.js).
 // Salida: stream de líneas JSON (NDJSON):
 //   {type:"text", text}          fragmento de respuesta
 //   {type:"cta", codigo, url}    botón de WhatsApp (cuando el modelo cierra)
@@ -27,6 +28,8 @@ import { registrarEvento, tipoDeErrorAnthropic } from "@/lib/alertas/eventos";
 import { limpiarFuente } from "@/lib/leads/validar";
 import { validarImagen, mensajeConImagen } from "@/lib/chatbot/imagen";
 import { registrarTurno, idValido } from "@/lib/metricas/conversaciones";
+import { resumirConversacion } from "@/lib/metricas/resumen";
+import { limpiarPerfil, notaDePerfil } from "@/lib/chatbot/perfil-visita";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -90,6 +93,14 @@ export async function POST(request) {
   const yaHayCta = body?.hasCta === true;
   const fuente = limpiarFuente(body?.fuente);
   const conversacionId = idValido(body?.conversacionId) ? body.conversacionId : null;
+  const perfil = limpiarPerfil(body?.perfil);
+  // Copia en texto plano para el resumen, antes de agregar notas del sistema o la foto.
+  const paraResumen = mensajes.map((m, i) => ({
+    role: m.role,
+    content: i === mensajes.length - 1 && img.imagen ? `${m.content} [envió una foto de su boleta]` : m.content,
+  }));
+  const nota = notaDePerfil(perfil);
+  if (nota) mensajes[0].content = `${mensajes[0].content}${nota}`;
   if (yaHayCta) {
     // Va al final del último mensaje (fuera del prefijo cacheado). Es del servidor, no del usuario.
     const ultimo = mensajes[mensajes.length - 1];
@@ -118,17 +129,20 @@ export async function POST(request) {
       };
       try {
         await correrTurno(client, mensajes, emitir, { yaHayCta, fuente, conversacionId, signal: request.signal });
-        enDiferido(() =>
-          registrarTurno({
+        enDiferido(async () => {
+          const registrado = await registrarTurno({
             id: conversacionId,
             fuente,
+            perfil,
             foto: Boolean(img.imagen),
             herramientas: fin?.herramientas || [],
             avanzo: Boolean(fin?.avanzo),
             fueraDeTema: /no lo puedo contestar/i.test(texto),
             costoUsd: fin?.costoUsd || 0,
-          }),
-        );
+          });
+          // El resumen va después: necesita que la conversación ya exista en la base.
+          if (registrado) await resumirConversacion(client, { id: conversacionId, mensajes: paraResumen, respuesta: texto });
+        });
       } catch (err) {
         const abandono = cerrado || request.signal?.aborted || err?.name === "AbortError";
         if (!abandono) {

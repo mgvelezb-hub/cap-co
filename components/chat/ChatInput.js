@@ -39,11 +39,14 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
     if (!el) return;
     if (texto === "") {
       el.style.height = "auto";
+      el.style.overflowY = "hidden";
       return;
     }
     const id = requestAnimationFrame(() => {
       el.style.height = "auto";
       el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+      // La barra de desplazamiento solo aparece cuando el texto ya no cabe.
+      el.style.overflowY = el.scrollHeight > 120 ? "auto" : "hidden";
     });
     return () => cancelAnimationFrame(id);
   }, [texto]);
@@ -170,9 +173,9 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
           maxLength={MAX_CHARS}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={adjunto ? "Comentario (opcional)…" : "Escribe tu duda…"}
+          placeholder={adjunto ? "Comentario (opcional)…" : "Escribe aquí tu duda…"}
           aria-label="Escribe tu mensaje"
-          className="max-h-[120px] flex-1 resize-none rounded-xl border border-esmeralda/15 bg-papel-alto px-3.5 py-2.5 font-sans text-[15px] leading-snug text-esmeralda outline-none placeholder:text-esmeralda/40 focus:border-esmeralda/40"
+          className="max-h-[120px] flex-1 resize-none overflow-y-hidden rounded-xl border border-esmeralda/15 bg-papel-alto px-3.5 py-2.5 font-sans text-[15px] leading-snug text-esmeralda caret-granate outline-none placeholder:text-esmeralda/40 focus:border-esmeralda focus:ring-2 focus:ring-esmeralda/15"
         />
         <button
           type="submit"

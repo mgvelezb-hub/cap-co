@@ -45,7 +45,8 @@ jobs:
       - name: Migración
         run: node scripts/migrate.mjs
       - name: Pruebas (unitarias y de base de datos)
-        run: node --test tests/*.test.js
+        # Un archivo a la vez: las pruebas de base cuentan filas de tablas compartidas.
+        run: node --test --test-concurrency=1 tests/*.test.js
       - name: Build del sitio
         run: npx next build
         env:

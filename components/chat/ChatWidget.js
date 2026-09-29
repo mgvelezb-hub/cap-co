@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import AgendaForm, { TarjetaCita } from "./AgendaForm";
+import PerfilForm from "./PerfilForm";
+import { MENSAJE_POR_CASO, PREGUNTAS_PERFIL, NO_DICE } from "@/lib/chatbot/perfil-visita";
 import { WHATSAPP_URL } from "@/lib/constants";
 
 const STORAGE_KEY = "capco-chat-v1";
@@ -24,7 +26,11 @@ function idConversacion(nueva = false) {
   }
 }
 const BIENVENIDA =
-  "Pregúntame lo que quieras sobre empeños: qué dice tu boleta, cuánto vas a pagar, cuánto vale tu oro o si te conviene cambiar de institución. También puedes subir una foto de tu boleta con el botón de la cámara y te hago el análisis completo. Sin costo.";
+  "¡Hola! Soy el asesor virtual de CAP & Co. y te ayudo con tu empeño: qué dice tu boleta, cuánto vas a pagar, cuánto vale tu oro o si te conviene cambiar de institución. Sin costo.";
+const INVITA_CASO =
+  "¿Cuál es tu caso? Elige una opción o escríbelo con tus palabras. No te pido nombre ni teléfono.";
+const INVITA_TEMA =
+  "Cuéntame tu caso con tus palabras o elige un tema. También puedes subir una foto de tu boleta con el botón de la cámara y te hago el análisis completo.";
 const CHIPS = [
   "Explícame mi boleta",
   "¿Cuánto debo hoy?",
@@ -82,6 +88,10 @@ function ChatWidgetPublico() {
   const [hidratado, setHidratado] = useState(false);
   const [visible, setVisible] = useState(false);
   const [citaApartada, setCitaApartada] = useState(null);
+  // null = aún no contesta el formulario de bienvenida; { omitido: true } = lo saltó.
+  const [perfil, setPerfil] = useState(null);
+  // La tarjeta con las 4 preguntas opcionales se ofrece una sola vez, tras la primera respuesta.
+  const [detalleCerrado, setDetalleCerrado] = useState(false);
   const fuenteRef = useRef({});
   const listaRef = useRef(null);
   const panelRef = useRef(null);
@@ -93,6 +103,8 @@ function ChatWidgetPublico() {
       setMensajes(guardado.mensajes);
       setCta(guardado.cta || null);
       setCitaApartada(guardado.citaApartada || null);
+      setPerfil(guardado.perfil || null);
+      setDetalleCerrado(guardado.detalleCerrado === true);
     }
     fuenteRef.current = capturarFuente();
     setHidratado(true);
@@ -101,17 +113,47 @@ function ChatWidgetPublico() {
   useEffect(() => {
     if (!hidratado) return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ mensajes, cta, citaApartada }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ mensajes, cta, citaApartada, perfil, detalleCerrado }));
     } catch {
       // sin almacenamiento: el chat sigue funcionando en memoria
     }
-  }, [mensajes, cta, citaApartada, hidratado]);
+  }, [mensajes, cta, citaApartada, perfil, detalleCerrado, hidratado]);
+
+  // Registro anónimo de que se abrió el chat (y del perfil cuando cambia), escriba o no la persona.
+  // Así se sabe si la bienvenida espanta gente. Una vez por conversación y por cambio de perfil.
+  const aperturaRef = useRef("");
+  useEffect(() => {
+    if (!abierto || !hidratado) return;
+    const id = idConversacion();
+    const clave = `${id}|${JSON.stringify(perfil)}`;
+    if (aperturaRef.current === clave) return;
+    aperturaRef.current = clave;
+    try {
+      fetch("/api/chat/apertura", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversacionId: id, fuente: fuenteRef.current, perfil }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      // sin red: no pasa nada
+    }
+  }, [abierto, hidratado, perfil, mensajes.length]);
+
+  const mostrarDetalle =
+    !detalleCerrado && !cargando && mensajes.length >= 2 && !mensajes[mensajes.length - 1].pendiente;
+  const ultimoRef = useRef(null);
 
   useEffect(() => {
     if (!abierto) return;
     const el = listaRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [mensajes, cta, abierto]);
+    if (!el) return;
+    // Sin mensajes, el saludo se lee desde arriba. Con la tarjeta de preguntas opcionales, se deja
+    // a la vista el inicio de la respuesta: la tarjeta queda abajo y no tapa lo que se contestó.
+    if (mensajes.length === 0) el.scrollTop = 0;
+    else if (mostrarDetalle && ultimoRef.current) el.scrollTop = ultimoRef.current.offsetTop - el.offsetTop - 12;
+    else el.scrollTop = el.scrollHeight;
+  }, [mensajes, cta, abierto, mostrarDetalle]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -171,8 +213,13 @@ function ChatWidgetPublico() {
   }, []);
 
   const enviar = useCallback(
-    async (texto, imagen = null) => {
+    async (texto, imagen = null, perfilElegido = perfil) => {
       if (cargando) return;
+      // Escribir sin contestar el formulario cuenta como saltarlo.
+      const perfilTurno = perfilElegido || { omitido: true };
+      if (!perfilElegido) setPerfil(perfilTurno);
+      // Si sigue platicando, la tarjeta de preguntas opcionales ya no aparece.
+      if (mensajes.length >= 2) setDetalleCerrado(true);
       // La foto viaja solo en este envío; en el historial queda la marca, nunca la imagen.
       const historial = [...mensajes, { role: "user", content: texto, adjunto: Boolean(imagen) }];
       setMensajes([...historial, { role: "assistant", content: "", pendiente: true }]);
@@ -194,6 +241,7 @@ function ChatWidgetPublico() {
             messages: historial.map(({ role, content }) => ({ role, content })),
             hasCta: Boolean(cta),
             fuente: fuenteRef.current,
+            perfil: perfilTurno,
             conversacionId: idConversacion(),
             ...(imagen ? { imagen } : {}),
           }),
@@ -252,7 +300,7 @@ function ChatWidgetPublico() {
         abortRef.current = null;
       }
     },
-    [cargando, mensajes, cta],
+    [cargando, mensajes, cta, perfil],
   );
 
   // Abrir el chat con una pregunta ya escrita (p. ej. "mi boleta vence en días" desde el hero).
@@ -262,6 +310,18 @@ function ChatWidgetPublico() {
     mensajePendienteRef.current = null;
     enviar(texto);
   }, [abierto, hidratado, cargando, enviar]);
+
+  function elegirCaso(caso) {
+    const p = { caso };
+    setPerfil(p);
+    const inicial = MENSAJE_POR_CASO[caso];
+    if (inicial) enviar(inicial, null, p);
+  }
+
+  function detalleListo(respuestas) {
+    setPerfil((p) => ({ ...(p && !p.omitido ? p : {}), ...respuestas }));
+    setDetalleCerrado(true);
+  }
 
   function reiniciar() {
     idConversacion(true);
@@ -289,13 +349,13 @@ function ChatWidgetPublico() {
           ref={lanzadorRef}
           type="button"
           onClick={() => setAbierto(true)}
-          aria-label="Abrir chat: pregunta lo que quieras sobre tu boleta"
+          aria-label="Abrir chat: resuelve tus dudas de empeño"
           className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-esmeralda font-sans text-sm font-medium text-sobre-verde shadow-[0_8px_30px_rgba(20,64,47,0.28)] transition-all duration-500 ease-expo hover:scale-[1.03] md:bottom-7 md:right-7 md:h-auto md:w-auto md:gap-3 md:py-3 md:pl-4 md:pr-5 ${
             visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
         >
           <IconoChat className="h-6 w-6 md:h-5 md:w-5" />
-          <span className="hidden md:inline">Pregunta lo que quieras</span>
+          <span className="hidden md:inline">Resuelve tus dudas de empeño</span>
         </button>
       )}
 
@@ -349,7 +409,29 @@ function ChatWidgetPublico() {
             aria-relevant="additions text"
           >
             <ChatMessage role="assistant" content={BIENVENIDA} />
-            {mensajes.length === 0 && (
+            {hidratado && mensajes.length === 0 && !perfil && (
+              <>
+                <ChatMessage role="assistant" content={INVITA_CASO} />
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {[...PREGUNTAS_PERFIL.caso.opciones, [NO_DICE, "Prefiero no decir"]].map(([v, t]) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => elegirCaso(v)}
+                      className={`rounded-full border px-3.5 py-2 font-sans text-sm transition-colors ${
+                        v === NO_DICE
+                          ? "border-esmeralda/15 text-esmeralda/60 hover:border-esmeralda/40"
+                          : "border-esmeralda/25 bg-papel-alto text-esmeralda hover:border-esmeralda hover:bg-esmeralda hover:text-sobre-verde"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {mensajes.length === 0 && perfil && <ChatMessage role="assistant" content={INVITA_TEMA} />}
+            {mensajes.length === 0 && perfil && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {CHIPS.map((chip) => (
                   <button
@@ -364,7 +446,7 @@ function ChatWidgetPublico() {
               </div>
             )}
             {mensajes.map((m, i) => (
-              <div key={i} className="space-y-2">
+              <div key={i} ref={i === mensajes.length - 1 ? ultimoRef : undefined} className="space-y-2">
                 <ChatMessage role={m.role} content={m.content} pendiente={m.pendiente} adjunto={m.adjunto} />
                 {m.whatsapp && !m.pendiente && (
                   <a
@@ -378,6 +460,9 @@ function ChatWidgetPublico() {
                 )}
               </div>
             ))}
+            {mostrarDetalle && (
+              <PerfilForm onListo={detalleListo} onOmitir={() => setDetalleCerrado(true)} />
+            )}
             {cta && (
               <div className="space-y-3">
                 {cta.persistido && !citaApartada && (
@@ -413,11 +498,11 @@ function ChatWidgetPublico() {
           <ChatInput onEnviar={enviar} deshabilitado={cargando} autoFocus />
 
           <p className="border-t border-esmeralda/10 bg-papel px-4 py-2 text-center font-sans text-[11px] leading-snug text-esmeralda/55">
-            Asistente automático: orienta y evalúa tu caso. La cita con un asesor se confirma por{" "}
-            <a href={WHATSAPP_URL} className="underline underline-offset-2">
-              WhatsApp
+            Asesor virtual automático. No guarda tu nombre ni teléfono, salvo que los dejes para agendar una cita.{" "}
+            <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+              Aviso de privacidad
             </a>
-            . No guarda datos personales; solo los que dejes en el formulario, con tu permiso.
+            .
           </p>
         </div>
       )}
