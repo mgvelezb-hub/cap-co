@@ -92,6 +92,8 @@ function ChatWidgetPublico() {
   const [perfil, setPerfil] = useState(null);
   // La tarjeta con las 4 preguntas opcionales se ofrece una sola vez, tras la primera respuesta.
   const [detalleCerrado, setDetalleCerrado] = useState(false);
+  // Celular con el teclado abierto: el encabezado se compacta para dejar espacio a la plática.
+  const [teclado, setTeclado] = useState(false);
   const fuenteRef = useRef({});
   const listaRef = useRef(null);
   const panelRef = useRef(null);
@@ -184,15 +186,19 @@ function ChatWidgetPublico() {
     body.style.width = "100%";
     body.style.overflow = "hidden";
     const vv = window.visualViewport;
+    let tapadoAntes = 0;
     function ajustar() {
       const el = panelRef.current;
       if (!el || !vv) return;
       const tapado = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       el.style.top = `${vv.offsetTop}px`;
       el.style.paddingBottom = `${tapado}px`;
-      // Si ya había plática, lo último sigue a la vista al encogerse por el teclado.
+      setTeclado(tapado > 120);
+      // Solo al abrirse el teclado: si ya había plática, lo último sigue a la vista. Al cerrarse no
+      // se mueve nada, para no perder lo que la persona estaba leyendo.
       const lista = listaRef.current;
-      if (lista && lista.scrollTop > 0) lista.scrollTop = lista.scrollHeight;
+      if (tapado > tapadoAntes + 80 && lista && lista.scrollTop > 0) lista.scrollTop = lista.scrollHeight;
+      tapadoAntes = tapado;
     }
     ajustar();
     vv?.addEventListener("resize", ajustar);
@@ -208,6 +214,7 @@ function ChatWidgetPublico() {
         el.style.top = "";
         el.style.paddingBottom = "";
       }
+      setTeclado(false);
     };
   }, [abierto]);
 
@@ -393,7 +400,7 @@ function ChatWidgetPublico() {
           type="button"
           onClick={() => setAbierto(true)}
           aria-label="Abrir chat: resuelve tus dudas de empeño"
-          className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-esmeralda font-sans text-sm font-medium text-sobre-verde shadow-[0_8px_30px_rgba(20,64,47,0.28)] transition-all duration-500 ease-expo hover:scale-[1.03] md:bottom-7 md:right-7 md:h-auto md:w-auto md:gap-3 md:py-3 md:pl-4 md:pr-5 ${
+          className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-esmeralda font-sans text-sm font-medium text-sobre-verde shadow-[0_8px_30px_rgba(20,64,47,0.28)] ring-2 ring-sobre-verde/70 transition-all duration-500 ease-expo hover:scale-[1.03] md:bottom-7 md:right-7 md:h-auto md:w-auto md:gap-3 md:py-3 md:pl-4 md:pr-5 ${
             visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
         >
@@ -410,12 +417,14 @@ function ChatWidgetPublico() {
           aria-label="Asesor virtual de CAP & Co."
           className="fixed inset-0 z-[70] flex flex-col bg-papel md:inset-auto md:bottom-7 md:right-7 md:h-[640px] md:max-h-[calc(100dvh-3.5rem)] md:w-[400px] md:overflow-hidden md:rounded-2xl md:border md:border-esmeralda/10 md:shadow-[0_20px_60px_rgba(20,64,47,0.25)]"
         >
-          <header className="flex items-center justify-between border-b border-esmeralda/10 bg-esmeralda px-4 py-3 text-sobre-verde">
+          <header className={`flex items-center justify-between border-b border-esmeralda/10 bg-esmeralda px-4 text-sobre-verde ${teclado ? "py-1" : "py-3"}`}>
             <div className="leading-tight">
               <div className="font-serif text-lg tracking-wide">CAP & Co.</div>
-              <div className="whitespace-nowrap font-sans text-[11px] uppercase tracking-[0.16em] text-sobre-verde/70">
-                Asesor virtual
-              </div>
+              {!teclado && (
+                <div className="whitespace-nowrap font-sans text-[11px] uppercase tracking-[0.16em] text-sobre-verde/70">
+                  Asesor virtual
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-1">
               {mensajes.length > 0 && (
@@ -447,7 +456,7 @@ function ChatWidgetPublico() {
 
           <div
             ref={listaRef}
-            className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
+            className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4"
             aria-live="polite"
             aria-relevant="additions text"
           >

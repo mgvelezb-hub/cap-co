@@ -24,7 +24,7 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-500 ease-expo ${
+      className={`sticky top-0 z-50 transition-colors duration-500 ease-expo ${
         scrolled
           ? "border-b border-esmeralda/10 bg-papel/95 shadow-[0_1px_0_rgba(20,64,47,0.04)] backdrop-blur"
           : "border-b border-transparent bg-transparent"
@@ -32,10 +32,12 @@ export default function Header() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 md:px-8">
         <a href="/" className="flex items-center gap-3">
-          <Logo className={`w-auto transition-all duration-500 ease-expo ${scrolled ? "h-9" : "h-11"}`} />
+          {/* Mismo tamaño siempre: al cambiar con el scroll, el logo y el nombre brincaban. */}
+          <Logo className="h-10 w-auto" />
           <div className="leading-tight">
             <div className="font-serif text-lg tracking-wide md:text-xl">{BRAND.nombre}</div>
-            <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-esmeralda/75">
+            {/* En celular el lema en tres renglones hacía el encabezado enorme; ahí basta el nombre. */}
+            <div className="hidden font-sans text-[10px] uppercase tracking-[0.18em] text-esmeralda/75 sm:block">
               {BRAND.slogan}
             </div>
           </div>

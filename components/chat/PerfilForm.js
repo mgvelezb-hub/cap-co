@@ -39,7 +39,7 @@ export default function PerfilForm({ onListo, onOmitir }) {
               <select
                 value={elegido || ""}
                 onChange={(e) => setRespuestas((r) => ({ ...r, [campo]: e.target.value || undefined }))}
-                className="w-full rounded-xl border border-esmeralda/20 bg-papel px-3 py-2.5 font-sans text-sm text-esmeralda outline-none focus:border-esmeralda focus:ring-2 focus:ring-esmeralda/15"
+                className="w-full rounded-xl border border-esmeralda/20 bg-papel px-3 py-2.5 font-sans text-base text-esmeralda md:text-sm outline-none focus:border-esmeralda focus:ring-2 focus:ring-esmeralda/15"
               >
                 <option value="">Elige una opción</option>
                 <optgroup label="Ciudad de México">

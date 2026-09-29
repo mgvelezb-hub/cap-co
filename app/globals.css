@@ -187,8 +187,12 @@ input[type="range"]::-moz-range-thumb {
     -webkit-hyphens: auto;
     hyphens: auto;
   }
+  /* Lo que no se justifica tampoco parte palabras con guion (p. ej. "PREN-DARIO" en el lema). */
   main :is(.text-center, .text-right) :is(p, dd),
-  main p.font-serif {
+  main p.font-serif,
+  main p.uppercase {
     text-align: inherit;
+    -webkit-hyphens: manual;
+    hyphens: manual;
   }
 }

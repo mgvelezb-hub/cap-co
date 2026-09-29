@@ -177,7 +177,7 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
           onKeyDown={onKeyDown}
           placeholder={adjunto ? "Comentario (opcional)…" : "Escribe aquí tu duda…"}
           aria-label="Escribe tu mensaje"
-          className="max-h-[120px] flex-1 resize-none overflow-y-hidden rounded-xl border border-esmeralda/15 bg-papel-alto px-3.5 py-2.5 font-sans text-[15px] leading-snug text-esmeralda caret-granate outline-none placeholder:text-esmeralda/40 focus:border-esmeralda focus:ring-2 focus:ring-esmeralda/15"
+          className="max-h-[120px] flex-1 resize-none overflow-y-hidden rounded-xl border border-esmeralda/15 bg-papel-alto px-3.5 py-2.5 font-sans text-base leading-snug text-esmeralda caret-granate md:text-[15px] outline-none placeholder:text-esmeralda/40 focus:border-esmeralda focus:ring-2 focus:ring-esmeralda/15"
         />
         <button
           type="submit"

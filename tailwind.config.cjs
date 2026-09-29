@@ -1,5 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // En celular, los estilos hover: no se quedan "pegados" ni obligan a tocar dos veces un botón.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./app/**/*.{js,jsx}",
     "./components/**/*.{js,jsx}",
