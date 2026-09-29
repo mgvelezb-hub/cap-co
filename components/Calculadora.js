@@ -46,7 +46,7 @@ export default function Calculadora() {
             value={tasa}
             onChange={(e) => setTasa(+e.target.value)}
           />
-          <p className="mt-2 font-sans text-xs text-sobre-verde/50">
+          <p className="mt-2 font-sans text-xs text-sobre-verde/75">
             Rango típico reportado por CONDUSEF. La tasa sola no basta: pide siempre el CAT.
           </p>
         </label>
@@ -79,7 +79,7 @@ export default function Calculadora() {
           <strong className="text-sobre-verde">{veces.toFixed(1)} veces</strong> lo que te
           prestaron.
         </p>
-        <p className="mt-4 w-fit max-w-full rounded-lg bg-white/[0.08] px-4 py-3 font-sans text-sm text-sobre-verde/90">
+        <p className="mt-4 w-fit max-w-full rounded-lg bg-white/[0.08] px-4 py-3 text-left font-sans text-sm text-sobre-verde/90">
           Y si solo refrendas, nada de esto baja tu deuda:
           <br className="hidden sm:block" /> el refrendo paga únicamente el
           interés del mes.

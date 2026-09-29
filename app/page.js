@@ -1,6 +1,7 @@
 import Logo from "@/components/Logo";
 import AnimatedLogo from "@/components/AnimatedLogo";
 import Gem3D from "@/components/Gem3DDiferida";
+import Empeno3D from "@/components/Empeno3DDiferido";
 import RayaRombo from "@/components/RayaRombo";
 import Header from "@/components/Header";
 import Reveal from "@/components/Reveal";
@@ -65,11 +66,11 @@ function Hero() {
         </Reveal>
       </div>
       <a
-        href="#quienes-somos"
-        aria-label="Conócenos"
+        href="#decide-bien"
+        aria-label="Empieza aquí"
         className="absolute bottom-8 hidden flex-col items-center gap-2 text-esmeralda/45 transition-colors duration-300 hover:text-esmeralda md:flex"
       >
-        <span className="font-sans text-[11px] uppercase tracking-[0.2em]">Conócenos</span>
+        <span className="font-sans text-[11px] uppercase tracking-[0.2em]">Empieza aquí</span>
         <span className="h-8 w-px bg-current" />
       </a>
     </section>
@@ -88,7 +89,7 @@ function Problema() {
         <div className="mt-14 grid gap-12 md:grid-cols-12">
           <Reveal delay={100} className="md:col-span-5">
             <p className="font-sans text-lg leading-relaxed text-sobre-verde/80 text-justify">
-              Antes de empeñar — o si ya empeñaste — conocer tus números te da
+              Antes de empeñar, o si ya empeñaste, conocer tus números te da
               poder: cuánto vas a pagar en total, cuándo terminas, y si existe
               una opción mejor. Eso es lo que ponemos sobre la mesa.
             </p>
@@ -254,33 +255,38 @@ function QuienesSomos() {
           </p>
         </Reveal>
 
-        {/* Cómo empezamos. PROPUESTA pendiente de aprobación de Ricardo (cuestionario 22-sep: "me
-            gustaría agregarla a tu consideración"). Solo usa lo que sabemos: el negocio nació al ver
-            las dudas de personas afectadas por sus empeños; sin fechas, nombres ni cifras inventadas. */}
-        <Reveal delay={40} className="mt-10 max-w-3xl">
-          <h2 className="font-serif text-2xl">Cómo empezamos</h2>
-          <p className="mt-3 font-sans text-[17px] leading-relaxed text-esmeralda/75">
-            CAP &amp; Co. nació al ver, en grupos de personas afectadas por sus empeños, las mismas preguntas
-            una y otra vez: ¿cuánto debo en realidad?, ¿qué pasa si se vence mi boleta?, ¿hay una opción mejor?
-            Muchas de esas personas estaban por perder su pieza o no sabían cuánto iban a terminar pagando,
-            porque nadie les había explicado su boleta. Decidimos dedicarnos a eso: revisar cada caso con
-            números claros y, cuando conviene, acompañar el cambio a una casa de empeño con mejores condiciones.
-          </p>
-        </Reveal>
-        {/* Qué hacemos */}
-        <Reveal delay={80} className="mt-10 max-w-[62ch]">
-          <p className="font-sans text-lg leading-relaxed text-esmeralda/75 text-justify">
-            Revisamos tu boleta cláusula por cláusula, la comparamos con datos
-            públicos de otras instituciones y, cuando conviene, te acompañamos
-            en el cambio a una casa con mejores condiciones. CONDUSEF recomienda
-            comparar antes de decidir: esa revisión la hacemos contigo, sin costo.
-          </p>
-        </Reveal>
+        <div className="mt-12 grid items-center gap-10 lg:grid-cols-12 lg:gap-12">
+          <div className="max-w-[62ch] lg:col-span-7 lg:max-w-none">
+            {/* Cómo empezamos. PROPUESTA pendiente de aprobación de Ricardo (cuestionario 22-sep: "me
+                gustaría agregarla a tu consideración"). Solo usa lo que sabemos: el negocio nació al ver
+                las dudas de personas afectadas por sus empeños; sin fechas, nombres ni cifras inventadas. */}
+            <Reveal delay={40}>
+              <h2 className="font-serif text-2xl">Cómo empezamos</h2>
+              <p className="mt-3 font-sans text-[17px] leading-relaxed text-esmeralda/75">
+                CAP &amp; Co. nació al ver, en grupos de personas afectadas por sus empeños, las mismas preguntas
+                una y otra vez: ¿cuánto debo en realidad?, ¿qué pasa si se vence mi boleta?, ¿hay una opción mejor?
+                Muchas de esas personas estaban por perder su pieza o no sabían cuánto iban a terminar pagando,
+                porque nadie les había explicado su boleta. Decidimos dedicarnos a eso: revisar cada caso con
+                números claros y, cuando conviene, acompañar el cambio a una casa de empeño con mejores condiciones.
+              </p>
+            </Reveal>
+            {/* Qué hacemos */}
+            <Reveal delay={80} className="mt-10">
+              <p className="font-sans text-lg leading-relaxed text-esmeralda/75 text-justify">
+                Hoy revisamos tu boleta cláusula por cláusula y la comparamos con datos
+                públicos de otras instituciones. CONDUSEF recomienda comparar antes de
+                decidir: esa revisión la hacemos contigo, sin costo.
+              </p>
+            </Reveal>
+          </div>
+          {/* Una operación prendaria en 3D: la pieza se pesa, se presta y la boleta se revisa. */}
+          <Empeno3D className="mx-auto h-72 w-full max-w-md bg-[radial-gradient(circle_at_50%_48%,rgba(200,162,75,0.16),transparent_62%)] sm:h-96 lg:col-span-5 lg:h-[30rem] lg:max-w-none" />
+        </div>
 
         {/* A quién ayudamos / Misión y visión */}
         <div className="mt-16 grid gap-16 lg:grid-cols-12">
           <Reveal delay={100} className="lg:col-span-5">
-            <p className="font-sans text-sm uppercase tracking-[0.18em] text-esmeralda/50">
+            <p className="font-sans text-sm uppercase tracking-[0.18em] text-esmeralda/70">
               Escríbenos si...
             </p>
             <ul className="mt-6 space-y-5">
@@ -348,13 +354,15 @@ export default function Home() {
     <>
       <Header />
       <main>
+        {/* Primero se ayuda (problema, boleta, calculadora, cómo funciona) y después se cuenta quiénes
+            somos, justo antes de las preguntas y del contacto. */}
         <Hero />
-        <QuienesSomos />
         <Ticker />
         <Problema />
         <SeccionBoleta />
         <SeccionCalculadora />
         <ComoFunciona />
+        <QuienesSomos />
         <PreguntasFrecuentes />
       </main>
       <Footer />

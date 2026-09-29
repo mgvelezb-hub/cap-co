@@ -60,11 +60,11 @@ export default function PerfilForm({ onListo, onOmitir }) {
                     type="button"
                     aria-pressed={elegido === v}
                     onClick={() => elegir(campo, v)}
-                    className={`rounded-full border px-3 py-1.5 font-sans text-[13px] transition-colors ${
+                    className={`min-h-[44px] rounded-full border px-3.5 py-2 font-sans text-sm transition-colors ${
                       elegido === v
                         ? "border-esmeralda bg-esmeralda text-sobre-verde"
                         : v === NO_DICE
-                          ? "border-esmeralda/15 text-esmeralda/60 hover:border-esmeralda/40"
+                          ? "border-esmeralda/15 text-esmeralda/70 hover:border-esmeralda/40"
                           : "border-esmeralda/25 text-esmeralda hover:border-esmeralda"
                     }`}
                   >
@@ -80,7 +80,7 @@ export default function PerfilForm({ onListo, onOmitir }) {
         <button
           type="button"
           onClick={onOmitir}
-          className="font-sans text-sm text-esmeralda/65 underline underline-offset-4 hover:text-esmeralda"
+          className="min-h-[44px] px-1 font-sans text-sm text-esmeralda/75 underline underline-offset-4 hover:text-esmeralda"
         >
           No, gracias
         </button>

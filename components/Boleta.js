@@ -167,7 +167,7 @@ export default function Boleta() {
                   >
                     <div className="overflow-hidden">
                       <p className="pt-3 font-sans leading-relaxed text-esmeralda/80 text-justify">{z.texto}</p>
-                      <p className="mt-3 inline-block rounded-lg bg-granate/[0.07] px-3 py-2 font-sans text-sm font-medium text-granate">
+                      <p className="mt-3 inline-block rounded-lg bg-granate/[0.07] px-3 py-2 text-left font-sans text-sm font-medium text-granate">
                         {z.alerta}
                       </p>
                     </div>
@@ -178,7 +178,7 @@ export default function Boleta() {
           })}
         </ol>
       </div>
-      <p className="mt-10 font-sans text-xs text-esmeralda/45">
+      <p className="mt-10 font-sans text-xs text-esmeralda/70">
         Con base en criterios públicos de CONDUSEF y PROFECO.
       </p>
     </div>

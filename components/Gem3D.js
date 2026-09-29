@@ -55,6 +55,16 @@ export default function Gem3D({ className = "" }) {
   // El fundido CSS (.gem-fade, 3.1 s) también se cuenta desde que abrió la página.
   const [retrasoCss] = useState(() => Math.max(0, 3.1 - performance.now() / 1000));
   const [girando, setGirando] = useState(true);
+  // Fuera de pantalla no dibuja: al bajar a "¿Quiénes somos?" no quedan dos escenas 3D corriendo.
+  const cajaRef = useRef(null);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const el = cajaRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -65,8 +75,13 @@ export default function Gem3D({ className = "" }) {
   }, []);
 
   return (
-    <div className={`gem-fade ${className}`} aria-hidden="true" style={{ animationDelay: `${retrasoCss}s` }}>
-      <Canvas camera={{ position: [0, 0, 3.4], fov: 32 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
+    <div ref={cajaRef} className={`gem-fade ${className}`} aria-hidden="true" style={{ animationDelay: `${retrasoCss}s` }}>
+      <Canvas
+        camera={{ position: [0, 0, 3.4], fov: 32 }}
+        dpr={[1, 2]}
+        gl={{ antialias: true, alpha: true }}
+        frameloop={visible ? "always" : "never"}
+      >
         <ambientLight intensity={0.95} />
         <directionalLight position={[3, 3.5, 4]} intensity={0.55} />
         <directionalLight position={[-3, -1.5, 2]} intensity={0.2} />

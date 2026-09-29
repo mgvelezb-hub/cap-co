@@ -5,10 +5,10 @@ import Logo from "./Logo";
 import { WHATSAPP_URL, BRAND } from "@/lib/constants";
 
 const LINKS = [
-  ["/#quienes-somos", "¿Quiénes somos?"],
   ["/#decide-bien", "Decide bien"],
   ["/#boleta", "Tu boleta"],
   ["/#calculadora", "Calcula"],
+  ["/#quienes-somos", "¿Quiénes somos?"],
   ["/#preguntas", "Preguntas"],
 ];
 
@@ -35,7 +35,7 @@ export default function Header() {
           <Logo className={`w-auto transition-all duration-500 ease-expo ${scrolled ? "h-9" : "h-11"}`} />
           <div className="leading-tight">
             <div className="font-serif text-lg tracking-wide md:text-xl">{BRAND.nombre}</div>
-            <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-esmeralda/60">
+            <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-esmeralda/75">
               {BRAND.slogan}
             </div>
           </div>

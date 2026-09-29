@@ -381,7 +381,7 @@ function ChatWidgetPublico() {
                   onClick={reiniciar}
                   aria-label="Empezar de nuevo"
                   title="Empezar de nuevo"
-                  className="rounded-full p-2 text-sobre-verde/70 transition-colors hover:bg-white/10 hover:text-sobre-verde"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-sobre-verde/80 transition-colors hover:bg-white/10 hover:text-sobre-verde"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
@@ -393,7 +393,7 @@ function ChatWidgetPublico() {
                 type="button"
                 onClick={() => setAbierto(false)}
                 aria-label="Cerrar chat"
-                className="rounded-full p-2 text-sobre-verde/70 transition-colors hover:bg-white/10 hover:text-sobre-verde"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-sobre-verde/80 transition-colors hover:bg-white/10 hover:text-sobre-verde"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <path d="M6 6l12 12M18 6L6 18" />
@@ -418,9 +418,9 @@ function ChatWidgetPublico() {
                       key={v}
                       type="button"
                       onClick={() => elegirCaso(v)}
-                      className={`rounded-full border px-3.5 py-2 font-sans text-sm transition-colors ${
+                      className={`min-h-[44px] rounded-full border px-3.5 py-2 font-sans text-sm transition-colors ${
                         v === NO_DICE
-                          ? "border-esmeralda/15 text-esmeralda/60 hover:border-esmeralda/40"
+                          ? "border-esmeralda/15 text-esmeralda/70 hover:border-esmeralda/40"
                           : "border-esmeralda/25 bg-papel-alto text-esmeralda hover:border-esmeralda hover:bg-esmeralda hover:text-sobre-verde"
                       }`}
                     >
@@ -438,7 +438,7 @@ function ChatWidgetPublico() {
                     key={chip}
                     type="button"
                     onClick={() => enviar(chip)}
-                    className="rounded-full border border-esmeralda/25 bg-papel-alto px-3.5 py-2 font-sans text-sm text-esmeralda transition-colors hover:border-esmeralda hover:bg-esmeralda hover:text-sobre-verde"
+                    className="min-h-[44px] rounded-full border border-esmeralda/25 bg-papel-alto px-3.5 py-2 font-sans text-sm text-esmeralda transition-colors hover:border-esmeralda hover:bg-esmeralda hover:text-sobre-verde"
                   >
                     {chip}
                   </button>
@@ -497,7 +497,7 @@ function ChatWidgetPublico() {
 
           <ChatInput onEnviar={enviar} deshabilitado={cargando} autoFocus />
 
-          <p className="border-t border-esmeralda/10 bg-papel px-4 py-2 text-center font-sans text-[11px] leading-snug text-esmeralda/55">
+          <p className="border-t border-esmeralda/10 bg-papel px-4 py-2 text-center font-sans text-xs leading-snug text-esmeralda/75">
             Asesor virtual automático. No guarda tu nombre ni teléfono, salvo que los dejes para agendar una cita.{" "}
             <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
               Aviso de privacidad

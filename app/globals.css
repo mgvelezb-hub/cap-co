@@ -176,3 +176,19 @@ input[type="range"]::-moz-range-thumb {
     opacity: 0.6;
   }
 }
+
+/* Párrafos justificados en todo el contenido, con guiones en español (html lang="es") para que no
+   queden huecos grandes entre palabras. En la capa base: cualquier clase de alineación de Tailwind
+   (text-left, lg:text-left…) le gana. Lo centrado o a la derecha y los titulares en serif heredan. */
+@layer base {
+  main p,
+  main dd {
+    text-align: justify;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
+  main :is(.text-center, .text-right) :is(p, dd),
+  main p.font-serif {
+    text-align: inherit;
+  }
+}
