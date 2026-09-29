@@ -168,22 +168,28 @@ function ChatWidgetPublico() {
     return () => abortRef.current?.abort();
   }, []);
 
-  // Celular (pantalla completa): la ventana se ajusta al área visible cuando sale el teclado y la
-  // página de atrás no se desplaza. Sin esto, en iPhone el chat no se encoge y entre el teclado y
-  // el chat se asoma el sitio.
+  // Celular (pantalla completa):
+  // - La página de atrás se congela en su lugar (position: fixed en body). En iPhone,
+  //   overflow: hidden no impide desplazarla.
+  // - El chat ocupa toda la pantalla y su contenido termina donde empieza lo que tapa la vista
+  //   (teclado y la barra de Safari que flota encima). Así, debajo de esa barra se ve el fondo del
+  //   chat y no la página.
   useEffect(() => {
     if (!abierto || !window.matchMedia("(max-width: 767px)").matches) return;
-    const html = document.documentElement;
-    const antes = { html: html.style.overflow, body: document.body.style.overflow };
-    html.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
+    const body = document.body;
+    const y = window.scrollY;
+    const antes = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    body.style.position = "fixed";
+    body.style.top = `-${y}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
     const vv = window.visualViewport;
     function ajustar() {
       const el = panelRef.current;
       if (!el || !vv) return;
+      const tapado = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       el.style.top = `${vv.offsetTop}px`;
-      el.style.bottom = "auto";
-      el.style.height = `${vv.height}px`;
+      el.style.paddingBottom = `${tapado}px`;
       // Si ya había plática, lo último sigue a la vista al encogerse por el teclado.
       const lista = listaRef.current;
       if (lista && lista.scrollTop > 0) lista.scrollTop = lista.scrollHeight;
@@ -194,13 +200,13 @@ function ChatWidgetPublico() {
     return () => {
       vv?.removeEventListener("resize", ajustar);
       vv?.removeEventListener("scroll", ajustar);
-      html.style.overflow = antes.html;
-      document.body.style.overflow = antes.body;
+      Object.assign(body.style, antes);
+      // Sin animación: el sitio usa desplazamiento suave y se vería la página correr.
+      window.scrollTo({ top: y, behavior: "instant" });
       const el = panelRef.current;
       if (el) {
         el.style.top = "";
-        el.style.bottom = "";
-        el.style.height = "";
+        el.style.paddingBottom = "";
       }
     };
   }, [abierto]);
@@ -482,6 +488,15 @@ function ChatWidgetPublico() {
                 ))}
               </div>
             )}
+            {/* El aviso va dentro de la conversación, no fijo abajo: se lee al abrir y después se
+                desplaza con la plática, sin robarle espacio a las respuestas. */}
+            <p className="px-2 pb-1 text-center font-sans text-xs leading-snug text-esmeralda/75">
+              Asesor virtual automático. No guarda tu nombre ni teléfono, salvo que los dejes para agendar una cita.{" "}
+              <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                Aviso de privacidad
+              </a>
+              .
+            </p>
             {mensajes.map((m, i) => (
               <div key={i} ref={i === mensajes.length - 1 ? ultimoRef : undefined} className="space-y-2">
                 <ChatMessage role={m.role} content={m.content} pendiente={m.pendiente} adjunto={m.adjunto} />
@@ -533,14 +548,6 @@ function ChatWidgetPublico() {
           </div>
 
           <ChatInput onEnviar={enviar} deshabilitado={cargando} autoFocus />
-
-          <p className="border-t border-esmeralda/10 bg-papel px-4 py-2 text-center font-sans text-xs leading-snug text-esmeralda/75">
-            Asesor virtual automático. No guarda tu nombre ni teléfono, salvo que los dejes para agendar una cita.{" "}
-            <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-              Aviso de privacidad
-            </a>
-            .
-          </p>
         </div>
       )}
     </>
