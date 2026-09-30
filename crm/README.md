@@ -1,7 +1,7 @@
 # CRM de CAP & Co.
 
 App de administración de los leads de casa-ap.com. Vive en `crm/` como workspace de npm y usa la
-misma lógica y la misma base de datos que el sitio (`../lib`): agenda, leads, comisión,
+misma lógica y la misma base de datos que el sitio (`../lib`): agenda, leads, tarifa por cambio,
 clasificación y seguimiento no están duplicados.
 
 ## Qué hace
@@ -10,7 +10,7 @@ clasificación y seguimiento no están duplicados.
   taller y las tareas del día (WhatsApp listo para enviar, llamadas, confirmar citas).
 - **Leads:** filtros por etapa, clasificación, días sin contestar, campaña y datos de contacto.
 - **Ficha:** contactar (llamar, WhatsApp con plantilla, registrar llamada/respuesta/nota),
-  clasificación y perfil, el caso con ahorro neto, cita (acordar, reprogramar, confirmar),
+  clasificación y perfil, el caso con su ahorro, cita (acordar, reprogramar, confirmar),
   checklist del cambio, etapa y cierre, tareas e historial completo.
 - **Revisión:** casos grises y desacuerdos regla–IA; lo que se aprueba ya no lo cambia el sistema.
 - **Citas:** llamadas por hacer, citas presenciales y cambios en curso con su avance.
@@ -31,7 +31,7 @@ Los leads que dejan datos se reparten por turnos entre los usuarios activos que 
 ## Automatización (`../lib/crm`)
 
 - **Clasificación** (`reglas.js`, `ia.js`, `clasificacion.js`): reglas fijas con los números de la
-  cotización y la comisión; la IA (solo datos anónimos) da segunda opinión, perfil y propensión a
+  cotización (el usuario no paga nada); la IA (solo datos anónimos) da segunda opinión, perfil y propensión a
   taller. Regla segura + IA de acuerdo → se aplica sola; desacuerdo o caso gris → cola de revisión.
 - **Seguimiento** (`seguimiento-plan.js`, `seguimiento.js`): al dejar datos, correo de bienvenida
   (si dejó correo; pide confirmarlo) y la tarea de llamarle en la franja que pidió; sin respuesta,
@@ -66,7 +66,7 @@ claude mcp add --transport http capco-crm https://<dominio-del-crm>/api/mcp --he
 | `CRON_SECRET` | Protege el cron de seguimiento |
 | `ANTHROPIC_API_KEY` | Clasificación con IA (sin ella, solo reglas) |
 | `RESEND_API_KEY`, `CORREO_REMITENTE` | Correos automáticos a la persona (dominio verificado en Resend) |
-| `COMISION_FIJA_MXN`, `COMISION_PCT_AHORRO` | Mismos valores que en el sitio |
+| `TARIFA_CAMBIO_MXN` | Tarifa por cambio que paga la casa de la red; mismo valor que en el sitio |
 | `RATE_SALT` | Freno de intentos de login |
 
 El sitio también necesita `RESEND_API_KEY` y `CORREO_REMITENTE` para el correo de bienvenida

@@ -61,7 +61,7 @@ function Hero() {
             ¿Tu boleta vence en días? Revísala ahora →
           </AbrirChat>
           <p className="mt-6 font-sans text-sm tracking-wide text-esmeralda/75">
-            Análisis sin costo · Si te conviene cambiarte, te decimos nuestra comisión antes de cualquier trámite · Lunes a viernes, 9:00 a 17:00
+            Nuestro servicio no te cuesta: nos paga la casa de empeño con convenio, no tú · Lunes a viernes, 9:00 a 17:00
           </p>
         </Reveal>
       </div>
@@ -157,8 +157,8 @@ function ComoFunciona() {
   const pasos = [
     ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
     ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
-    ["Comparamos tus opciones", "Con datos públicos del mercado y la tasa preferente que gestionamos con nuestro aliado, evaluamos si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso. Antes de empezar te decimos nuestra comisión y el ahorro que te queda con ella; si ya no conviene, te lo decimos."],
+    ["Comparamos tus opciones", "Con datos públicos del mercado y las condiciones de las casas de empeño con convenio, evaluamos si tu empeño está bien donde está."],
+    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso a la casa con convenio que más te ahorra, sin costo para ti. Si no te conviene, te lo decimos."],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
@@ -241,7 +241,7 @@ function QuienesSomos() {
   const valores = [
     ["Claridad radical", "Te explicamos cada término en lenguaje claro, sin tecnicismos."],
     ["Datos, no opiniones", "Cada comparación con números verificables."],
-    ["Evaluación clara", "Antes de cualquier trámite te decimos cuánto te ahorras ya con nuestra comisión; si no te conviene, no avanzamos."],
+    ["Te decimos si no conviene", "Solo ganamos si te cambias, y aun así, si el cambio no te deja un ahorro claro, te lo decimos y no avanzamos."],
     ["Discreción", "Tu situación y tus piezas son asunto tuyo."],
   ];
   return (

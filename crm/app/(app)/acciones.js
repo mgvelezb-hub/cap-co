@@ -27,7 +27,7 @@ const MOTIVOS = {
   accion_invalida: "Esa acción no existe.",
   nota_vacia: "Escribe la nota antes de guardarla.",
   etapa_invalida: "Etapa no válida.",
-  comision_invalida: "La comisión debe ser un número en pesos, por ejemplo 1500 o 1500.50.",
+  comision_invalida: "La tarifa debe ser un número en pesos, por ejemplo 1500 o 1500.50.",
   clasificacion_invalida: "Clasificación no válida.",
   paso_invalido: "Paso no válido.",
   usa_registrar_cobro: "El cobro se registra con monto, fecha y método en «Registrar cobro».",
@@ -159,7 +159,7 @@ export async function accionCobro(_previo, f) {
   if (r.ok) await bitacora(s.usuario, "cobro_registrado", codigo, { monto: texto(f, "monto"), metodo: texto(f, "metodo") });
   refrescar(codigo);
   revalidatePath("/trafico");
-  return resultado(r, "Cobro registrado: el caso quedó en «Comisión cobrada».");
+  return resultado(r, "Cobro registrado: el caso quedó en «Tarifa cobrada a la casa».");
 }
 
 export async function accionNoContactar(_previo, f) {

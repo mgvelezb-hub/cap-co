@@ -3,7 +3,7 @@ import { requireSesion } from "@/lib/auth";
 import { tokensDe } from "@/lib/tokens";
 import { query } from "@lib/db/client";
 import { correoPersonasConfigurado } from "@lib/crm/correo";
-import { comisionCambio } from "@lib/chatbot/comision";
+import { tarifaCambio } from "@lib/chatbot/tarifa";
 import { Seccion, Vacio } from "@/components/ui";
 import NuevoToken from "@/components/NuevoToken";
 import { fecha, hace, fechaHora } from "@/lib/formato";
@@ -27,7 +27,7 @@ export default async function Ajustes() {
     tokensDe(s.usuario),
     s.rol === "dueno" ? query(`SELECT usuario, nombre, rol, activo, acceso_at, recibe_leads FROM crm_usuario ORDER BY usuario`).then((r) => r.rows) : [],
   ]);
-  const comision = comisionCambio(2000);
+  const comision = tarifaCambio();
   const [salud, eventos, bitacora] = s.rol === "dueno"
     ? await Promise.all([diagnostico({ revisarLlave: false }), eventosRecientes({ horas: 72, limite: 30 }), bitacoraReciente(40)])
     : [null, [], []];
@@ -69,7 +69,7 @@ export default async function Ajustes() {
         <ul className="space-y-1 rounded-xl border border-esmeralda/10 bg-papel-alto p-4 text-sm">
           <Estado ok={correoPersonasConfigurado()} si="Correos automáticos activos (Resend)." no="Correos automáticos apagados: falta RESEND_API_KEY o CORREO_REMITENTE con dominio verificado. Las tareas de WhatsApp sí se crean." />
           <Estado ok={Boolean(process.env.ANTHROPIC_API_KEY)} si="Clasificación con IA activa." no="Sin ANTHROPIC_API_KEY: solo clasifican las reglas." />
-          <Estado ok={comision !== null} si={`Comisión configurada (con $2,000 de ahorro serían ${comision?.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}).`} no="Comisión sin configurar (COMISION_FIJA_MXN / COMISION_PCT_AHORRO): las reglas usan el ahorro sin descontarla." />
+          <Estado ok={comision !== null} si={`Tarifa por cambio de la red configurada: ${comision?.toLocaleString("es-MX", { style: "currency", currency: "MXN" })} sin IVA.`} no="Tarifa por cambio sin configurar (TARIFA_CAMBIO_MXN). Al usuario no se le cobra nada; la tarifa solo sirve para el cobro a la casa y el dinero por campaña." />
           <Estado ok={Boolean(process.env.CRON_SECRET)} si="Seguimiento diario programado." no="Falta CRON_SECRET: el seguimiento automático diario no corre." />
         </ul>
       </Seccion>

@@ -20,26 +20,17 @@ const base = {
   consent_at: new Date("2026-09-28T16:00:00Z"),
 };
 
-test("reglas: ahorro neto claro, datos completos y probabilidad alta aplica en automático", () => {
-  const r = clasificarPorReglas(base, { comision: 500 });
+test("reglas: ahorro claro, datos completos y probabilidad alta aplica en automático (el usuario no paga)", () => {
+  const r = clasificarPorReglas(base);
   assert.equal(r.clasificacion, "aplica_auto");
   assert.equal(r.confianza, "alta");
-  assert.match(r.motivo, /Ahorro neto de \$2,100/);
+  assert.match(r.motivo, /Ahorro de \$2,600/);
+  assert.doesNotMatch(r.motivo, /comisi|neto/);
 });
 
-test("reglas: sin comisión configurada nada aplica solo ni se habla de ahorro neto", () => {
-  const r = clasificarPorReglas(base);
-  assert.equal(r.clasificacion, "revision");
-  assert.match(r.motivo, /comisión no está configurada/);
-  assert.doesNotMatch(clasificarPorReglas({ ...base, ahorro: "300" }).motivo, /neto/);
-});
-
-test("reglas: la comisión cuenta — si se come el ahorro, no aplica; si lo deja chico, revisión", () => {
-  assert.equal(clasificarPorReglas(base, { comision: 2600 }).clasificacion, "no_aplica");
-  const chico = clasificarPorReglas(base, { comision: 1500 });
-  assert.equal(chico.clasificacion, "revision");
-  assert.match(chico.motivo, /menos comisión/);
+test("reglas: ahorro chico no compensa el trámite", () => {
   assert.equal(clasificarPorReglas({ ...base, ahorro: "300" }).clasificacion, "no_aplica");
+  assert.equal(clasificarPorReglas({ ...base, ahorro: "0" }).clasificacion, "no_aplica");
 });
 
 test("reglas: casos grises y especiales", () => {

@@ -142,42 +142,44 @@ test("compararOpciones: moverse a tasa menor conviene cuando el ahorro es claro"
 });
 
 import { cotizarTraspaso } from "../lib/chatbot/cotizacion.js";
-import { rankingPublico, pisoTasa } from "../lib/chatbot/instituciones.js";
+import { rangosPublicos, pisoTasa, CONVENIOS } from "../lib/chatbot/instituciones.js";
 
-test("cotizarTraspaso: tasa alta → oferta = tasa pública del aliado y avanza", () => {
-  const r = cotizarTraspaso({ prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000, institucionActual: "Prendamex" });
+test("cotizarTraspaso: tasa alta → oferta = tasa pública de la red, avanza y no nombra instituciones", () => {
+  const r = cotizarTraspaso({ prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000 });
   assert.equal(r.ok, true);
   assert.equal(r.tipoOferta, "tasa_publica");
   assert.equal(r.tasaOferta, 3.5);
-  assert.equal(r.institucionActual, "Prendamex");
   assert.equal(r.avanza, true);
   assert.ok(r.comparacion.ahorro > 500);
+  assert.match(r.mensajeSugerido, /no te cuesta nada/);
+  const texto = JSON.stringify(r);
+  for (const c of CONVENIOS) assert.ok(!texto.includes(c.nombreInterno), "no expone el nombre de la casa");
+  assert.doesNotMatch(texto, /nuestra comisi[oó]n|comisi[oó]n de cap/i);
 });
 
 test("cotizarTraspaso: tasa igual o menor a la pública → preferente 5 % abajo con piso", () => {
-  const r = cotizarTraspaso({ prestamo: 10000, tasaActual: 3.4, mesesRestantes: 8, mesesSinPagar: 0, penalizacion: 0, valorPieza: 25000, institucionActual: "Nacional Monte de Piedad" });
+  const r = cotizarTraspaso({ prestamo: 10000, tasaActual: 3.4, mesesRestantes: 8, mesesSinPagar: 0, penalizacion: 0, valorPieza: 25000 });
   assert.equal(r.tipoOferta, "tasa_preferente");
   assert.equal(r.tasaOferta, 3.23);
   assert.equal(r.piso, 2.5);
-  assert.equal(r.institucionActual, "Nacional Monte de Piedad");
 });
 
 test("cotizarTraspaso: no avanza si la oferta no mejora la tasa (piso) o el ahorro es chico", () => {
-  const enPiso = cotizarTraspaso({ prestamo: 5000, tasaActual: 3.0, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 6000, institucionActual: null });
+  const enPiso = cotizarTraspaso({ prestamo: 5000, tasaActual: 3.0, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 6000 });
   assert.equal(enPiso.avanza, false);
   assert.equal(enPiso.tocoPiso, true);
   assert.match(enPiso.mensajeSugerido, /te conviene quedarte/);
   assert.doesNotMatch(enPiso.mensajeSugerido, /mejor trato/);
-  const corto = cotizarTraspaso({ prestamo: 1500, tasaActual: 4, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0, valorPieza: null, institucionActual: null });
+  const corto = cotizarTraspaso({ prestamo: 1500, tasaActual: 4, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0, valorPieza: null });
   assert.equal(corto.avanza, false);
   assert.match(corto.motivoNoAvanza, /ahorro/);
 });
 
-test("instituciones: ranking por CAT ascendente con fuente; piso por valor de pieza", () => {
-  const r = rankingPublico();
-  assert.equal(r.conDato[0].catAnual, 69);
-  assert.ok(r.conDato.every((i) => i.fuente));
-  for (let i = 1; i < r.conDato.length; i += 1) assert.ok(r.conDato[i].catAnual >= r.conDato[i - 1].catAnual);
+test("instituciones: rangos públicos por tipo, sin nombres; piso por valor de pieza", () => {
+  const r = rangosPublicos();
+  assert.ok(r.fuente && r.fecha);
+  assert.equal(r.rangos.length, 2);
+  for (const x of r.rangos) assert.ok(x.min <= x.max && !("nombre" in x));
   assert.equal(pisoTasa(30000), 2.5);
   assert.equal(pisoTasa(7000), 3.0);
   assert.equal(pisoTasa(null), 3.25);
@@ -250,23 +252,18 @@ test("alertas: clasifica errores de Anthropic", () => {
   assert.equal(tipoDeErrorAnthropic(new Error("socket hang up")).tipo, "error_chat");
 });
 
-test("cotizarTraspaso: con comisión configurada, cuenta el ahorro neto", () => {
+test("cotizarTraspaso: el usuario no paga; elige la casa de la red que más ahorra", () => {
   const base = { prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000 };
-  const sin = cotizarTraspaso(base);
-  assert.equal(sin.comision, null);
-  assert.equal(sin.ahorroNeto, null);
-  assert.match(sin.mensajeSugerido, /antes de nuestra comisión/);
-  process.env.COMISION_FIJA_MXN = "300";
+  const una = cotizarTraspaso(base);
+  CONVENIOS.push({ id: "convenio_prueba", nombreInterno: "Casa de prueba", tasaPublicaMensual: 3.0, descuentoRelativo: 0.05, pisos: [{ desdeValorPieza: 0, tasaMinima: 2.5 }] });
   try {
-    const con = cotizarTraspaso(base);
-    assert.equal(con.comision, 300);
-    assert.equal(con.ahorroNeto, Math.round((sin.comparacion.ahorro - 300) * 100) / 100);
-    assert.match(con.mensajeSugerido, /ya descontada nuestra comisión/);
-    process.env.COMISION_FIJA_MXN = String(Math.ceil(sin.comparacion.ahorro));
-    const come = cotizarTraspaso(base);
-    assert.equal(come.avanza, false, "si la comisión se come el ahorro, no se propone");
-    assert.match(come.motivoNoAvanza, /comisión/);
+    const dos = cotizarTraspaso(base);
+    assert.equal(dos.convenioId, "convenio_prueba");
+    assert.equal(dos.tasaOferta, 3.0);
+    assert.ok(dos.comparacion.ahorro > una.comparacion.ahorro);
+    assert.ok(!JSON.stringify(dos).includes("Casa de prueba"));
   } finally {
-    delete process.env.COMISION_FIJA_MXN;
+    CONVENIOS.pop();
   }
 });
+

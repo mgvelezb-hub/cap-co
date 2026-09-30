@@ -18,7 +18,8 @@ Tres palabras físicas: **despejado, firme, de mármol** (institución seria que
 - Landing de plantilla: hero centrado + tres tarjetas con iconito
 
 ## Reglas duras (legales/estratégicas)
-- NUNCA mencionar a Montepío ni patrocinios (confidencial)
+- NUNCA nombrar ninguna institución ni casa de empeño en el sitio, el chat o los avisos (identidad del 30-sep-2026). Se dice "nuestra red de casas de empeño con convenio".
+- El usuario NO paga nada: las casas de la red pagan a CAP & Co. la misma tarifa por cambio, y se recomienda la que más le ahorra.
 - NUNCA afirmar "somos 100% independientes" (bandera PROFECO abierta)
 - Rojo granate JAMÁS en botones de acción; solo para señalar el problema
 - Sin símbolos patrios

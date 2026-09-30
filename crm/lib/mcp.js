@@ -196,7 +196,7 @@ export function registrarHerramientas(server) {
     "registrar_cobro",
     {
       title: "Registrar cobro",
-      description: "Registra el cobro de la comisión (monto en pesos, fecha AAAA-MM-DD, método). Pasa el caso a comisión cobrada. Solo si el usuario lo confirmó.",
+      description: "Registra el cobro de la tarifa a la casa de empeño con convenio (monto en pesos, fecha AAAA-MM-DD, método). Pasa el caso a tarifa cobrada. Al cliente no se le cobra nada. Solo si el usuario lo confirmó.",
       inputSchema: z.object({ codigo: CODIGO, monto: z.number().positive().max(10_000_000), fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), metodo: z.enum(METODOS_COBRO) }),
     },
     async (i, ctx) =>
@@ -296,7 +296,7 @@ export function registrarHerramientas(server) {
     "actualizar_caso",
     {
       title: "Actualizar caso",
-      description: "Cambia etapa, asesor, casa de destino, comisión cobrada o motivo de descarte. Descartar cierra tareas y seguimiento. Para notas usa registrar_contacto con tipo nota.",
+      description: "Cambia etapa, asesor, casa de destino, tarifa cobrada o motivo de descarte. Descartar cierra tareas y seguimiento. Para notas usa registrar_contacto con tipo nota.",
       inputSchema: z.object({
         codigo: CODIGO,
         etapa: z.enum(ETAPAS).optional(),

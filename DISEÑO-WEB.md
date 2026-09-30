@@ -46,7 +46,7 @@ Página informativa de una sola vista (long-scroll) que educa sobre el mundo del
 7. **Footer** — CTA final WhatsApp, link a aviso de privacidad (placeholder — obligatorio antes de operar el chatbot real, doc 01 §9), copyright
 
 ## Restricciones de confidencialidad y legales (de docs 01/02)
-- El copy **nunca** menciona a Montepío ni el patrocinio — información confidencial
+- El copy **nunca** nombra instituciones ni casas de empeño; habla de "nuestra red de casas con convenio". El servicio es gratis para el usuario.
 - Ningún texto afirma independencia/neutralidad de forma explícita y categórica ("somos 100% independientes") — bandera abierta de PROFECO por posible publicidad engañosa
 - Sin símbolos patrios literales (ya cubierto por el logo aprobado)
 - Aviso de privacidad: placeholder visible desde v1, contenido real pendiente de asesoría legal

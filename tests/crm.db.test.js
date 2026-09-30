@@ -17,7 +17,7 @@ test("CRM en la base: lead → datos → clasificación → correo y tareas → 
   const leer = async (codigo) => (await query(`SELECT * FROM lead WHERE codigo = $1`, [codigo])).rows[0];
   const tareas = async (codigo) => (await query(`SELECT tipo, detalle FROM crm_tarea WHERE lead_codigo = $1 AND hecha_at IS NULL ORDER BY tipo`, [codigo])).rows;
   process.env.RESEND_API_KEY = "re_test";
-  process.env.COMISION_FIJA_MXN = "500";
+  process.env.TARIFA_CAMBIO_MXN = "2000";
   process.env.CORREO_REMITENTE = "CAP & Co. <hola@casa-ap.com>";
   const correos = [];
   const fetchImpl = async (_u, init) => {
@@ -129,7 +129,7 @@ test("CRM en la base: lead → datos → clasificación → correo y tareas → 
   } finally {
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
-    delete process.env.COMISION_FIJA_MXN;
+    delete process.env.TARIFA_CAMBIO_MXN;
     for (const codigo of creados) await query(`DELETE FROM lead WHERE codigo = $1`, [codigo]);
     await cerrarPool();
   }
@@ -146,7 +146,7 @@ test("CRM en la base: carreras, decisiones humanas, reparto, no contactar y borr
   const usuarios = ["qa-uno", "qa-dos"];
   process.env.RESEND_API_KEY = "re_test";
   process.env.CORREO_REMITENTE = "CAP & Co. <hola@casa-ap.com>";
-  process.env.COMISION_FIJA_MXN = "500";
+  process.env.TARIFA_CAMBIO_MXN = "2000";
   const leer = async (c) => (await query(`SELECT * FROM lead WHERE codigo = $1`, [c])).rows[0];
   try {
     const nuevo = async () => {
@@ -216,7 +216,7 @@ test("CRM en la base: carreras, decisiones humanas, reparto, no contactar y borr
   } finally {
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
-    delete process.env.COMISION_FIJA_MXN;
+    delete process.env.TARIFA_CAMBIO_MXN;
     await query(`UPDATE crm_usuario SET recibe_leads = true WHERE usuario NOT IN ('qa-uno', 'qa-dos')`);
     await query(`DELETE FROM lead WHERE codigo = ANY($1)`, [creados]);
     await query(`DELETE FROM crm_usuario WHERE usuario = ANY($1)`, [usuarios]);

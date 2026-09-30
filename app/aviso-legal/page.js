@@ -1,13 +1,13 @@
-// Aviso legal. Provisional, pendiente de revisión del abogado de Ricardo. Nunca decir
-// "independiente" (hay tasas preferentes negociadas y CAP & Co. cobra comisión por el cambio) ni
-// nombrar a la casa aliada: su nombre es interno (decisión de Mau, 27-sep-2026).
+// Aviso legal. Provisional, pendiente de revisión legal. Nunca decir "independiente" (hay tasas
+// preferentes negociadas con la red) ni nombrar ninguna institución (identidad del 30-sep-2026):
+// el usuario no paga nada y la casa con convenio paga a CAP & Co. una tarifa por cambio (misma para todas).
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BRAND, CORREO_CONTACTO } from "@/lib/constants";
 
 export const metadata = {
   title: "Aviso legal — CAP & Co.",
-  description: "Qué es CAP & Co., cómo comparamos y cómo cobramos.",
+  description: "Qué es CAP & Co., cómo comparamos y cómo nos pagan.",
   robots: { index: false, follow: false },
 };
 
@@ -32,17 +32,18 @@ export default function AvisoLegal() {
           <Seccion titulo="Qué somos">
             <p>
               {BRAND.nombre} ({BRAND.slogan}) es asesoría prendaria: <strong>no otorgamos préstamos</strong> ni
-              recibimos prendas. Comparamos tu caso con datos públicos de varias instituciones. Con algunas casas de
-              empeño aliadas tenemos tasas preferentes negociadas; por eso, con frecuencia, la opción que más te
-              ahorra es una de ellas. Te decimos cuál y sus condiciones antes de cualquier trámite; si en tu caso no
-              conviene, te lo decimos.
+              recibimos prendas. Comparamos tu caso con datos públicos del mercado y con las condiciones de las
+              casas de empeño con las que tenemos convenio. Si alguna te ahorra de forma clara, te recomendamos la
+              que más te ahorra y te decimos sus condiciones antes de cualquier trámite; si ninguna te conviene, te
+              decimos que te quedes donde estás.
             </p>
           </Seccion>
-          <Seccion titulo="Cómo cobramos">
+          <Seccion titulo="Cómo nos pagan">
             <p>
-              Revisar tu boleta no tiene costo. Si decides hacer el cambio a otra casa de empeño con nuestro apoyo,
-              cobramos una comisión. Antes de cualquier trámite te decimos el monto (IVA incluido) y cuánto te
-              ahorrarías ya con ella; si con la comisión no te conviene, no avanzamos.
+              A ti no te cobramos nada: ni por revisar tu boleta ni por acompañarte en el cambio. La casa de empeño
+              con convenio nos paga una tarifa solo cuando alguien se cambia con ella; si se suman más casas, todas
+              pagan la misma. Aunque solo ganamos si te cambias, cuando el cambio no te deja un ahorro claro (al
+              menos $500 o 5 % de lo que pagarías), te lo decimos y no avanzamos. Todo el ahorro es tuyo.
             </p>
           </Seccion>
           <Seccion titulo="Cifras y cálculos">
@@ -56,7 +57,7 @@ export default function AvisoLegal() {
           </Seccion>
           <Seccion titulo="Lo que nunca te pediremos">
             <p>
-              Dinero por adelantado ni que nos entregues tu boleta o tu pieza. Todo lo que firmes lo firmas tú, en la
+              Ningún pago, ni antes ni después, ni que nos entregues tu boleta o tu pieza. Todo lo que firmes lo firmas tú, en la
               casa de empeño, a tu nombre.
             </p>
           </Seccion>

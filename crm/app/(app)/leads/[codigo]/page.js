@@ -4,7 +4,7 @@ import { fichaLead, duplicados, CHECKLIST_TRASPASO, METODOS_COBRO } from "@lib/c
 import { linkWhatsApp, NOMBRE_WHATSAPP } from "@lib/crm/plantillas";
 import { TIPOS_EVENTO } from "@lib/crm/eventos";
 import { TIPOS_TAREA } from "@lib/crm/tareas";
-import { comisionCambio } from "@lib/chatbot/comision";
+import { tarifaCambio } from "@lib/chatbot/tarifa";
 import { PATRON_CODIGO } from "@lib/chatbot/codigo";
 import { query } from "@lib/db/client";
 import { guionPara, DOCUMENTOS, OBJECIONES } from "@lib/crm/guiones";
@@ -109,7 +109,7 @@ export default async function Ficha({ params }) {
   const { lead: l, eventos, tareas, citas, conversacion } = f;
   const dueno = s.rol === "dueno";
   const asesor = s.nombre.split(" ")[0];
-  const comision = l.ahorro !== null ? comisionCambio(Number(l.ahorro)) : null;
+  const comision = tarifaCambio();
   const citaActiva = citas.find((c) => ["reservada", "confirmada"].includes(c.estado));
   l.ultima_cita_estado = citas[0]?.estado ?? null;
   const citaPresencial = citaActiva && citaActiva.tipo === "cita" ? citaActiva : null;
@@ -262,8 +262,7 @@ export default async function Ficha({ params }) {
               <Dato etiqueta="Tasa actual">{l.tasa_actual ? `${Number(l.tasa_actual)} % mensual` : null}</Dato>
               <Dato etiqueta="Tasa ofrecida">{l.tasa_oferta ? `${Number(l.tasa_oferta)} % mensual` : null}</Dato>
               <Dato etiqueta="Ahorro estimado">{pesos(l.ahorro)}</Dato>
-              <Dato etiqueta="Comisión estimada">{comision !== null ? pesos(comision) : "sin monto configurado"}</Dato>
-              <Dato etiqueta="Ahorro neto">{comision !== null && l.ahorro !== null ? pesos(Number(l.ahorro) - comision) : "—"}</Dato>
+              <Dato etiqueta="Tarifa de la casa por el cambio">{comision !== null ? pesos(comision) : "sin monto configurado"}</Dato>
               <Dato etiqueta="Probabilidad (chat)">{l.probabilidad !== null ? `${l.probabilidad} %` : null}</Dato>
               {conversacion && <Dato etiqueta="Conversación">{conversacion.turnos} mensajes{conversacion.fotos ? ` · ${conversacion.fotos} foto` : ""}</Dato>}
               {conversacion?.perfil && !conversacion.perfil.omitido && (
@@ -404,7 +403,7 @@ export default async function Ficha({ params }) {
           </FormAccion>
         </Seccion>
 
-        <Seccion titulo="Cobro de la comisión">
+        <Seccion titulo="Cobro de la tarifa a la casa">
           <div className="rounded-xl border border-esmeralda/15 bg-papel-alto p-4 text-sm">
             {l.etapa === "comision_cobrada" ? (
               <p>
@@ -431,7 +430,7 @@ export default async function Ficha({ params }) {
                 <Enviar className={BOTON}>Registrar cobro</Enviar>
               </FormAccion>
             ) : (
-              <p className="text-esmeralda/75">{l.etapa === "switcheo_concretado" ? "Cambio concretado: la comisión está por cobrar. El cobro lo registra el dueño." : "Se registra cuando se concreta el cambio."}</p>
+              <p className="text-esmeralda/75">{l.etapa === "switcheo_concretado" ? "Cambio concretado: la tarifa está por cobrar. El cobro lo registra el dueño." : "Se registra cuando se concreta el cambio."}</p>
             )}
           </div>
         </Seccion>

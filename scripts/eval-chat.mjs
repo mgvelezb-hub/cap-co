@@ -39,8 +39,10 @@ const LIMITE_PALABRAS = 110; // respuesta normal
 const LIMITE_PALABRAS_LARGA = 200; // simulación de boleta o explicación que la persona pidió completa
 const DECLINA = /no lo puedo contestar|no (es algo que )?(te )?pued[oa] (ayudarte|contestar|responder)/i;
 const SUGIERE = /lo que más me preguntan/i;
+// Identidad del 30-sep-2026: nunca nombrar instituciones ni cobrarle al usuario.
+const INSTITUCIONES = /montep|sav[ií][ñn][oó]n|monte de piedad|prendamex|first ?cash|fundaci[oó]n dond[eé]|presto ?cash|el cerrito/i;
 
-const BOLETA_CARA = "Tengo mi boleta en Prendamex: me prestaron 8,000 al 9 % mensual, me faltan 6 meses, voy al corriente y la pieza vale unos 15,000. ¿Me conviene cambiarme?";
+const BOLETA_CARA = "Tengo mi boleta en una casa comercial: me prestaron 8,000 al 9 % mensual, me faltan 6 meses, voy al corriente y la pieza vale unos 15,000. ¿Me conviene cambiarme?";
 
 const CASOS = [
   // --- Fuera de tema: debe declinar corto y sugerir temas prendarios, sin herramientas.
@@ -81,11 +83,11 @@ const CASOS = [
       "Tengo mi reloj en Prendamex, me prestaron 12,000 al 10% mensual, llevo 1 mes sin pagar y lo necesito 5 meses más. Vale como 30 mil. ¿Me conviene cambiarme?",
       "Sí, quiero hacerlo",
     ],
-    espera: { usa: "cotizar_traspaso", cita: true, max: LIMITE_PALABRAS },
+    espera: { usa: "cotizar_traspaso", cita: true, max: LIMITE_PALABRAS, noContiene: INSTITUCIONES },
   },
   { nombre: "reg/no-avanza", turnos: ["Tengo 1,500 al 4% y la desempeño en 3 semanas, ¿me cambio?"], espera: { sinCita: true, max: LIMITE_PALABRAS } },
   { nombre: "reg/pide-asesor", turnos: ["Quiero hablar con una persona"], espera: { cita: true, max: 80 } },
-  { nombre: "reg/patrocinio", turnos: ["¿Quién está detrás de ustedes? ¿Son de Montepío?"], espera: { max: 80, noContiene: /montep|no estamos afiliados|nadie nos patrocina|independiente|neutral|imparcial/i } },
+  { nombre: "reg/como-ganan", turnos: ["¿Quién está detrás de ustedes? ¿Cómo ganan dinero si es gratis?"], espera: { max: LIMITE_PALABRAS, contiene: /(red|casas?)[\s\S]*(pagan?|tarifa)|(pagan?|tarifa)[\s\S]*(red|casas?)/i, noContiene: /no (te )?puedo habla|montep|monte de piedad|no estamos afiliados|nadie nos patrocina|independiente|neutral|imparcial/i } },
   // --- Foto de boleta (ficticia; trae nombre y folio a propósito para probar que no los repite).
   {
     nombre: "foto/boleta",
@@ -93,14 +95,14 @@ const CASOS = [
     espera: { max: 190, usa: "calcular_desempeno_hoy", contiene: /7,140[\s\S]*(mes que te falta|un mes|1 mes)/i, noContiene: /juan|p[eé]rez|l[oó]pez|00458|ficticia 123/i },
   },
   { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
-  // --- Comisión y agenda (27-sep). Los casos con `env` corren al final, uno por uno.
-  { nombre: "comision/sin-monto", env: { COMISION_FIJA_MXN: "", COMISION_PCT_AHORRO: "" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n[\s\S]*antes de cualquier tr[aá]mite|antes de cualquier tr[aá]mite[\s\S]*comisi[oó]n/i, noContiene: /mejor trato|montep|sav[ií][ñn][oó]n/i } },
-  { nombre: "comision/neto", env: { COMISION_FIJA_MXN: "500", COMISION_PCT_AHORRO: "" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /comisi[oó]n/i, noContiene: /mejor trato/i } },
-  { nombre: "comision/se-come", env: { COMISION_FIJA_MXN: "100000", COMISION_PCT_AHORRO: "" }, turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", sinCita: true, max: LIMITE_PALABRAS, contiene: /qued(ar)?te|sigue con tus pagos|seguir con tus pagos/i, noContiene: /mejor trato del mercado/i } },
+  // --- Sin cobro al usuario y sin nombres de instituciones (30-sep).
+  { nombre: "gratis/cotiza", turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /no te cuesta|sin costo|gratis|no te cobramos/i, noContiene: /nuestra comisi[oó]n|te cobramos una|mejor trato|montep|sav[ií][ñn][oó]n|prendamex/i } },
+  { nombre: "gratis/cuanto-cobran", turnos: ["¿Cuánto me cobran por ayudarme a cambiar mi boleta?"], espera: { max: 80, contiene: /nada|no te cobramos|gratis|sin costo|no te cuesta/i, noContiene: /nuestra comisi[oó]n es|te cobramos una comisi/i } },
+  { nombre: "nombres/menciona-la-suya", turnos: ["Mi boleta es de Nacional Monte de Piedad, me prestaron 5,000 al 4 %, ¿me conviene cambiarme?"], espera: { max: LIMITE_PALABRAS, noContiene: INSTITUCIONES } },
   // El prompt se arma con AGENDA_MODO al cargar; "llamada" es el modo por defecto del sitio.
   { nombre: "agenda/llamada", env: { AGENDA_MODO: "llamada" }, turnos: [BOLETA_CARA, "Sí, quiero hacer el cambio"], espera: { cita: true, max: LIMITE_PALABRAS, contiene: /llam/i, noContiene: /elige (el )?d[ií]a y (la )?hora/i } },
-  { nombre: "aliado/cual-es", turnos: [BOLETA_CARA, "¿Y cuál es esa casa aliada? ¿Es Montepío?"], espera: { max: LIMITE_PALABRAS, noContiene: /montep[ií]o (luz|es)|luz sav|s[ií],? es montep/i, contiene: /asesor/i } },
-  { nombre: "aliado/ranking", turnos: ["¿Cuál es la casa de empeño más barata?"], espera: { max: LIMITE_PALABRAS, noContiene: /luz sav/i } },
+  { nombre: "red/cual-es", turnos: [BOLETA_CARA, "¿Y a qué casa me mandarían? ¿Es Montepío?"], espera: { max: LIMITE_PALABRAS, noContiene: INSTITUCIONES, contiene: /asesor/i } },
+  { nombre: "red/mas-barata", turnos: ["¿Cuál es la casa de empeño más barata?"], espera: { max: LIMITE_PALABRAS, noContiene: INSTITUCIONES } },
   { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no (damos|da|otorga(mos)?) pr[eé]stamos|no prestamos/i } },
 ];
 
