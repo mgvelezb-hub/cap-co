@@ -39,8 +39,10 @@ const LIMITE_PALABRAS = 110; // respuesta normal
 const LIMITE_PALABRAS_LARGA = 200; // simulación de boleta o explicación que la persona pidió completa
 const DECLINA = /no lo puedo contestar|no (es algo que )?(te )?pued[oa] (ayudarte|contestar|responder)/i;
 const SUGIERE = /lo que más me preguntan/i;
-// Identidad del 30-sep-2026: nunca nombrar instituciones ni cobrarle al usuario.
-const INSTITUCIONES = /montep|sav[ií][ñn][oó]n|monte de piedad|prendamex|first ?cash|fundaci[oó]n dond[eé]|presto ?cash|el cerrito/i;
+// 1-oct-2026: el chat SÍ nombra instituciones con sus cifras públicas; nunca habla de convenios
+// ni le cobra al usuario.
+const INSTITUCIONES = /montep|sav[ií][ñn][oó]n|monte de piedad|prendamex|first ?cash|dond[eé]|presto ?cash|el cerrito|presta ?prenda/i;
+const CONVENIO = /convenio|aliad[ao]|tasa preferente|nuestra red/i;
 
 const BOLETA_CARA = "Tengo mi boleta en una casa comercial: me prestaron 8,000 al 9 % mensual, me faltan 6 meses, voy al corriente y la pieza vale unos 15,000. ¿Me conviene cambiarme?";
 
@@ -96,13 +98,17 @@ const CASOS = [
   },
   { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
   // --- Sin cobro al usuario y sin nombres de instituciones (30-sep).
-  { nombre: "gratis/cotiza", turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /no te cuesta|sin costo|gratis|no te cobramos/i, noContiene: /nuestra comisi[oó]n|te cobramos una|mejor trato|montep|sav[ií][ñn][oó]n|prendamex/i } },
+  { nombre: "gratis/cotiza", turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /no te cuesta|sin costo|gratis|no te cobramos/i, noContiene: /nuestra comisi[oó]n|te cobramos una|mejor trato|convenio|aliad[ao]|preferente/i } },
   { nombre: "gratis/cuanto-cobran", turnos: ["¿Cuánto me cobran por ayudarme a cambiar mi boleta?"], espera: { max: 80, contiene: /nada|no te cobramos|gratis|sin costo|no te cuesta/i, noContiene: /nuestra comisi[oó]n es|te cobramos una comisi/i } },
-  { nombre: "nombres/menciona-la-suya", turnos: ["Mi boleta es de Nacional Monte de Piedad, me prestaron 5,000 al 4 %, ¿me conviene cambiarme?"], espera: { max: LIMITE_PALABRAS, noContiene: INSTITUCIONES } },
+  { nombre: "nombres/menciona-la-suya", turnos: ["Mi boleta es de Nacional Monte de Piedad, me prestaron 5,000 al 4 %, ¿me conviene cambiarme?"], espera: { max: LIMITE_PALABRAS, noContiene: CONVENIO } },
   // El prompt se arma con AGENDA_MODO al cargar; "llamada" es el modo por defecto del sitio.
   { nombre: "agenda/llamada", env: { AGENDA_MODO: "llamada" }, turnos: [BOLETA_CARA, "Sí, quiero hacer el cambio"], espera: { cita: true, max: LIMITE_PALABRAS, contiene: /llam/i, noContiene: /elige (el )?d[ií]a y (la )?hora/i } },
-  { nombre: "red/cual-es", turnos: [BOLETA_CARA, "¿Y a qué casa me mandarían? ¿Es Montepío?"], espera: { max: LIMITE_PALABRAS, noContiene: INSTITUCIONES, contiene: /asesor/i } },
-  { nombre: "red/mas-barata", turnos: ["¿Cuál es la casa de empeño más barata?"], espera: { max: LIMITE_PALABRAS, noContiene: INSTITUCIONES } },
+  { nombre: "casas/a-cual", turnos: [BOLETA_CARA, "¿Y a qué casa me cambiaría?"], espera: { max: LIMITE_PALABRAS, contiene: INSTITUCIONES, noContiene: CONVENIO } },
+  { nombre: "casas/mas-barata", turnos: ["¿Cuál es la casa de empeño más barata?"], espera: { usa: "comparar_instituciones", max: LIMITE_PALABRAS_LARGA, contiene: INSTITUCIONES, noContiene: CONVENIO } },
+  { nombre: "casas/tabla-pieza", turnos: ["Tengo una cadena de oro de 14 kilates de 10 gramos y la voy a desempeñar en 3 meses. ¿Dónde me conviene empeñarla?"], espera: { usa: "comparar_casas", max: LIMITE_PALABRAS_LARGA, contiene: /\|[\s\S]*\|/, noContiene: CONVENIO } },
+  { nombre: "casas/mas-dinero", turnos: ["Necesito que me presten lo más posible por un anillo de oro de 18k de 6 gramos, ¿dónde me dan más?"], espera: { usa: "comparar_casas", max: LIMITE_PALABRAS_LARGA, contiene: /dond[eé]/i, noContiene: CONVENIO } },
+  { nombre: "casas/plata", turnos: ["¿Dónde me prestan más por una pulsera de plata .925 de 40 gramos?"], espera: { max: LIMITE_PALABRAS_LARGA, noContiene: CONVENIO } },
+  { nombre: "casas/tasa-de-una", turnos: ["¿Cuánto cobra First Cash al mes?"], espera: { max: LIMITE_PALABRAS, contiene: /15\.99/, noContiene: CONVENIO } },
   { nombre: "reg/presta", turnos: ["Necesito que me presten 10 mil pesos hoy"], espera: { max: 80, contiene: /no (te )?(puedo )?prest|no (damos|da|otorga(mos)?) pr[eé]stamos|no prestamos/i } },
 ];
 

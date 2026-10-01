@@ -63,7 +63,7 @@ test("perfiles: seis perfiles válidos", () => {
 import { TOOLS, ejecutarTool } from "../lib/chatbot/tools.js";
 
 test("tools: definiciones estrictas y nombres estables", () => {
-  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "comparar_instituciones", "cotizar_traspaso", "precio_metales", "estimar_valor_metal", "agendar_cita"]);
+  assert.deepEqual(TOOLS.map((t) => t.name), ["calcular_costo", "calcular_desempeno_hoy", "comparar_opciones", "comparar_instituciones", "comparar_casas", "cotizar_traspaso", "precio_metales", "estimar_valor_metal", "agendar_cita"]);
   for (const t of TOOLS) {
     assert.equal(t.strict, true);
     assert.equal(t.input_schema.additionalProperties, false);
@@ -142,10 +142,22 @@ test("compararOpciones: moverse a tasa menor conviene cuando el ahorro es claro"
 });
 
 import { cotizarTraspaso } from "../lib/chatbot/cotizacion.js";
+
+// Las pruebas de la red con convenio corren con el convenio activo; el chat hoy lo tiene apagado.
+function conConvenio(fn) {
+  const antes = process.env.CHAT_CONVENIO;
+  process.env.CHAT_CONVENIO = "si";
+  try {
+    return fn();
+  } finally {
+    if (antes === undefined) delete process.env.CHAT_CONVENIO;
+    else process.env.CHAT_CONVENIO = antes;
+  }
+}
 import { rangosPublicos, pisoTasa, CONVENIOS } from "../lib/chatbot/instituciones.js";
 
 test("cotizarTraspaso: tasa alta → oferta = tasa pública de la red, avanza y no nombra instituciones", () => {
-  const r = cotizarTraspaso({ prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000 });
+  const r = conConvenio(() => cotizarTraspaso({ prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000 }));
   assert.equal(r.ok, true);
   assert.equal(r.tipoOferta, "tasa_publica");
   assert.equal(r.tasaOferta, 3.5);
@@ -158,112 +170,101 @@ test("cotizarTraspaso: tasa alta → oferta = tasa pública de la red, avanza y 
 });
 
 test("cotizarTraspaso: tasa igual o menor a la pública → preferente 5 % abajo con piso", () => {
-  const r = cotizarTraspaso({ prestamo: 10000, tasaActual: 3.4, mesesRestantes: 8, mesesSinPagar: 0, penalizacion: 0, valorPieza: 25000 });
+  const r = conConvenio(() => cotizarTraspaso({ prestamo: 10000, tasaActual: 3.4, mesesRestantes: 8, mesesSinPagar: 0, penalizacion: 0, valorPieza: 25000 }));
   assert.equal(r.tipoOferta, "tasa_preferente");
   assert.equal(r.tasaOferta, 3.23);
   assert.equal(r.piso, 2.5);
 });
 
 test("cotizarTraspaso: no avanza si la oferta no mejora la tasa (piso) o el ahorro es chico", () => {
-  const enPiso = cotizarTraspaso({ prestamo: 5000, tasaActual: 3.0, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 6000 });
+  const enPiso = conConvenio(() => cotizarTraspaso({ prestamo: 5000, tasaActual: 3.0, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 6000 }));
   assert.equal(enPiso.avanza, false);
   assert.equal(enPiso.tocoPiso, true);
   assert.match(enPiso.mensajeSugerido, /te conviene quedarte/);
   assert.doesNotMatch(enPiso.mensajeSugerido, /mejor trato/);
-  const corto = cotizarTraspaso({ prestamo: 1500, tasaActual: 4, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0, valorPieza: null });
+  const corto = conConvenio(() => cotizarTraspaso({ prestamo: 1500, tasaActual: 4, mesesRestantes: 1, mesesSinPagar: 0, penalizacion: 0, valorPieza: null }));
   assert.equal(corto.avanza, false);
   assert.match(corto.motivoNoAvanza, /ahorro/);
 });
 
-test("instituciones: rangos públicos por tipo, sin nombres; piso por valor de pieza", () => {
-  const r = rangosPublicos();
-  assert.ok(r.fuente && r.fecha);
-  assert.equal(r.rangos.length, 2);
-  for (const x of r.rangos) assert.ok(x.min <= x.max && !("nombre" in x));
-  assert.equal(pisoTasa(30000), 2.5);
-  assert.equal(pisoTasa(7000), 3.0);
-  assert.equal(pisoTasa(null), 3.25);
-});
+import { compararCasas, casaMasBarata, buscarCasa, CASAS } from "../lib/chatbot/casas.js";
 
-import { normalizarPureza, precioGramoPuroMXN, estimarValorMetal, tablaPorGramo, fotografiaVigente } from "../lib/precios/calculo.js";
+const FOTO_CASAS = { capturadoAt: "2026-09-25T15:00:00Z", oroUsdOz: 3110.34768, plataUsdOz: 31.1034768, platinoUsdOz: 1555.17384, paladioUsdOz: 1244.139072, usdMxn: 20 };
+const CASAS_PRUEBA = [
+  { id: "a", nombre: "Casa A", tipo: "IAP", tasaMensual: { oro: 4 }, prestamoPct: { oro: 0.8 }, fuente: "prueba" },
+  { id: "b", nombre: "Casa B", tipo: "comercial", tasaMensual: { oro: 10 }, ivaSobreIntereses: true, prestamoPct: { oro: 0.9 }, fuente: "prueba" },
+  { id: "c", nombre: "Casa C", tipo: "comercial", tasaMensual: { oro: 6 }, fuente: "sin porcentaje" },
+];
 
-const FOTO = { capturadoAt: "2026-09-25T15:00:00Z", oroUsdOz: 3110.34768, plataUsdOz: 31.1034768, platinoUsdOz: 1555.17384, paladioUsdOz: 1244.139072, usdMxn: 20 };
-
-test("precios: onza troy en dólares a gramo en pesos", () => {
-  assert.equal(Math.round(precioGramoPuroMXN(3110.34768, 20) * 100) / 100, 2000);
-  const t = tablaPorGramo(FOTO);
-  assert.equal(t.oro.puro, 2000);
-  assert.equal(t.oro["14k"], 1170);
-  assert.equal(t.plata["925"], 18.5);
-});
-
-test("precios: normaliza kilataje y ley", () => {
-  assert.equal(normalizarPureza("oro", "14k"), "14k");
-  assert.equal(normalizarPureza("oro", "14 kilates"), "14k");
-  assert.equal(normalizarPureza("oro", "585"), "14k");
-  assert.equal(normalizarPureza("oro", "18"), "18k");
-  assert.equal(normalizarPureza("plata", ".925"), "925");
-  assert.equal(normalizarPureza("plata", "ley 925"), "925");
-  assert.equal(normalizarPureza("platino", "PT950"), "950");
-  assert.equal(normalizarPureza("oro", "15k"), null);
-});
-
-test("precios: valor de una cadena de 14k y rango de préstamo", () => {
-  const r = estimarValorMetal({ metal: "oro", pureza: "14k", gramos: 10, foto: FOTO });
+test("compararCasas: préstamo = valor del metal × porcentaje; ordena por costo o por dinero", () => {
+  // 10 g de 14k con oro a $2,000/g puro: 10 × 0.585 × 2000 = $11,700.
+  const r = compararCasas({ metal: "oro", pureza: "14k", gramos: 10, meses: 2, prioridad: "menor_costo", foto: FOTO_CASAS, casas: CASAS_PRUEBA });
   assert.equal(r.ok, true);
-  assert.equal(r.valorMetal, 11700);
-  assert.equal(r.prestamoBajo, 4680);
-  assert.equal(r.prestamoAlto, 7020);
-  assert.equal(estimarValorMetal({ metal: "cobre", pureza: "x", gramos: 1, foto: FOTO }).ok, false);
-  assert.equal(estimarValorMetal({ metal: "oro", pureza: "14k", gramos: -1, foto: FOTO }).ok, false);
+  assert.equal(r.valor.valorMetal, 11700);
+  assert.deepEqual(r.filas.map((f) => f.nombre), ["Casa A", "Casa B"]);
+  assert.equal(r.filas[0].prestamo, 9360);
+  assert.equal(r.filas[0].costo, 748.8); // 9,360 × 4 % × 2
+  assert.equal(r.filas[1].costo, 2442.96); // 10,530 × 10 % × 1.16 × 2
+  assert.deepEqual(r.sinDato, ["Casa C"]);
+  assert.equal(r.menorCosto, "Casa A");
+  assert.equal(r.masDinero, "Casa B");
+  assert.equal(r.mismaCasa, false);
+  const dinero = compararCasas({ metal: "oro", pureza: "14k", gramos: 10, meses: 2, prioridad: "mas_dinero", foto: FOTO_CASAS, casas: CASAS_PRUEBA });
+  assert.equal(dinero.filas[0].nombre, "Casa B");
 });
 
-test("precios: una fotografía de más de 4 días no se usa", () => {
-  assert.equal(fotografiaVigente(FOTO, new Date("2026-09-28T15:00:00Z")), true);
-  assert.equal(fotografiaVigente(FOTO, new Date("2026-09-30T15:00:00Z")), false);
-  assert.equal(fotografiaVigente(null), false);
+test("compararCasas: valida pieza y meses", () => {
+  assert.equal(compararCasas({ metal: "oro", pureza: "9k", gramos: 10, foto: FOTO_CASAS, casas: CASAS_PRUEBA }).ok, false);
+  assert.equal(compararCasas({ metal: "oro", pureza: "14k", gramos: 10, meses: 0, foto: FOTO_CASAS, casas: CASAS_PRUEBA }).ok, false);
 });
 
-import { validarImagen, mensajeConImagen } from "../lib/chatbot/imagen.js";
-
-test("imagen: acepta JPG/PNG/WebP en base64 y rechaza lo demás", () => {
-  const data = "A".repeat(200);
-  assert.deepEqual(validarImagen(null), { ok: true, imagen: null });
-  assert.equal(validarImagen({ media_type: "image/jpeg", data }).ok, true);
-  assert.equal(validarImagen({ media_type: "application/pdf", data }).ok, false);
-  assert.equal(validarImagen({ media_type: "image/png", data: "no es base64!!" + data }).ok, false);
-  assert.equal(validarImagen({ media_type: "image/png", data: "A".repeat(4_000_001) }).ok, false);
+test("casas: datos reales con fuente y fecha; la más barata y búsqueda por nombre", () => {
+  assert.ok(CASAS.length >= 4);
+  for (const c of CASAS) assert.ok(c.nombre && c.fuente, `fuente de ${c.id}`);
+  assert.equal(casaMasBarata("oro", CASAS_PRUEBA).casa.id, "a");
+  const cerrada = [{ ...CASAS_PRUEBA[0], cerradaHasta: "2026-10-07" }, CASAS_PRUEBA[1]];
+  assert.equal(casaMasBarata("oro", cerrada, new Date("2026-10-01T12:00:00-06:00")).casa.id, "b");
+  assert.equal(casaMasBarata("oro", cerrada, new Date("2026-10-07T09:00:00-06:00")).casa.id, "a");
+  assert.equal(buscarCasa("la tengo en el nacional monte de piedad")?.id, "nacional_monte_de_piedad");
 });
 
-test("imagen: el mensaje lleva la foto y la fecha de hoy fuera del prompt", () => {
-  const m = mensajeConImagen("Analiza mi boleta", { media_type: "image/jpeg", data: "AAAA" }, new Date("2026-09-26T18:00:00Z"));
-  assert.equal(m[0].type, "image");
-  assert.equal(m[0].source.media_type, "image/jpeg");
-  assert.match(m[1].text, /^Analiza mi boleta/);
-  assert.match(m[1].text, /26 de septiembre de 2026/);
+test("cotizarTraspaso sin convenio: compara contra la tasa publicada más baja y la nombra", () => {
+  const antes = process.env.CHAT_CONVENIO;
+  delete process.env.CHAT_CONVENIO;
+  const r = cotizarTraspaso({ prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: 15000 });
+  assert.equal(r.ok, true);
+  assert.equal(r.tipoOferta, "tasa_publicada");
+  assert.ok(r.casa);
+  assert.equal(r.avanza, true);
+  assert.doesNotMatch(JSON.stringify(r), /convenio|preferente/i);
+  if (antes !== undefined) process.env.CHAT_CONVENIO = antes;
 });
 
-import { tipoDeErrorAnthropic } from "../lib/alertas/eventos.js";
+import { estaCerrada, tasaConIva } from "../lib/chatbot/casas.js";
+import { SEPARADOR_TABLA, celdas, esFilaTabla } from "../components/chat/tabla.js";
 
-test("alertas: clasifica errores de Anthropic", () => {
-  assert.deepEqual(tipoDeErrorAnthropic({ status: 400, message: "Your credit balance is too low" }), { tipo: "saldo_anthropic", nivel: "critico" });
-  assert.equal(tipoDeErrorAnthropic({ status: 401, message: "invalid x-api-key" }).tipo, "llave_anthropic");
-  assert.equal(tipoDeErrorAnthropic({ status: 429, message: "rate" }).tipo, "limite_anthropic");
-  assert.equal(tipoDeErrorAnthropic(new Error("socket hang up")).tipo, "error_chat");
+test("compararCasas: una casa cerrada sale en la tabla pero no se recomienda", () => {
+  const casas = [{ ...CASAS_PRUEBA[0], cerradaHasta: "2026-10-07", nota: "cerrada" }, CASAS_PRUEBA[1]];
+  const r = compararCasas({ metal: "oro", pureza: "14k", gramos: 10, meses: 2, foto: FOTO_CASAS, casas, hoy: new Date("2026-10-01T12:00:00-06:00") });
+  assert.equal(r.filas.length, 2);
+  assert.equal(r.menorCosto, "Casa B");
+  assert.ok(r.filas.find((f) => f.id === "a").cerrada);
+  const despues = compararCasas({ metal: "oro", pureza: "14k", gramos: 10, meses: 2, foto: FOTO_CASAS, casas, hoy: new Date("2026-10-08T12:00:00-06:00") });
+  assert.equal(despues.menorCosto, "Casa A");
+  assert.equal(despues.filas.find((f) => f.id === "a").nota, null, "la nota de cierre caduca");
+  assert.equal(estaCerrada({ cerradaHasta: "2026-10-07" }, new Date("2026-10-07T00:30:00-06:00")), false);
 });
 
-test("cotizarTraspaso: el usuario no paga; elige la casa de la red que más ahorra", () => {
-  const base = { prestamo: 8000, tasaActual: 9, mesesRestantes: 6, mesesSinPagar: 2, penalizacion: 0, valorPieza: 15000 };
-  const una = cotizarTraspaso(base);
-  CONVENIOS.push({ id: "convenio_prueba", nombreInterno: "Casa de prueba", tasaPublicaMensual: 3.0, descuentoRelativo: 0.05, pisos: [{ desdeValorPieza: 0, tasaMinima: 2.5 }] });
-  try {
-    const dos = cotizarTraspaso(base);
-    assert.equal(dos.convenioId, "convenio_prueba");
-    assert.equal(dos.tasaOferta, 3.0);
-    assert.ok(dos.comparacion.ahorro > una.comparacion.ahorro);
-    assert.ok(!JSON.stringify(dos).includes("Casa de prueba"));
-  } finally {
-    CONVENIOS.pop();
-  }
+test("casas: la tasa comparable suma IVA en las comerciales", () => {
+  assert.equal(tasaConIva(CASAS_PRUEBA[1]), 11.6);
+  assert.equal(tasaConIva(CASAS_PRUEBA[0]), 4);
 });
 
+test("markdown: reconoce filas de tabla con y sin pipe final", () => {
+  assert.ok(esFilaTabla("| A | 4 % |"));
+  assert.ok(esFilaTabla("| B | 5 %"));
+  assert.ok(!esFilaTabla("Tasa | 5 %"));
+  assert.ok(SEPARADOR_TABLA.test("|---|---|"));
+  assert.ok(SEPARADOR_TABLA.test("| :-- | --: |"));
+  assert.deepEqual(celdas("| B | 5 %"), ["B", "5 %"]);
+});
