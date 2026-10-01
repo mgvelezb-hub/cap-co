@@ -84,7 +84,7 @@ export default function AvisoPrivacidad() {
           </Seccion>
 
           <Seccion titulo="Para qué los usamos">
-            <p>Finalidades primarias: contactarte por llamada, WhatsApp o correo cuando lo solicitas; revisar tu boleta y orientarte sobre tasas, plazos, costo total y opciones; coordinar el cambio de tu boleta con la casa de empeño con convenio cuando decidas hacerlo (cita y datos del préstamo); dar seguimiento a tu consulta: si no coincidimos, hasta tres recordatorios en una semana hábil por WhatsApp o llamada y, si confirmaste tu correo, por correo (cada correo trae un enlace para dejar de recibirlos). Puedes pedir en cualquier momento que no te contactemos. Para priorizar la atención, un sistema clasifica tu caso con los números de la cotización y un resumen sin tus datos personales; si el sistema concluye que el cambio no te conviene, una persona del equipo lo revisa antes de dejar de contactarte. El equipo organiza los casos en un sistema interno y puede usar asistentes de inteligencia artificial de nuestro proveedor para consultarlos, bajo las mismas obligaciones de confidencialidad.</p>
+            <p>Finalidades primarias: contactarte por llamada, WhatsApp o correo cuando lo solicitas; revisar tu boleta y orientarte sobre tasas, plazos, costo total y opciones; coordinar el cambio de tu boleta con la casa de empeño a la que decidas cambiarte (cita y datos del préstamo); dar seguimiento a tu consulta: si no coincidimos, hasta tres recordatorios en una semana hábil por WhatsApp o llamada y, si confirmaste tu correo, por correo (cada correo trae un enlace para dejar de recibirlos). Puedes pedir en cualquier momento que no te contactemos. Para priorizar la atención, un sistema clasifica tu caso con los números de la cotización y un resumen sin tus datos personales; si el sistema concluye que el cambio no te conviene, una persona del equipo lo revisa antes de dejar de contactarte. El equipo organiza los casos en un sistema interno y puede usar asistentes de inteligencia artificial de nuestro proveedor para consultarlos, bajo las mismas obligaciones de confidencialidad.</p>
             <p>Finalidades secundarias: estadísticas internas anónimas sobre el tipo de consultas recibidas y el perfil opcional del chat, para mejorar el servicio y decidir dónde y cómo darlo a conocer (por ejemplo, en qué redes o zonas anunciarnos). Puedes oponerte a esta finalidad escribiendo al correo indicado abajo.</p>
             <p>No usamos tus datos para publicidad de terceros ni los vendemos.</p>
           </Seccion>
@@ -92,9 +92,9 @@ export default function AvisoPrivacidad() {
           <Seccion titulo="Con quién los compartimos">
             <p>
               No transferimos tus datos a terceros, salvo cuando aceptas la cita para hacer el cambio de tu boleta:
-              en ese momento compartimos tu nombre, tu teléfono y los datos de tu boleta con la casa de empeño con
-              convenio que te recomendamos, para coordinar el trámite. Esa casa nos paga una tarifa por el cambio; a
-              ti no te cuesta nada. También cuando lo exija la ley. Nuestros proveedores
+              en ese momento compartimos tu nombre, tu teléfono y los datos de tu boleta con la casa de empeño a la
+              que decides cambiarte, para coordinar el trámite. Si esa casa nos paga una tarifa por el cambio, a ti no
+              te cuesta nada. También cuando lo exija la ley. Nuestros proveedores
               tecnológicos (alojamiento web, base de datos, mensajería e inteligencia artificial, algunos con servidores
               fuera de México) tratan los datos únicamente por cuenta nuestra y bajo obligaciones de confidencialidad.
             </p>

@@ -1,6 +1,6 @@
-// Aviso legal. Provisional, pendiente de revisión legal. Nunca decir "independiente" (hay tasas
-// preferentes negociadas con la red) ni nombrar ninguna institución (identidad del 30-sep-2026):
-// el usuario no paga nada y la casa con convenio paga a CAP & Co. una tarifa por cambio (misma para todas).
+// Aviso legal. Provisional, pendiente de revisión legal. Nunca decir "independiente". Desde el
+// 1-oct-2026 se nombran instituciones con sus cifras públicas y no se habla de convenios; el usuario
+// no paga nada. Mismo mensaje que el chat (lib/chatbot/system.js) y las preguntas frecuentes.
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BRAND, CORREO_CONTACTO } from "@/lib/constants";
@@ -32,18 +32,19 @@ export default function AvisoLegal() {
           <Seccion titulo="Qué somos">
             <p>
               {BRAND.nombre} ({BRAND.slogan}) es asesoría prendaria: <strong>no otorgamos préstamos</strong> ni
-              recibimos prendas. Comparamos tu caso con datos públicos del mercado y con las condiciones de las
-              casas de empeño con las que tenemos convenio. Si alguna te ahorra de forma clara, te recomendamos la
-              que más te ahorra y te decimos sus condiciones antes de cualquier trámite; si ninguna te conviene, te
-              decimos que te quedes donde estás.
+              recibimos prendas. Comparamos tu caso con las tasas, costos y montos de préstamo que publica cada casa de
+              empeño, con su fuente y fecha, y con el precio del oro del día. Si alguna te ahorra de forma clara, te
+              decimos cuál y sus condiciones antes de cualquier trámite; si ninguna te conviene, te decimos que te
+              quedes donde estás.
             </p>
           </Seccion>
           <Seccion titulo="Cómo nos pagan">
             <p>
-              A ti no te cobramos nada: ni por revisar tu boleta ni por acompañarte en el cambio. La casa de empeño
-              con convenio nos paga una tarifa solo cuando alguien se cambia con ella; si se suman más casas, todas
-              pagan la misma. Aunque solo ganamos si te cambias, cuando el cambio no te deja un ahorro claro (al
-              menos $500 o 5 % de lo que pagarías), te lo decimos y no avanzamos. Todo el ahorro es tuyo.
+              A ti no te cobramos nada: ni por revisar tu boleta ni por acompañarte en el cambio. Nuestros ingresos
+              vienen de tarifas que algunas casas de empeño nos pagan cuando alguien se cambia con ellas, y de
+              talleres de educación financiera para empresas. La comparación se hace con las cifras que publica cada
+              casa, y cuando el cambio no te deja un ahorro claro (al menos $500 o 5 % de lo que pagarías), te lo
+              decimos y no avanzamos. Todo el ahorro es tuyo.
             </p>
           </Seccion>
           <Seccion titulo="Cifras y cálculos">
