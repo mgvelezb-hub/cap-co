@@ -12,7 +12,7 @@ const ZONAS = [
     titulo: "El préstamo",
     texto:
       "Lo que te dieron en la mano por tu pieza. No es lo que debes: es el punto de partida de tu deuda, calculado sobre el avalúo.",
-    alerta: "El avalúo típico va del 25% al 45% del valor de la pieza, según CONDUSEF.",
+    alerta: "Te prestan solo una parte del avalúo, y cuánto cambia de una casa a otra: compáralo antes de firmar.",
   },
   {
     id: "cat",
@@ -21,7 +21,7 @@ const ZONAS = [
     titulo: "La tasa y el CAT",
     texto:
       "La tasa es el interés mensual. El CAT (Costo Anual Total) suma esa tasa más comisiones, almacenaje y seguro: es el número real que deberías comparar entre instituciones.",
-    alerta: "CONDUSEF recomienda siempre pedir el CAT, no solo la tasa de interés.",
+    alerta: "La norma de casas de empeño (NOM-179) obliga a informarte el CAT: pídelo siempre, no solo la tasa.",
   },
   {
     id: "vence",
@@ -48,7 +48,7 @@ const ZONAS = [
     titulo: "El derecho de demasía",
     texto:
       "Si no logras recuperar tu pieza y termina vendiéndose en más de lo que debías, esa diferencia es legalmente tuya.",
-    alerta: "Casi ninguna casa de empeño lo menciona. Pregúntalo antes de empeñar, no después.",
+    alerta: "Pregunta por la demasía antes de empeñar, no después.",
   },
 ];
 

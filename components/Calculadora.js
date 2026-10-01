@@ -41,13 +41,13 @@ export default function Calculadora() {
           <input
             type="range"
             min="4"
-            max="12"
+            max="20"
             step="0.5"
             value={tasa}
             onChange={(e) => setTasa(+e.target.value)}
           />
           <p className="mt-2 font-sans text-xs text-sobre-verde/75">
-            Rango típico reportado por CONDUSEF. La tasa sola no basta: pide siempre el CAT.
+            Las casas publican de 3 % a 20 % al mes. La tasa sola no basta: pide siempre el CAT.
           </p>
         </label>
         <label className="block">
@@ -68,7 +68,7 @@ export default function Calculadora() {
 
       <div className="flex flex-col justify-center">
         <div className="font-sans text-sm uppercase tracking-[0.2em] text-sobre-verde/60">
-          Pagarás en total
+          Pagarías aprox. en total
         </div>
         <div className="mt-2 font-serif text-[clamp(3rem,7vw,5.5rem)] leading-none tabular-nums">
           {fmt(total)}
@@ -77,7 +77,7 @@ export default function Calculadora() {
           {fmt(monto)} de préstamo + {fmt(interesTotal)} de puros intereses
           ({fmt(interesMensual)} por mes). Recuperar tu pieza te costará{" "}
           <strong className="text-sobre-verde">{veces.toFixed(1)} veces</strong> lo que te
-          prestaron.
+          prestaron. Estimado con interés simple, sin IVA, comisiones ni almacenaje.
         </p>
         <p className="mt-4 w-fit max-w-full rounded-lg bg-white/[0.08] px-4 py-3 text-left font-sans text-sm text-sobre-verde/90">
           Y si solo refrendas, nada de esto baja tu deuda:

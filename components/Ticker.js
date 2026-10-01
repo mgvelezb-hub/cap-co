@@ -1,9 +1,9 @@
 const FRASES = [
   "El refrendo solo paga intereses",
   "Tu boleta es un contrato: entiéndelo antes de firmar",
-  "Una tasa 3% más alta puede duplicar tu pago",
+  "3 puntos más de tasa: $1,800 más en 6 meses por cada $10,000",
   "Analizar tu boleta no tiene costo",
-  "El costo real nunca es el número grande de la publicidad",
+  "El costo real está en el CAT, no en el anuncio",
   "Preguntar no cuesta nada; no preguntar, sí",
 ];
 

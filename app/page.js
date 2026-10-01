@@ -157,8 +157,8 @@ function ComoFunciona() {
   const pasos = [
     ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
     ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
-    ["Comparamos tus opciones", "Con las tasas que publica cada casa de empeño y el precio del oro del día, te mostramos cuánto te prestaría y cobraría cada una, y si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso a la casa que más te ahorra, sin costo para ti. Si no te conviene, te lo decimos."],
+    ["Comparamos tus opciones", "Con las tasas que publica cada casa de empeño y el precio del oro del día, te mostramos lo que cada una publica y si tu empeño está bien donde está."],
+    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso a la que más te ahorra de las que comparamos, sin costo para ti. Si no te conviene, te lo decimos."],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
@@ -240,8 +240,8 @@ function QuienesSomos() {
   ];
   const valores = [
     ["Claridad radical", "Te explicamos cada término en lenguaje claro, sin tecnicismos."],
-    ["Datos, no opiniones", "Cada comparación con números verificables."],
-    ["Te decimos si no conviene", "Solo ganamos si te cambias, y aun así, si el cambio no te deja un ahorro claro, te lo decimos y no avanzamos."],
+    ["Datos, no opiniones", "Cada comparación con la fuente y la fecha de sus números."],
+    ["Te decimos si no conviene", "Nuestro ingreso depende de que te cambies, y aun así, si el cambio no te deja un ahorro claro, te lo decimos y no avanzamos."],
     ["Discreción", "Tu situación y tus piezas son asunto tuyo."],
   ];
   return (
@@ -274,8 +274,8 @@ function QuienesSomos() {
             <Reveal delay={80} className="mt-10">
               <p className="font-sans text-lg leading-relaxed text-esmeralda/75 text-justify">
                 Hoy revisamos tu boleta cláusula por cláusula y la comparamos con datos
-                públicos de otras instituciones. CONDUSEF recomienda comparar antes de
-                decidir: esa revisión la hacemos contigo, sin costo.
+                públicos de otras instituciones. Comparar antes de decidir es la recomendación
+                básica de las autoridades de consumo: esa revisión la hacemos contigo, sin costo.
               </p>
             </Reveal>
           </div>
