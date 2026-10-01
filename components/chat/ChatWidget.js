@@ -7,7 +7,7 @@ import ChatInput from "./ChatInput";
 import AgendaForm, { TarjetaCita } from "./AgendaForm";
 import PerfilForm from "./PerfilForm";
 import { MENSAJE_POR_CASO, PREGUNTAS_PERFIL, NO_DICE } from "@/lib/chatbot/perfil-visita";
-import { WHATSAPP_URL } from "@/lib/constants";
+import { WHATSAPP_URL, WHATSAPP_ACTIVO, CANAL_RESPALDO, CORREO_CONTACTO } from "@/lib/constants";
 
 const STORAGE_KEY = "capco-chat-v1";
 const FUENTE_KEY = "capco-fuente-v1";
@@ -26,7 +26,7 @@ function idConversacion(nueva = false) {
   }
 }
 const BIENVENIDA =
-  "¡Hola! Soy el asesor virtual de CAP & Co. y te ayudo con tu empeño: qué dice tu boleta, cuánto vas a pagar, cuánto vale tu oro o si te conviene cambiar de institución. Sin costo.";
+  "¡Hola! Soy el asesor virtual de CAP & Co. y te ayudo con tu empeño: qué dice tu boleta, cuánto vas a pagar, cuánto vale tu oro o si te conviene cambiar de institución. Preguntarme no tiene costo.";
 const INVITA_CASO =
   "¿Cuál es tu caso? Elige una opción o escríbelo con tus palabras. No te pido nombre ni teléfono.";
 const INVITA_TEMA =
@@ -37,8 +37,7 @@ const CHIPS = [
   "¿Me conviene cambiar de casa de empeño?",
   "Enséñame con un ejemplo",
 ];
-const MENSAJE_CAIDA =
-  "Ahora mismo no puedo responder. Escríbenos por WhatsApp y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.";
+const MENSAJE_CAIDA = `Ahora mismo no puedo responder. Si quieres, ${CANAL_RESPALDO} y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.`;
 
 // Fuente de la visita (primer toque): utm_* de la URL, referrer y ruta. Sin datos personales.
 function capturarFuente() {
@@ -59,6 +58,17 @@ function capturarFuente() {
   } catch {
     return {};
   }
+}
+
+// Texto de una respuesta para el lector de pantalla: sin las marcas de markdown de las burbujas.
+function textoPlano(contenido) {
+  return (contenido || "")
+    .replace(/\*\*/g, "")
+    .replace(/^\s*\|?[\s:|-]+\|?\s*$/gm, "")
+    .replace(/\|/g, " ")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function cargarEstado() {
@@ -169,6 +179,37 @@ function ChatWidgetPublico() {
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
+
+  // Diálogo modal de verdad: con el chat abierto, la página de atrás queda inerte (ni foco ni lector
+  // de pantalla). Al abrir, el foco entra al panel; en escritorio ChatInput ya lo puso en el campo de
+  // texto, y en celular se enfoca el panel mismo para no abrir el teclado.
+  useEffect(() => {
+    if (!abierto) return;
+    const pagina = document.getElementById("pagina");
+    if (pagina) pagina.inert = true;
+    const panel = panelRef.current;
+    if (panel && !panel.contains(document.activeElement)) panel.focus();
+    return () => {
+      if (pagina) pagina.inert = false;
+    };
+  }, [abierto]);
+
+  // Región "status" aparte (la lista de mensajes ya no es live): avisa "Escribiendo…" mientras llega
+  // la respuesta y, al terminar, la lee completa una sola vez en vez de cada pedazo del streaming.
+  const [anuncio, setAnuncio] = useState("");
+  const ultimoMensaje = mensajes[mensajes.length - 1];
+  const respondiendo = ultimoMensaje?.role === "assistant" && ultimoMensaje.pendiente === true;
+  const estabaRespondiendo = useRef(false);
+  useEffect(() => {
+    if (respondiendo) {
+      if (!estabaRespondiendo.current) setAnuncio("Escribiendo…");
+      estabaRespondiendo.current = true;
+      return;
+    }
+    if (!estabaRespondiendo.current) return;
+    estabaRespondiendo.current = false;
+    setAnuncio(ultimoMensaje?.role === "assistant" ? textoPlano(ultimoMensaje.content) : "");
+  }, [respondiendo, ultimoMensaje]);
 
   // Celular (pantalla completa):
   // - La página de atrás se congela en su lugar (position: fixed en body). En iPhone,
@@ -380,6 +421,7 @@ function ChatWidgetPublico() {
     setCta(null);
     setCitaApartada(null);
     setCargando(false);
+    setAnuncio("");
   }
 
   // Marca el click en WhatsApp sin bloquear la navegación (sendBeacon sobrevive al cambio de pestaña).
@@ -400,6 +442,9 @@ function ChatWidgetPublico() {
           type="button"
           onClick={() => setAbierto(true)}
           aria-label="Abrir chat: resuelve tus dudas de empeño"
+          // Escondido en el hero del celular: tampoco se alcanza con teclado ni lector.
+          tabIndex={visible ? 0 : -1}
+          aria-hidden={!visible}
           className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-esmeralda font-sans text-sm font-medium text-sobre-verde shadow-[0_8px_30px_rgba(20,64,47,0.28)] ring-2 ring-sobre-verde/70 transition-all duration-500 ease-expo hover:scale-[1.03] md:bottom-7 md:right-7 md:h-auto md:w-auto md:gap-3 md:py-3 md:pl-4 md:pr-5 ${
             visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
@@ -415,9 +460,10 @@ function ChatWidgetPublico() {
           role="dialog"
           aria-modal="true"
           aria-label="Asesor virtual de CAP & Co."
-          className="fixed inset-0 z-[70] flex flex-col bg-papel md:inset-auto md:bottom-7 md:right-7 md:h-[640px] md:max-h-[calc(100dvh-3.5rem)] md:w-[400px] md:overflow-hidden md:rounded-2xl md:border md:border-esmeralda/10 md:shadow-[0_20px_60px_rgba(20,64,47,0.25)]"
+          tabIndex={-1}
+          className="fixed inset-0 outline-none z-[70] flex flex-col bg-papel md:inset-auto md:bottom-7 md:right-7 md:h-[640px] md:max-h-[calc(100dvh-3.5rem)] md:w-[400px] md:overflow-hidden md:rounded-2xl md:border md:border-esmeralda/10 md:shadow-[0_20px_60px_rgba(20,64,47,0.25)]"
         >
-          <header className={`flex items-center justify-between border-b border-esmeralda/10 bg-esmeralda px-4 text-sobre-verde ${teclado ? "py-1" : "py-3"}`}>
+          <div className={`flex items-center justify-between border-b border-esmeralda/10 bg-esmeralda px-4 text-sobre-verde ${teclado ? "py-1" : "py-3"}`}>
             <div className="leading-tight">
               <div className="font-serif text-lg tracking-wide">CAP & Co.</div>
               {!teclado && (
@@ -452,13 +498,15 @@ function ChatWidgetPublico() {
                 </svg>
               </button>
             </div>
-          </header>
+          </div>
+
+          <div role="status" className="sr-only">
+            {anuncio}
+          </div>
 
           <div
             ref={listaRef}
             className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4"
-            aria-live="polite"
-            aria-relevant="additions text"
           >
             <ChatMessage role="assistant" content={BIENVENIDA} />
             {hidratado && mensajes.length === 0 && !perfil && (
@@ -500,7 +548,7 @@ function ChatWidgetPublico() {
             {/* El aviso va dentro de la conversación, no fijo abajo: se lee al abrir y después se
                 desplaza con la plática, sin robarle espacio a las respuestas. */}
             <p className="px-2 pb-1 text-center font-sans text-xs leading-snug text-esmeralda/75">
-              Asesor virtual automático. No guarda tu nombre ni teléfono, salvo que los dejes para agendar una cita.{" "}
+              Asesor virtual automático con inteligencia artificial: lo que escribes se envía a nuestro proveedor de IA para contestarte y no guardamos el texto. No pide tu nombre ni teléfono, salvo que los dejes para agendar una cita.{" "}
               <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                 Aviso de privacidad
               </a>
@@ -511,12 +559,12 @@ function ChatWidgetPublico() {
                 <ChatMessage role={m.role} content={m.content} pendiente={m.pendiente} adjunto={m.adjunto} />
                 {m.whatsapp && !m.pendiente && (
                   <a
-                    href={WHATSAPP_URL}
+                    href={WHATSAPP_ACTIVO ? WHATSAPP_URL : `mailto:${CORREO_CONTACTO}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border border-esmeralda/25 px-4 py-2 font-sans text-sm text-esmeralda hover:border-esmeralda"
                   >
-                    Escribir por WhatsApp
+                    {WHATSAPP_ACTIVO ? "Escribir por WhatsApp" : "Escribir por correo"}
                   </a>
                 )}
               </div>

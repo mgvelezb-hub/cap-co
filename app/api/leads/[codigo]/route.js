@@ -1,6 +1,7 @@
 // GET /api/leads/CAP-XXXX — consulta interna (bot de WhatsApp, fase 3).
 // Requiere Authorization: Bearer <LEADS_API_SECRET>. Devuelve el lead completo.
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import { PATRON_CODIGO } from "@/lib/chatbot/codigo";
 import { obtenerLead } from "@/lib/leads/repo";
 import { dbDisponible } from "@/lib/db/client";
@@ -11,7 +12,10 @@ function autorizado(request) {
   const secreto = process.env.LEADS_API_SECRET;
   if (!secreto) return false;
   const auth = request.headers.get("authorization") || "";
-  return auth === `Bearer ${secreto}`;
+  // Comparación en tiempo constante (con hash para igualar largos).
+  const a = createHash("sha256").update(auth).digest();
+  const b = createHash("sha256").update(`Bearer ${secreto}`).digest();
+  return timingSafeEqual(a, b);
 }
 
 export async function GET(request, { params }) {

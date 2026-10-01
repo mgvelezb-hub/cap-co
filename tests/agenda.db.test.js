@@ -107,7 +107,7 @@ test("agenda en la base: reserva atómica, cupo, teléfonos, reprogramación y e
   }
 });
 
-test("retención: 12 meses sin actividad; 5 años si se cobró comisión", { skip: !URL && "sin base local" }, async () => {
+test("retención: 12 meses sin actividad, aunque se haya cobrado la tarifa; lo fiscal se queda", { skip: !URL && "sin base local" }, async () => {
   const { crearLead, registrarContacto, anonimizarLeadsViejos } = await import("../lib/leads/repo.js");
   const { query, cerrarPool } = await import("../lib/db/client.js");
   const creados = [];
@@ -123,10 +123,10 @@ test("retención: 12 meses sin actividad; 5 años si se cobró comisión", { ski
       );
     }
     await anonimizarLeadsViejos();
-    const { rows } = await query(`SELECT etapa, nombre FROM lead WHERE codigo = ANY($1) ORDER BY etapa`, [creados]);
+    const { rows } = await query(`SELECT etapa, nombre, (cobrado_at IS NOT NULL) AS cobrado FROM lead WHERE codigo = ANY($1) ORDER BY etapa`, [creados]);
     assert.deepEqual(rows, [
-      { etapa: "atendido", nombre: null },
-      { etapa: "comision_cobrada", nombre: "Viejo" },
+      { etapa: "atendido", nombre: null, cobrado: false },
+      { etapa: "comision_cobrada", nombre: null, cobrado: true },
     ]);
   } finally {
     await query(`DELETE FROM lead WHERE codigo = ANY($1)`, [creados]);

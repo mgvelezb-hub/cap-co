@@ -6,9 +6,11 @@
 // footer lo usa en claro sobre verde). Las piezas doradas no cambian.
 // Los ids de gradientes se repiten entre instancias (header y footer) —
 // inofensivo: los defs son idénticos y el navegador resuelve al primero.
-export default function Logo({ className = "", color = "#14402F" }) {
+// decorativo: junto a un texto visible con el nombre (header, footer), el lector lo salta.
+export default function Logo({ className = "", color = "#14402F", decorativo = false }) {
+  const a11y = decorativo ? { "aria-hidden": true } : { role: "img", "aria-label": "CAP & Co." };
   return (
-    <svg viewBox="-125 -135 250 300" className={className} aria-label="CAP & Co.">
+    <svg viewBox="-125 -135 250 300" className={className} {...a11y}>
       <defs>
         <clipPath id="lg-base">
           <rect x="-150" y="-150" width="300" height="300" />

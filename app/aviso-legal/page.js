@@ -1,6 +1,7 @@
 // Aviso legal. Provisional, pendiente de revisión legal. Nunca decir "independiente". Desde el
-// 1-oct-2026 se nombran instituciones con sus cifras públicas y no se habla de convenios; el usuario
-// no paga nada. Mismo mensaje que el chat (lib/chatbot/system.js) y las preguntas frecuentes.
+// 1-oct-2026 se nombran instituciones con sus cifras públicas; Montepío Luz Saviñón nos paga una
+// tarifa (gratis para la persona) y con otras casas la persona paga 10 % de su ahorro. Mismo mensaje
+// que el chat (lib/chatbot/system.js), las preguntas frecuentes y /reembolsos.
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BRAND, CORREO_CONTACTO } from "@/lib/constants";
@@ -40,11 +41,14 @@ export default function AvisoLegal() {
           </Seccion>
           <Seccion titulo="Cómo nos pagan">
             <p>
-              A ti no te cobramos nada: ni por revisar tu boleta ni por acompañarte en el cambio. Nuestros ingresos
-              vienen de tarifas que algunas casas de empeño nos pagan cuando alguien se cambia con ellas, y de
-              talleres de educación financiera para empresas. La comparación se hace con las cifras que publica cada
-              casa, y cuando el cambio no te deja un ahorro claro (al menos $500 o 5 % de lo que pagarías), te lo
-              decimos y no avanzamos. Todo el ahorro es tuyo.
+              Revisar tu boleta y comparar casas no te cuesta. Si te acompañamos a cambiar tu boleta: con Montepío
+              Luz Saviñón es gratis para ti, porque esa casa nos paga una tarifa; con cualquier otra casa nos pagas el
+              10 % de tu ahorro, solo si el cambio se concreta y siempre dicho por escrito antes del trámite. Estamos en
+              pláticas con las casas para que ellas paguen y sea gratis para ti. La comparación se hace con las cifras
+              que publica cada casa y con lo que de verdad te queda, y cuando el cambio no te deja un ahorro claro (al
+              menos $500 o 5 % de lo que pagarías), te lo decimos y no avanzamos. También tenemos ingresos por talleres
+              de educación financiera para empresas. Detalle en{" "}
+              <a href="/reembolsos" className="underline underline-offset-4">pagos y reembolsos</a>.
             </p>
           </Seccion>
           <Seccion titulo="Cifras y cálculos">
@@ -58,7 +62,8 @@ export default function AvisoLegal() {
           </Seccion>
           <Seccion titulo="Lo que nunca te pediremos">
             <p>
-              Ningún pago, ni antes ni después, ni que nos entregues tu boleta o tu pieza. Todo lo que firmes lo firmas tú, en la
+              Ningún pago por adelantado, ni que nos entregues tu boleta o tu pieza. El único cobro posible es el
+              de la sección anterior, después de que el cambio se concreta, por transferencia a nombre del titular. Todo lo que firmes lo firmas tú, en la
               casa de empeño, a tu nombre.
             </p>
           </Seccion>

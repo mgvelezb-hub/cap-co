@@ -28,7 +28,19 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es" className="motion-safe:scroll-smooth">
       <body className={`${marcellus.variable} ${inter.variable} font-sans bg-papel text-esmeralda antialiased`}>
-        {children}
+        {/* Con el chat abierto, todo lo de la página queda inerte (ChatWidget le pone inert): el foco
+            y el lector de pantalla no se salen del diálogo. */}
+        <div id="pagina">
+          {/* Primero en el orden de tabulación: brinca el encabezado. El destino es el <main> de cada
+              página (id="contenido"; el encabezado se lo pone a los que no lo traen). */}
+          <a
+            href="#contenido"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-esmeralda focus:px-5 focus:py-3 focus:font-sans focus:text-sm focus:text-sobre-verde"
+          >
+            Saltar al contenido
+          </a>
+          {children}
+        </div>
         <ChatWidget />
         <Visitas />
       </body>

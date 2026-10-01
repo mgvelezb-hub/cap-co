@@ -22,10 +22,15 @@ export default function ChatMessage({ role, content, pendiente, adjunto }) {
 
 function Puntos() {
   return (
-    <span className="chat-puntos inline-flex items-center gap-1 py-1" aria-label="Escribiendo">
-      <span />
-      <span />
-      <span />
-    </span>
+    // Texto oculto en vez de aria-label (un span sin rol no lo anuncia); fuera de .chat-puntos para
+    // que no herede el estilo de los puntos.
+    <>
+      <span className="chat-puntos inline-flex items-center gap-1 py-1" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </span>
+      <span className="sr-only">Escribiendo…</span>
+    </>
   );
 }

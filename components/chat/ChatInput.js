@@ -109,8 +109,8 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
     <div className="border-t border-esmeralda/10 bg-papel">
       {(adjunto || procesando || error) && (
         <div className="space-y-2 px-3 pt-3">
-          {procesando && <p className="font-sans text-xs text-esmeralda/60">Preparando la foto…</p>}
-          {error && <p className="font-sans text-xs text-granate">{error}</p>}
+          {procesando && <p role="status" className="font-sans text-xs text-esmeralda/75">Preparando la foto…</p>}
+          {error && <p role="alert" className="font-sans text-xs text-granate">{error}</p>}
           {adjunto && (
             <div className="flex items-center gap-3 rounded-xl border border-esmeralda/15 bg-papel-alto p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -137,11 +137,11 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
                 className="mt-0.5 h-4 w-4 shrink-0 accent-esmeralda"
               />
               <span>
-                Acepto que se analice la foto de mi boleta según el{" "}
+                Acepto que la foto de mi boleta, que trae datos de mi préstamo, se envíe a nuestro proveedor de inteligencia artificial para analizarla, según el{" "}
                 <a href="/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                   aviso de privacidad
                 </a>
-                . La foto no se guarda. Si prefieres, tapa tu nombre y domicilio antes de tomarla.
+                . La foto no se guarda. Tapa tu nombre, domicilio y número de contrato antes de tomarla.
               </span>
             </label>
           )}
@@ -177,7 +177,7 @@ export default function ChatInput({ onEnviar, deshabilitado, autoFocus }) {
           onKeyDown={onKeyDown}
           placeholder={adjunto ? "Comentario (opcional)…" : "Escribe aquí tu duda…"}
           aria-label="Escribe tu mensaje"
-          className="max-h-[120px] flex-1 resize-none overflow-y-hidden rounded-xl border border-esmeralda/15 bg-papel-alto px-3.5 py-2.5 font-sans text-base leading-snug text-esmeralda caret-granate md:text-[15px] outline-none placeholder:text-esmeralda/40 focus:border-esmeralda focus:ring-2 focus:ring-esmeralda/15"
+          className="max-h-[120px] flex-1 resize-none overflow-y-hidden rounded-xl border border-esmeralda/60 bg-papel-alto px-3.5 py-2.5 font-sans text-base leading-snug text-esmeralda caret-granate md:text-[15px] placeholder:text-esmeralda/60 focus:border-esmeralda"
         />
         <button
           type="submit"

@@ -8,7 +8,7 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import Boleta from "@/components/Boleta";
 import Calculadora from "@/components/Calculadora";
-import { WHATSAPP_URL, BRAND } from "@/lib/constants";
+import { WHATSAPP_URL, WHATSAPP_ACTIVO, BRAND } from "@/lib/constants";
 import AbrirChat from "@/components/chat/AbrirChat";
 import { PREGUNTAS } from "@/lib/contenido/preguntas";
 import Footer from "@/components/Footer";
@@ -32,7 +32,7 @@ function Hero() {
         <Reveal delay={250} className="text-center lg:text-left">
           {/* La marca se ve como título, pero el <h1> es la promesa: es lo que busca la gente. */}
           <p className="font-serif text-[clamp(2.75rem,6vw,4.75rem)] leading-[1.05] tracking-wide">{BRAND.nombre}</p>
-          <p className="mt-4 font-sans text-sm uppercase tracking-[0.28em] text-esmeralda/55 md:text-[15px]">
+          <p className="mt-4 font-sans text-sm uppercase tracking-[0.28em] text-esmeralda/75 md:text-[15px]">
             {BRAND.slogan}
           </p>
           <h1 className="mx-auto mt-9 max-w-[26ch] font-serif leading-snug lg:mx-0">
@@ -44,15 +44,23 @@ function Hero() {
             puedes hacer para recuperar tu pieza.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
-            <a
-              href={WHATSAPP_URL}
-              className="rounded-full bg-esmeralda px-8 py-4 font-sans text-sm font-medium tracking-wide text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
-            >
-              Revisa tu boleta sin costo por WhatsApp
-            </a>
-            <AbrirChat className="inline-flex min-h-[44px] items-center px-2 font-sans text-sm text-esmeralda/80 underline underline-offset-4 hover:text-esmeralda">
-              o analízala aquí con nuestro asistente
-            </AbrirChat>
+            {WHATSAPP_ACTIVO ? (
+              <>
+                <a
+                  href={WHATSAPP_URL}
+                  className="rounded-full bg-esmeralda px-8 py-4 font-sans text-sm font-medium tracking-wide text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]"
+                >
+                  Revisa tu boleta sin costo por WhatsApp
+                </a>
+                <AbrirChat className="inline-flex min-h-[44px] items-center px-2 font-sans text-sm text-esmeralda/80 underline underline-offset-4 hover:text-esmeralda">
+                  o analízala aquí con nuestro asistente
+                </AbrirChat>
+              </>
+            ) : (
+              <AbrirChat className="rounded-full bg-esmeralda px-8 py-4 font-sans text-sm font-medium tracking-wide text-sobre-verde transition-transform duration-300 ease-expo hover:scale-[1.03]">
+                Revisa tu boleta aquí, sin costo
+              </AbrirChat>
+            )}
           </div>
           <AbrirChat
             mensaje="Mi boleta de empeño vence en unos días, ¿qué puedo hacer?"
@@ -61,14 +69,15 @@ function Hero() {
             ¿Tu boleta vence en días? Revísala ahora →
           </AbrirChat>
           <p className="mt-6 font-sans text-sm tracking-wide text-esmeralda/75">
-            Nuestro servicio no te cuesta nada · Lunes a viernes, 9:00 a 17:00
+            Revisar y comparar no te cuesta. Si te acompañamos a cambiarte, te decimos antes si tiene costo:{" "}
+            <a href="/reembolsos" className="underline underline-offset-4">así cobramos</a> · Lunes a viernes, 9:00 a 17:00
           </p>
         </Reveal>
       </div>
       <a
         href="#decide-bien"
         aria-label="Empieza aquí"
-        className="absolute bottom-8 hidden flex-col items-center gap-2 text-esmeralda/45 transition-colors duration-300 hover:text-esmeralda md:flex"
+        className="absolute bottom-8 hidden flex-col items-center gap-2 text-esmeralda/70 transition-colors duration-300 hover:text-esmeralda md:flex"
       >
         <span className="font-sans text-[11px] uppercase tracking-[0.2em]">Empieza aquí</span>
         <span className="h-8 w-px bg-current" />
@@ -158,7 +167,7 @@ function ComoFunciona() {
     ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
     ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
     ["Comparamos tus opciones", "Con las tasas que publica cada casa de empeño y el precio del oro del día, te mostramos lo que cada una publica y si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso a la que más te ahorra de las que comparamos, sin costo para ti. Si no te conviene, te lo decimos."],
+    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso a la que más te ahorra de las que comparamos. Antes de cualquier trámite te decimos lo que te queda: gratis con Montepío Luz Saviñón, que nos paga una tarifa; con otra casa, 10 % de tu ahorro. Si no te conviene, te lo decimos."],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
@@ -206,7 +215,7 @@ function PreguntasFrecuentes() {
             <details key={q} className="group py-3">
               <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-6 py-2 font-serif text-lg md:text-xl [&::-webkit-details-marker]:hidden">
                 {q}
-                <span className="mt-1 shrink-0 font-sans text-esmeralda/50 transition-transform duration-300 group-open:rotate-45" aria-hidden="true">
+                <span className="mt-1 shrink-0 font-sans text-esmeralda/70 transition-transform duration-300 group-open:rotate-45" aria-hidden="true">
                   +
                 </span>
               </summary>
@@ -247,6 +256,7 @@ function QuienesSomos() {
   return (
     <section id="quienes-somos" className="border-t border-esmeralda/10 bg-papel-alto">
       <div className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+        <h2 className="sr-only">¿Quiénes somos?</h2>
         {/* Por qué existimos */}
         <Reveal>
           <p className="max-w-[30ch] font-serif text-[clamp(1.9rem,3.8vw,3.1rem)] leading-tight">
@@ -261,7 +271,7 @@ function QuienesSomos() {
                 gustaría agregarla a tu consideración"). Solo usa lo que sabemos: el negocio nació al ver
                 las dudas de personas afectadas por sus empeños; sin fechas, nombres ni cifras inventadas. */}
             <Reveal delay={40}>
-              <h2 className="font-serif text-2xl">Cómo empezamos</h2>
+              <h3 className="font-serif text-2xl">Cómo empezamos</h3>
               <p className="mt-3 font-sans text-[17px] leading-relaxed text-esmeralda/75">
                 CAP &amp; Co. nació al ver, en grupos de personas afectadas por sus empeños, las mismas preguntas
                 una y otra vez: ¿cuánto debo en realidad?, ¿qué pasa si se vence mi boleta?, ¿hay una opción mejor?
@@ -353,7 +363,7 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main>
+      <main id="contenido" tabIndex={-1} className="focus:outline-none">
         {/* Primero se ayuda (problema, boleta, calculadora, cómo funciona) y después se cuenta quiénes
             somos, justo antes de las preguntas y del contacto. */}
         <Hero />

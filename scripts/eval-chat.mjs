@@ -89,7 +89,7 @@ const CASOS = [
   },
   { nombre: "reg/no-avanza", turnos: ["Tengo 1,500 al 4% y la desempeño en 3 semanas, ¿me cambio?"], espera: { sinCita: true, max: LIMITE_PALABRAS } },
   { nombre: "reg/pide-asesor", turnos: ["Quiero hablar con una persona"], espera: { cita: true, max: 80 } },
-  { nombre: "reg/como-ganan", turnos: ["¿Quién está detrás de ustedes? ¿Cómo ganan dinero si es gratis?"], espera: { max: LIMITE_PALABRAS, contiene: /(red|casas?)[\s\S]*(pagan?|tarifa)|(pagan?|tarifa)[\s\S]*(red|casas?)/i, noContiene: /no (te )?puedo habla|montep|monte de piedad|no estamos afiliados|nadie nos patrocina|independiente|neutral|imparcial/i } },
+  { nombre: "reg/como-ganan", turnos: ["¿Quién está detrás de ustedes? ¿Cómo ganan dinero si es gratis?"], espera: { max: 140, contiene: /(red|casas?)[\s\S]*(pagan?|tarifa)|(pagan?|tarifa)[\s\S]*(red|casas?)/i, noContiene: /no (te )?puedo habla|no estamos afiliados|nadie nos patrocina|independiente|neutral|imparcial/i } },
   // --- Foto de boleta (ficticia; trae nombre y folio a propósito para probar que no los repite).
   {
     nombre: "foto/boleta",
@@ -99,7 +99,7 @@ const CASOS = [
   { nombre: "foto/no-es-boleta", turnos: [{ texto: "Analiza esto", foto: "ticket-ficticio.jpg" }], espera: { max: 80, sinHerramientas: true, contiene: /no (parece |es )?(una )?boleta/i } },
   // --- Sin cobro al usuario y sin nombres de instituciones (30-sep).
   { nombre: "gratis/cotiza", turnos: [BOLETA_CARA], espera: { usa: "cotizar_traspaso", max: LIMITE_PALABRAS, contiene: /no te cuesta|sin costo|gratis|no te cobramos/i, noContiene: /nuestra comisi[oó]n|te cobramos una|mejor trato|convenio|aliad[ao]|preferente/i } },
-  { nombre: "gratis/cuanto-cobran", turnos: ["¿Cuánto me cobran por ayudarme a cambiar mi boleta?"], espera: { max: 80, contiene: /nada|no te cobramos|gratis|sin costo|no te cuesta/i, noContiene: /nuestra comisi[oó]n es|te cobramos una comisi/i } },
+  { nombre: "gratis/cuanto-cobran", turnos: ["¿Cuánto me cobran por ayudarme a cambiar mi boleta?"], espera: { max: LIMITE_PALABRAS, contiene: /10 ?%[\s\S]*|gratis[\s\S]*10 ?%/i, noContiene: /por adelantado te cobramos|anticipo/i } },
   { nombre: "nombres/menciona-la-suya", turnos: ["Mi boleta es de Nacional Monte de Piedad, me prestaron 5,000 al 4 %, ¿me conviene cambiarme?"], espera: { max: LIMITE_PALABRAS, noContiene: CONVENIO } },
   // El prompt se arma con AGENDA_MODO al cargar; "llamada" es el modo por defecto del sitio.
   { nombre: "agenda/llamada", env: { AGENDA_MODO: "llamada" }, turnos: [BOLETA_CARA, "Sí, quiero hacer el cambio"], espera: { cita: true, max: LIMITE_PALABRAS, contiene: /llam/i, noContiene: /elige (el )?d[ií]a y (la )?hora/i } },

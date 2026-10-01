@@ -1,6 +1,7 @@
 import Logo from "@/components/Logo";
 import Reveal from "@/components/Reveal";
-import { WHATSAPP_URL, SOCIAL, BRAND, CORREO_CONTACTO } from "@/lib/constants";
+import { WHATSAPP_URL, WHATSAPP_ACTIVO, SOCIAL, BRAND, CORREO_CONTACTO } from "@/lib/constants";
+import AbrirChat from "@/components/chat/AbrirChat";
 
 function IconFacebook(props) {
   return (
@@ -21,6 +22,17 @@ function IconInstagram(props) {
   );
 }
 
+// Ayuda y documentos legales, en el orden en que se leen.
+const ENLACES = [
+  ["/#preguntas", "Preguntas frecuentes"],
+  ["/glosario", "Glosario"],
+  ["/aviso-de-privacidad", "Aviso de privacidad"],
+  ["/terminos", "Términos y condiciones"],
+  ["/cookies", "Política de cookies"],
+  ["/reembolsos", "Pagos y reembolsos"],
+  ["/aviso-legal", "Aviso legal"],
+];
+
 export default function Footer() {
   return (
     <footer className="bg-esmeralda text-sobre-verde">
@@ -30,12 +42,18 @@ export default function Footer() {
             <h2 className="max-w-[18ch] font-serif text-[clamp(2rem,4.5vw,3.6rem)] leading-tight">
               ¿Tienes una boleta que no entiendes?
             </h2>
-            <a
-              href={WHATSAPP_URL}
-              className="mt-10 inline-block rounded-full bg-sobre-verde px-8 py-4 font-sans text-sm font-medium tracking-wide text-esmeralda transition-transform duration-300 ease-expo hover:scale-[1.03]"
-            >
-              Escríbenos por WhatsApp
-            </a>
+            {WHATSAPP_ACTIVO ? (
+              <a
+                href={WHATSAPP_URL}
+                className="mt-10 inline-block rounded-full bg-sobre-verde px-8 py-4 font-sans text-sm font-medium tracking-wide text-esmeralda transition-transform duration-300 ease-expo hover:scale-[1.03]"
+              >
+                Escríbenos por WhatsApp
+              </a>
+            ) : (
+              <AbrirChat className="mt-10 inline-block rounded-full bg-sobre-verde px-8 py-4 font-sans text-sm font-medium tracking-wide text-esmeralda transition-transform duration-300 ease-expo hover:scale-[1.03]">
+                Pregúntale al asistente
+              </AbrirChat>
+            )}
             <p className="mt-4 font-sans text-sm text-sobre-verde/70">
               Lunes a viernes, de 9:00 a 17:00 ·{" "}
               <a href={`mailto:${CORREO_CONTACTO}`} className="underline underline-offset-4">
@@ -44,7 +62,7 @@ export default function Footer() {
             </p>
             {(SOCIAL.facebook !== "#" || SOCIAL.instagram !== "#") && (
             <div className="mt-10 flex items-center gap-4">
-              <span className="font-sans text-xs uppercase tracking-[0.2em] text-sobre-verde/50">
+              <span className="font-sans text-xs uppercase tracking-[0.2em] text-sobre-verde/70">
                 Síguenos
               </span>
               {SOCIAL.facebook !== "#" && <a
@@ -65,26 +83,19 @@ export default function Footer() {
             )}
           </Reveal>
           <Reveal delay={200} className="hidden justify-end lg:col-span-4 lg:flex">
-            <Logo className="h-40 w-auto" color="#F4F6F1" />
+            <Logo className="h-40 w-auto" color="#F4F6F1" decorativo />
           </Reveal>
         </div>
         <div className="mt-20 flex flex-col items-start justify-between gap-4 border-t border-sobre-verde/15 pt-8 font-sans text-xs text-sobre-verde/60 md:flex-row md:items-center">
           <span>
             © {new Date().getFullYear()} {BRAND.nombre} · {BRAND.slogan}
           </span>
-          <nav className="flex flex-wrap gap-x-5 gap-y-2">
-            <a href="/#preguntas" className="inline-block py-2 underline-offset-4 hover:underline">
-              Preguntas frecuentes
-            </a>
-            <a href="/glosario" className="inline-block py-2 underline-offset-4 hover:underline">
-              Glosario
-            </a>
-            <a href="/aviso-legal" className="inline-block py-2 underline-offset-4 hover:underline">
-              Aviso legal
-            </a>
-            <a href="/aviso-de-privacidad" className="inline-block py-2 underline-offset-4 hover:underline">
-              Aviso de privacidad
-            </a>
+          <nav aria-label="Pie de página" className="flex flex-wrap gap-x-5 gap-y-2">
+            {ENLACES.map(([href, texto]) => (
+              <a key={href} href={href} className="inline-block py-2 underline-offset-4 hover:underline">
+                {texto}
+              </a>
+            ))}
           </nav>
         </div>
       </div>

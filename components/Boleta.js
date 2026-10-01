@@ -75,7 +75,8 @@ function PapelBoleta({ activa }) {
     </g>
   );
   return (
-    <svg viewBox="0 0 340 512" className="w-full max-w-md" aria-label="Boleta de empeño explicada">
+    // Ilustración: lo mismo se lee en la lista de al lado, así que el lector de pantalla la salta.
+    <svg viewBox="0 0 340 512" className="w-full max-w-md" aria-hidden="true">
       {/* papel */}
       <rect x="8" y="8" width="304" height="496" rx="14" fill="#FDFDFB" stroke="rgba(20,64,47,0.18)" />
       {/* encabezado genérico */}
@@ -87,7 +88,7 @@ function PapelBoleta({ activa }) {
 
       {/* zona 1: monto */}
       {zona("monto", 100, 58)}
-      <text x="40" y="124" fontSize="11" fill="rgba(20,64,47,0.55)" fontFamily="var(--font-inter)" letterSpacing="1.5">
+      <text x="40" y="124" fontSize="11" fill="rgba(20,64,47,0.75)" fontFamily="var(--font-inter)" letterSpacing="1.5">
         PRÉSTAMO
       </text>
       <text x="40" y="147" fontSize="22" fill="#14402F" fontFamily="var(--font-marcellus)">
@@ -97,7 +98,7 @@ function PapelBoleta({ activa }) {
 
       {/* zona 2: tasa / CAT */}
       {zona("cat", 166, 58)}
-      <text x="40" y="190" fontSize="11" fill="rgba(20,64,47,0.55)" fontFamily="var(--font-inter)" letterSpacing="1.5">
+      <text x="40" y="190" fontSize="11" fill="rgba(20,64,47,0.75)" fontFamily="var(--font-inter)" letterSpacing="1.5">
         TASA MENSUAL · CAT
       </text>
       <text x="40" y="213" fontSize="22" fill="#14402F" fontFamily="var(--font-marcellus)">
@@ -107,7 +108,7 @@ function PapelBoleta({ activa }) {
 
       {/* zona 3: vencimiento */}
       {zona("vence", 232, 58)}
-      <text x="40" y="256" fontSize="11" fill="rgba(20,64,47,0.55)" fontFamily="var(--font-inter)" letterSpacing="1.5">
+      <text x="40" y="256" fontSize="11" fill="rgba(20,64,47,0.75)" fontFamily="var(--font-inter)" letterSpacing="1.5">
         VENCE
       </text>
       <text x="40" y="279" fontSize="22" fill="#14402F" fontFamily="var(--font-marcellus)">
@@ -117,7 +118,7 @@ function PapelBoleta({ activa }) {
 
       {/* zona 4: refrendo */}
       {zona("refrendo", 298, 58)}
-      <text x="40" y="322" fontSize="11" fill="rgba(20,64,47,0.55)" fontFamily="var(--font-inter)" letterSpacing="1.5">
+      <text x="40" y="322" fontSize="11" fill="rgba(20,64,47,0.75)" fontFamily="var(--font-inter)" letterSpacing="1.5">
         REFRENDO MENSUAL
       </text>
       <text x="40" y="345" fontSize="22" fill="#14402F" fontFamily="var(--font-marcellus)">
@@ -127,7 +128,7 @@ function PapelBoleta({ activa }) {
 
       {/* zona 5: demasía */}
       {zona("demasia", 364, 58)}
-      <text x="40" y="388" fontSize="11" fill="rgba(20,64,47,0.55)" fontFamily="var(--font-inter)" letterSpacing="1.5">
+      <text x="40" y="388" fontSize="11" fill="rgba(20,64,47,0.75)" fontFamily="var(--font-inter)" letterSpacing="1.5">
         SI NO RECUPERAS TU PIEZA
       </text>
       <text x="40" y="411" fontSize="22" fill="#14402F" fontFamily="var(--font-marcellus)">
@@ -183,33 +184,35 @@ export default function Boleta() {
           {ZONAS.map((z, i) => {
             const abierta = activa === z.id;
             return (
-              <li key={z.id}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setActiva(z.id)}
-                  onClick={() => setActiva(z.id)}
-                  className={`w-full rounded-2xl px-6 py-5 text-left transition-colors duration-300 ${
-                    abierta ? "bg-papel-alto shadow-[0_2px_24px_rgba(20,64,47,0.07)]" : "hover:bg-papel-alto/60"
-                  }`}
-                >
-                  <div className="flex items-baseline gap-4">
-                    <span className={`font-serif text-2xl ${abierta ? "text-granate" : "text-esmeralda/30"}`}>
+              <li
+                key={z.id}
+                className={`rounded-2xl transition-colors duration-300 ${
+                  abierta ? "bg-papel-alto shadow-[0_2px_24px_rgba(20,64,47,0.07)]" : "hover:bg-papel-alto/60"
+                }`}
+              >
+                {/* Acordeón: el botón solo lleva el título (nombre corto para el lector) y el panel va
+                    aparte, oculto cuando está cerrado. */}
+                <h3 className="font-serif text-2xl">
+                  <button
+                    type="button"
+                    aria-expanded={abierta}
+                    aria-controls={`boleta-${z.id}`}
+                    onMouseEnter={() => setActiva(z.id)}
+                    onClick={() => setActiva(z.id)}
+                    className={`flex w-full items-baseline gap-4 rounded-2xl px-6 text-left ${abierta ? "pt-5" : "py-5"}`}
+                  >
+                    <span aria-hidden="true" className={abierta ? "text-granate" : "text-esmeralda/70"}>
                       {i + 1}
                     </span>
-                    <h3 className="font-serif text-2xl">{z.titulo}</h3>
-                  </div>
-                  <div
-                    className="grid transition-[grid-template-rows] duration-500 ease-expo"
-                    style={{ gridTemplateRows: abierta ? "1fr" : "0fr" }}
-                  >
-                    <div className="overflow-hidden">
-                      <p className="pt-3 font-sans leading-relaxed text-esmeralda/80 text-justify">{z.texto}</p>
-                      <p className="mt-3 inline-block rounded-lg bg-granate/[0.07] px-3 py-2 text-left font-sans text-sm font-medium text-granate">
-                        {z.alerta}
-                      </p>
-                    </div>
-                  </div>
-                </button>
+                    <span>{z.titulo}</span>
+                  </button>
+                </h3>
+                <div id={`boleta-${z.id}`} hidden={!abierta} className="boleta-panel px-6 pb-5">
+                  <p className="pt-3 font-sans leading-relaxed text-esmeralda/80 text-justify">{z.texto}</p>
+                  <p className="mt-3 inline-block rounded-lg bg-granate/[0.07] px-3 py-2 text-left font-sans text-sm font-medium text-granate">
+                    {z.alerta}
+                  </p>
+                </div>
               </li>
             );
           })}

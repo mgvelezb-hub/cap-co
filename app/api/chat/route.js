@@ -26,6 +26,7 @@ import { correrTurno } from "@/lib/chatbot/motor";
 import { revisarLimites, ipDeRequest, hashIp } from "@/lib/chatbot/ratelimit";
 import { registrarEvento, tipoDeErrorAnthropic } from "@/lib/alertas/eventos";
 import { limpiarFuente } from "@/lib/leads/validar";
+import { CANAL_RESPALDO, WHATSAPP_ACTIVO } from "@/lib/constants";
 import { validarImagen, mensajeConImagen } from "@/lib/chatbot/imagen";
 import { registrarTurno, idValido } from "@/lib/metricas/conversaciones";
 import { resumirConversacion } from "@/lib/metricas/resumen";
@@ -40,18 +41,18 @@ const MAX_CHARS = 1500;
 const NOTA_CTA_PREVIO =
   "\n\n[Nota del sistema, no del usuario: el botón para agendar por WhatsApp ya está en pantalla desde un turno anterior. No llames agendar_cita otra vez; sigue resolviendo dudas y, si viene al caso, recuérdale que lo use.]";
 
-const MENSAJE_CAIDA =
-  "Ahora mismo no puedo responder. Escríbenos por WhatsApp y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.";
+const MENSAJE_CAIDA = `Ahora mismo no puedo responder. Si quieres, ${CANAL_RESPALDO} y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.`;
 
 const client = new Anthropic();
 
 // Los bloqueos llevan whatsapp: true para que el widget muestre el botón y el prospecto no se pierda.
+const RESPALDO = CANAL_RESPALDO[0].toUpperCase() + CANAL_RESPALDO.slice(1);
 const MENSAJES_LIMITE = {
-  chat: "Vamos muy rápido: dame unos minutos para seguir. Si prefieres, escríbenos por WhatsApp; respondemos de lunes a viernes de 9:00 a 17:00.",
-  chatDia: "Por hoy llegamos al máximo de mensajes en este chat. Escríbenos por WhatsApp y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.",
-  foto: "Por hoy ya analizamos varias fotos tuyas. Puedes escribirme los datos de tu boleta y seguimos, o mandarla por WhatsApp.",
-  chatGlobal: "El asistente está saturado en este momento. Escríbenos por WhatsApp; respondemos de lunes a viernes de 9:00 a 17:00.",
-  fotoGlobal: "Por hoy no podemos analizar más fotos. Escríbeme los datos de tu boleta y seguimos, o mándala por WhatsApp.",
+  chat: `Vamos muy rápido: dame unos minutos para seguir. Si prefieres, ${CANAL_RESPALDO}; respondemos de lunes a viernes de 9:00 a 17:00.`,
+  chatDia: `Por hoy llegamos al máximo de mensajes en este chat. ${RESPALDO} y seguimos con tu caso; respondemos de lunes a viernes de 9:00 a 17:00.`,
+  foto: `Por hoy ya analizamos varias fotos tuyas. Puedes escribirme los datos de tu boleta y seguimos, o ${WHATSAPP_ACTIVO ? "mandarla por WhatsApp" : "mandarla por correo"}.`,
+  chatGlobal: `El asistente está saturado en este momento. ${RESPALDO}; respondemos de lunes a viernes de 9:00 a 17:00.`,
+  fotoGlobal: `Por hoy no podemos analizar más fotos. Escríbeme los datos de tu boleta y seguimos, o ${WHATSAPP_ACTIVO ? "mándala por WhatsApp" : "mándala por correo"}.`,
 };
 
 let ultimoAvisoTope = 0;

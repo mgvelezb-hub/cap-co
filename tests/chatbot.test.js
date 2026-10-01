@@ -268,3 +268,23 @@ test("markdown: reconoce filas de tabla con y sin pipe final", () => {
   assert.ok(SEPARADOR_TABLA.test("| :-- | --: |"));
   assert.deepEqual(celdas("| B | 5 %"), ["B", "5 %"]);
 });
+
+import { COMISION_USUARIO } from "../lib/chatbot/cotizacion.js";
+
+test("cotizarTraspaso sin convenio: gratis con la casa que paga tarifa; 10 % del ahorro con las demás", () => {
+  const antes = process.env.CHAT_CONVENIO;
+  delete process.env.CHAT_CONVENIO;
+  try {
+    for (const tasaActual of [9, 12, 20]) {
+      const r = cotizarTraspaso({ prestamo: 8000, tasaActual, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: null });
+      assert.equal(r.ok, true);
+      if (!r.comparacion) continue;
+      const esperado = r.pagaTarifa ? 0 : Math.round(r.comparacion.ahorro * COMISION_USUARIO * 100) / 100;
+      assert.equal(r.comisionUsuario, esperado);
+      assert.equal(r.ahorroNeto, Math.round((r.comparacion.ahorro - esperado) * 100) / 100);
+      if (r.avanza) assert.match(r.mensajeSugerido, r.pagaTarifa ? /gratis[\s\S]*nos paga una tarifa/ : /10 %[\s\S]*pláticas/);
+    }
+  } finally {
+    if (antes !== undefined) process.env.CHAT_CONVENIO = antes;
+  }
+});

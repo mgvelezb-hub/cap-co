@@ -36,7 +36,7 @@ export default function AnimatedLogo({ className = "", color = "#14402F" }) {
   const patinPataDer =
     "M 88.9 150 L 54.98 150 C 58.5 150 59.6 146.5 59.6 139 L 79.22 139 C 81.2 141.3 85.8 143.2 88.9 145 Z";
   return (
-    <svg viewBox="-125 -135 250 300" className={`animated-logo ${className}`} aria-label="CAP & Co.">
+    <svg viewBox="-125 -135 250 300" className={`animated-logo ${className}`} role="img" aria-label="CAP & Co.">
       <defs>
         <clipPath id="al-base">
           <rect x="-150" y="-150" width="300" height="300" />

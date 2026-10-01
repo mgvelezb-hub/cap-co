@@ -18,7 +18,8 @@ function inline(texto, keyBase) {
 function Tabla({ filas, keyBase }) {
   const [cabeza, ...cuerpo] = filas;
   return (
-    <div className="my-2 -mx-1 overflow-x-auto">
+    // Con teclado también se desplaza: la tabla puede ser más ancha que la burbuja.
+    <div className="my-2 -mx-1 overflow-x-auto" tabIndex={0} role="region" aria-label="Tabla comparativa">
       <table className="w-full border-collapse text-[13px] leading-snug">
         <thead>
           <tr>

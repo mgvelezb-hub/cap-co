@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 // Cuenta páginas vistas de forma anónima: un id aleatorio por pestaña, la ruta y la campaña
-// (utm) con la que llegó. Sin cookies, sin IP, sin datos personales.
+// (utm) y el dominio del sitio de origen. Sin cookies, sin IP, sin datos personales.
 const LLAVE = "capco-visita";
 
 function sesion() {
@@ -24,7 +24,14 @@ function fuente() {
   const p = new URLSearchParams(window.location.search);
   const f = {};
   for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content"]) if (p.get(k)) f[k] = p.get(k);
-  if (document.referrer && !document.referrer.startsWith(window.location.origin)) f.referrer = document.referrer.slice(0, 200);
+  if (document.referrer && !document.referrer.startsWith(window.location.origin)) f.referrer = (() => {
+    try {
+      return new URL(document.referrer).hostname;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!f.referrer) delete f.referrer;
   try {
     // La campaña se queda con la sesión aunque la persona navegue a otra página.
     if (Object.keys(f).length) sessionStorage.setItem(`${LLAVE}-fuente`, JSON.stringify(f));
