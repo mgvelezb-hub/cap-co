@@ -1,4 +1,4 @@
-// Render mínimo de markdown para las burbujas: **negritas**, listas con "- " o "1. ", tablas
+// Render mínimo de markdown para las burbujas: **negritas**, ~~tachado~~, listas con "- " o "1. ", tablas
 // con "|" (comparativos de casas de empeño) y saltos de línea. Nada más (sin HTML crudo, sin
 // links: el único link es el CTA).
 
@@ -6,10 +6,20 @@ import { Fragment } from "react";
 import { SEPARADOR_TABLA, celdas, esFilaTabla } from "./tabla.js";
 
 function inline(texto, keyBase) {
-  const partes = texto.split(/(\*\*[^*]+\*\*)/g);
+  const partes = texto.split(/(\*\*[^*]+\*\*|~~[^~]+~~)/g);
   return partes.map((p, i) => {
     if (p.startsWith("**") && p.endsWith("**") && p.length > 4) {
       return <strong key={`${keyBase}-${i}`}>{p.slice(2, -2)}</strong>;
+    }
+    // ~~tachado~~: precio de lista de la comisión durante la promoción. El lector de pantalla no
+    // anuncia el tachado, así que se dice con palabras.
+    if (p.startsWith("~~") && p.endsWith("~~") && p.length > 4) {
+      return (
+        <s key={`${keyBase}-${i}`}>
+          <span className="sr-only">precio regular </span>
+          {p.slice(2, -2)}
+        </s>
+      );
     }
     return <Fragment key={`${keyBase}-${i}`}>{p}</Fragment>;
   });

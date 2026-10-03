@@ -1,5 +1,6 @@
 // Términos y condiciones. PROVISIONAL, en revisión legal. Mismo modelo de cobro que el chat
-// (lib/chatbot/cotizacion.js → COMISION_USUARIO) y la página de pagos y reembolsos.
+// (lib/chatbot/comision.js) y la página de pagos y reembolsos.
+import { PrecioComision, CondicionesComision } from "@/components/Comision";
 import { PaginaLegal, Seccion, Lista } from "@/components/Legal";
 import { BRAND, CORREO_CONTACTO, LEGAL } from "@/lib/constants";
 
@@ -36,8 +37,8 @@ export default function Terminos() {
       <Seccion titulo="Cuánto cuesta">
         <Lista>
           <li>Revisar tu boleta, usar el asistente y comparar casas no tiene costo.</li>
-          <li>Si te ayudamos a cambiar tu boleta a una casa que le paga una tarifa a {BRAND.nombre} (hoy, Montepío Luz Saviñón), para ti es gratis.</li>
-          <li>Si te ayudamos a cambiarla a otra casa, nos pagas el 10 % de tu ahorro, solo si el cambio se concreta. Te decimos el monto por escrito antes de cualquier trámite. Estamos en pláticas con las casas para que ellas paguen la tarifa y sea gratis para ti.</li>
+          <li>Ninguna casa de empeño nos paga.</li>
+          <li>Si te ayudamos a cambiar tu boleta, nuestra comisión es <PrecioComision /> <CondicionesComision /> Te decimos el monto por escrito antes de cualquier trámite.</li>
           <li>Nunca te pedimos pagos por adelantado.</li>
         </Lista>
         <p>Detalle en <a href="/reembolsos" className="underline underline-offset-4">pagos y reembolsos</a>.</p>
@@ -73,3 +74,6 @@ export default function Terminos() {
     </PaginaLegal>
   );
 }
+
+// La comisión cambia sola el 1-may-2027 (fin de la promoción): la página se regenera cada hora.
+export const revalidate = 3600;

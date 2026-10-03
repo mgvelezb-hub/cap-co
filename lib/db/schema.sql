@@ -313,3 +313,22 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS visita_tiktok_idx ON visita ((lower(fuente->>'utm_campaign'))) WHERE lower(fuente->>'utm_source') = 'tiktok';
+
+-- Cobro al usuario (Mau, 3-oct-2026): ninguna casa paga; la persona paga una comisión sobre el
+-- ahorro final que se le dio por escrito (7 %, 0 % por promoción hasta el 30-abr-2027; ver
+-- lib/chatbot/comision.js). comision_mxn es el monto cobrado ($0 en promoción, cobro_metodo
+-- 'promocion'). 'tarifa_casa' queda solo para los cobros anteriores.
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS cobro_tipo        TEXT;          -- tarifa_casa | ahorro_usuario
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS ahorro_confirmado NUMERIC(12,2); -- base del 10 % (solo ahorro_usuario)
+ALTER TABLE lead ADD COLUMN IF NOT EXISTS cobro_folio       TEXT;          -- folio de la factura o recibo, opcional
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM migracion_unica WHERE nombre = 'cobro_tipo_previos') THEN
+    UPDATE lead SET cobro_tipo = 'tarifa_casa' WHERE etapa = 'comision_cobrada' AND cobro_tipo IS NULL;
+    INSERT INTO migracion_unica (nombre) VALUES ('cobro_tipo_previos');
+  END IF;
+END $$;
+
+-- Sesiones del CRM: al cerrar sesión sube la versión y todas las cookies anteriores del usuario
+-- dejan de valer (también si el dueño cierra sus sesiones desde Ajustes).
+ALTER TABLE crm_usuario ADD COLUMN IF NOT EXISTS sesion_version INT NOT NULL DEFAULT 0;

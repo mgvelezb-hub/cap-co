@@ -25,9 +25,12 @@ test("migración: se puede volver a aplicar con varias llamadas en la misma fran
       await c.query(`INSERT INTO lead (codigo, perfil) VALUES ($1, 'curioso')`, [codigo]);
       await c.query(`INSERT INTO cita (lead_codigo, inicio, tipo, franja) VALUES ($1, $2, 'llamada', 'manana')`, [codigo, inicio]);
     }
+    const marcas = async () => (await c.query(`SELECT nombre, aplicada FROM migracion_unica ORDER BY nombre`)).rows;
+    const antes = await marcas();
     await assert.doesNotReject(() => c.query(sql));
-    // El ajuste de datos "de una vez" no se repite.
-    assert.equal((await c.query(`SELECT count(*)::int AS n FROM migracion_unica`)).rows[0].n, 1);
+    // Los ajustes de datos "de una vez" no se repiten.
+    assert.deepEqual(await marcas(), antes);
+    assert.deepEqual(antes.map((m) => m.nombre), ["cobro_tipo_previos", "crm_leads_previos"]);
   } finally {
     await c.end().catch(() => {});
     await admin.query(`DROP DATABASE IF EXISTS ${nombre}`);

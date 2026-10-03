@@ -1,5 +1,6 @@
 import { requireSesion } from "@/lib/auth";
-import { listarLeads } from "@lib/crm/leads";
+import { listarLeads, alcanceDe } from "@lib/crm/leads";
+import { registrarConsulta } from "@lib/leads/bitacora";
 import { Clase, SinContestar, Vacio, CAMPO, BOTON } from "@/components/ui";
 import { pesos, fecha, etapaNombre, ETAPAS_PANEL, NOMBRE_CLASE, PERFILES } from "@/lib/formato";
 
@@ -18,8 +19,16 @@ export default async function Leads({ searchParams }) {
     conDatos: p.datos === "1" ? true : null,
     revision: p.revision === "1" ? true : null,
     asesor: p.mios === "1" ? sesion.usuario : null,
+    alcance: alcanceDe(sesion),
+    sinAsesor: p.asesor === "ninguno",
   };
   const leads = await listarLeads(filtros);
+  // Buscar por nombre o teléfono es una consulta de datos personales: queda en la bitácora sin el
+  // texto buscado (sobreviviría a un borrado ARCO), solo qué se buscó y cuántos salieron.
+  if (filtros.texto) {
+    const por = /^\d[\d\s-]*$/.test(filtros.texto) ? "telefono" : /^CAP-/i.test(filtros.texto) ? "codigo" : "nombre";
+    await registrarConsulta(sesion.usuario, `busqueda:${por}`, { resultados: leads.length }, "leads_buscados");
+  }
   return (
     <>
       <header className="flex flex-wrap items-end justify-between gap-3">

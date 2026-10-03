@@ -6,6 +6,7 @@ import { decidir } from "../lib/crm/clasificacion.js";
 import { pasoPendiente, motivoSinSeguimiento, diasSinContestar, proximoSeguimiento, respondioANuestroContacto } from "../lib/crm/seguimiento-plan.js";
 import { linkWhatsApp, CORREOS, primerNombre } from "../lib/crm/plantillas.js";
 import { enviarCorreoLead } from "../lib/crm/correo.js";
+import { calcularCobro } from "../lib/crm/cobro.js";
 
 const base = {
   codigo: "CAP-TEST",
@@ -127,4 +128,15 @@ test("correo: no sale sin correo, con baja o sin configurar; con Resend manda al
 
 test("IA: el resumen sale sin teléfonos ni correos", () => {
   assert.equal(anonimizarTexto("Llamar al 55 1234 5678 o ana@correo.mx, préstamo 8000"), "Llamar al [número] o [correo], préstamo 8000");
+});
+
+test("cobro: comisión sobre el ahorro escrito, 0 % por promoción y 7 % desde el 1-may-2027", () => {
+  const promo = new Date("2027-04-30T20:00:00-06:00");
+  const despues = new Date("2027-05-01T10:00:00-06:00");
+  assert.deepEqual(calcularCobro({ ahorro: "2600", fecha: promo }), { ok: true, tipo: "ahorro_usuario", monto: 0, ahorro: 2600, tasa: 0, promocion: true });
+  assert.deepEqual(calcularCobro({ ahorro: 2600, fecha: despues }), { ok: true, tipo: "ahorro_usuario", monto: 182, ahorro: 2600, tasa: 0.07, promocion: false });
+  assert.equal(calcularCobro({ ahorro: 1234.56, fecha: despues }).monto, 86.42);
+  assert.equal(calcularCobro({ ahorro: 10.05, fecha: despues }).monto, 0.7, "en centavos enteros");
+  assert.equal(calcularCobro({ ahorro: null }).motivo, "ahorro_invalido");
+  assert.equal(calcularCobro({ ahorro: -10 }).motivo, "ahorro_invalido");
 });

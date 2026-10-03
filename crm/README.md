@@ -1,7 +1,7 @@
 # CRM de CAP & Co.
 
 App de administración de los leads de casa-ap.com. Vive en `crm/` como workspace de npm y usa la
-misma lógica y la misma base de datos que el sitio (`../lib`): agenda, leads, tarifa por cambio,
+misma lógica y la misma base de datos que el sitio (`../lib`): agenda, leads, comisión sobre el ahorro,
 clasificación y seguimiento no están duplicados.
 
 ## Qué hace
@@ -66,7 +66,6 @@ claude mcp add --transport http capco-crm https://<dominio-del-crm>/api/mcp --he
 | `CRON_SECRET` | Protege el cron de seguimiento |
 | `ANTHROPIC_API_KEY` | Clasificación con IA (sin ella, solo reglas) |
 | `RESEND_API_KEY`, `CORREO_REMITENTE` | Correos automáticos a la persona (dominio verificado en Resend) |
-| `TARIFA_CAMBIO_MXN` | Tarifa por cambio que paga la casa de la red; mismo valor que en el sitio |
 | `RATE_SALT` | Freno de intentos de login |
 
 El sitio también necesita `RESEND_API_KEY` y `CORREO_REMITENTE` para el correo de bienvenida

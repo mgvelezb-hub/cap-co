@@ -196,13 +196,21 @@ export function registrarHerramientas(server) {
     "registrar_cobro",
     {
       title: "Registrar cobro",
-      description: "Registra el cobro de la tarifa a la casa de empeño con convenio (monto en pesos, fecha AAAA-MM-DD, método). Pasa el caso a tarifa cobrada. Al cliente no se le cobra nada. Solo si el usuario lo confirmó.",
-      inputSchema: z.object({ codigo: CODIGO, monto: z.number().positive().max(10_000_000), fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), metodo: z.enum(METODOS_COBRO) }),
+      description:
+        "Registra el cierre de un cambio concretado con su comisión sobre el ahorro que se le dio por escrito (pasa ahorro en pesos; el monto lo calcula el sistema). " +
+        "Cambios concretados hasta el 30-abr-2027: 0 % por promoción, sin método. Después: 7 % del ahorro y método obligatorio. Fecha AAAA-MM-DD y folio opcionales. Solo si el usuario lo confirmó.",
+      inputSchema: z.object({
+        codigo: CODIGO,
+        ahorro: z.number().positive().max(100_000_000),
+        folio: z.string().max(60).optional(),
+        fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        metodo: z.enum(METODOS_COBRO).optional(),
+      }),
     },
     async (i, ctx) =>
       correr(async () => {
-        const r = await registrarCobro(i.codigo, { monto: i.monto, fecha: i.fecha ?? null, metodo: i.metodo, usuario: usuario(ctx) });
-        if (r.ok) await bitacora(usuario(ctx), "cobro_registrado", i.codigo, { monto: i.monto, metodo: i.metodo, via: "mcp" });
+        const r = await registrarCobro(i.codigo, { ahorro: i.ahorro, folio: i.folio ?? null, fecha: i.fecha ?? null, metodo: i.metodo ?? null, usuario: usuario(ctx) });
+        if (r.ok) await bitacora(usuario(ctx), "cobro_registrado", i.codigo, { monto: r.monto, tasa: r.tasa, promocion: r.promocion, via: "mcp" });
         return r;
       }),
   );
@@ -296,7 +304,7 @@ export function registrarHerramientas(server) {
     "actualizar_caso",
     {
       title: "Actualizar caso",
-      description: "Cambia etapa, asesor, casa de destino, tarifa cobrada o motivo de descarte. Descartar cierra tareas y seguimiento. Para notas usa registrar_contacto con tipo nota.",
+      description: "Cambia etapa, asesor, casa de destino, monto cobrado o motivo de descarte. Descartar cierra tareas y seguimiento. Para notas usa registrar_contacto con tipo nota.",
       inputSchema: z.object({
         codigo: CODIGO,
         etapa: z.enum(ETAPAS).optional(),

@@ -1,4 +1,4 @@
-import { resumenHoy } from "@lib/crm/leads";
+import { resumenHoy, alcanceDe } from "@lib/crm/leads";
 import { tareasAbiertas, TIPOS_TAREA } from "@lib/crm/tareas";
 import { citasProximas } from "@lib/agenda/repo";
 import { linkWhatsApp, NOMBRE_WHATSAPP } from "@lib/crm/plantillas";
@@ -29,12 +29,14 @@ function Llamada({ t }) {
 
 export default async function Hoy({ searchParams }) {
   const s = await requireSesion();
-  const equipo = (await searchParams).ver === "equipo";
+  // Un asesor solo ve sus casos: la vista del equipo es del dueño.
+  const alcance = alcanceDe(s);
+  const equipo = !alcance && (await searchParams).ver === "equipo";
   const finDeHoy = new Date(Date.now() + 12 * 3600_000);
   const [r, tareas, citas, eventos, salud] = await Promise.all([
-    resumenHoy(),
-    tareasAbiertas({ hasta: finDeHoy, asesor: equipo ? null : s.usuario }),
-    citasProximas({ dias: 2 }),
+    resumenHoy({ alcance }),
+    tareasAbiertas({ hasta: finDeHoy, asesor: equipo ? null : s.usuario, alcance }),
+    citasProximas({ dias: 2, alcance }),
     eventosRecientes({ horas: 24, limite: 20 }),
     diagnostico({ revisarLlave: false }).catch(() => ({ estado: "ok" })),
   ]);
@@ -49,10 +51,12 @@ export default async function Hoy({ searchParams }) {
           <h1 className="font-serif text-3xl">Hoy</h1>
           <p className="text-sm text-esmeralda/75">Lo que hay que atender, lo más urgente primero.</p>
         </div>
+        {!alcance && (
         <nav aria-label="De quién" className="flex gap-1 text-sm">
           <a href="/" aria-current={!equipo ? "page" : undefined} className={`inline-flex min-h-[44px] items-center rounded-full px-4 ${!equipo ? "bg-esmeralda text-sobre-verde" : "border border-esmeralda/40"}`}>Mías</a>
           <a href="/?ver=equipo" aria-current={equipo ? "page" : undefined} className={`inline-flex min-h-[44px] items-center rounded-full px-4 ${equipo ? "bg-esmeralda text-sobre-verde" : "border border-esmeralda/40"}`}>Todo el equipo</a>
         </nav>
+        )}
       </header>
       {criticos.length > 0 && (
         <p role="alert" className="rounded-xl border border-granate/30 bg-granate/5 p-3 text-sm">
@@ -67,11 +71,14 @@ export default async function Hoy({ searchParams }) {
         <Cifra etiqueta="Aplican" valor={r.aplica_por_agendar} nota="por agendar" href="/leads?clase=aplica_auto&etapa=cita_solicitada" />
         <Cifra etiqueta="Taller" valor={r.taller} nota="candidatos" href="/leads?clase=taller" />
         <Cifra etiqueta="Nuevos" valor={r.nuevos_24h} nota="últimas 24 h" href="/leads" />
+        {!alcance && (
+          <Cifra etiqueta="Sin asesor" valor={r.sin_asignar} nota="ningún asesor los ve: asígnalos" href="/leads?asesor=ninguno" alerta={r.sin_asignar > 0} />
+        )}
       </div>
 
       <Seccion titulo={`${equipo ? "Tareas del equipo" : "Mis tareas"} (${tareas.length})`}>
         {tareas.length === 0 ? (
-          <Vacio>{equipo ? "El equipo no tiene tareas pendientes para hoy." : "No tienes tareas pendientes para hoy. Revisa las del equipo."}</Vacio>
+          <Vacio>{equipo ? "El equipo no tiene tareas pendientes para hoy." : alcance ? "No tienes tareas pendientes para hoy." : "No tienes tareas pendientes para hoy. Revisa las del equipo."}</Vacio>
         ) : (
           <ul className="space-y-2">
             {tareas.map((t) => {

@@ -1,7 +1,8 @@
 // Aviso legal. Provisional, pendiente de revisión legal. Nunca decir "independiente". Desde el
-// 1-oct-2026 se nombran instituciones con sus cifras públicas; Montepío Luz Saviñón nos paga una
-// tarifa (gratis para la persona) y con otras casas la persona paga 10 % de su ahorro. Mismo mensaje
+// 1-oct-2026 se nombran instituciones con sus cifras públicas. Desde el 3-oct-2026 ninguna casa nos
+// paga: comisión de 7 % del ahorro, 0 % por promoción hasta el 30-abr-2027 (lib/chatbot/comision.js). Mismo mensaje
 // que el chat (lib/chatbot/system.js), las preguntas frecuentes y /reembolsos.
+import { PrecioComision, CondicionesComision } from "@/components/Comision";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BRAND, CORREO_CONTACTO } from "@/lib/constants";
@@ -41,10 +42,8 @@ export default function AvisoLegal() {
           </Seccion>
           <Seccion titulo="Cómo nos pagan">
             <p>
-              Revisar tu boleta y comparar casas no te cuesta. Si te acompañamos a cambiar tu boleta: con Montepío
-              Luz Saviñón es gratis para ti, porque esa casa nos paga una tarifa; con cualquier otra casa nos pagas el
-              10 % de tu ahorro, solo si el cambio se concreta y siempre dicho por escrito antes del trámite. Estamos en
-              pláticas con las casas para que ellas paguen y sea gratis para ti. La comparación se hace con las cifras
+              Revisar tu boleta y comparar casas no te cuesta, y ninguna casa de empeño nos paga. Si te acompañamos a
+              cambiar tu boleta, nuestra comisión es <PrecioComision /> <CondicionesComision /> La comparación se hace con las cifras
               que publica cada casa y con lo que de verdad te queda, y cuando el cambio no te deja un ahorro claro (al
               menos $500 o 5 % de lo que pagarías), te lo decimos y no avanzamos. También tenemos ingresos por talleres
               de educación financiera para empresas. Detalle en{" "}
@@ -85,3 +84,6 @@ export default function AvisoLegal() {
     </>
   );
 }
+
+// La comisión cambia sola el 1-may-2027 (fin de la promoción): la página se regenera cada hora.
+export const revalidate = 3600;

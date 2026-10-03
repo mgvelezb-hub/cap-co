@@ -13,7 +13,8 @@ export const metadata = { title: "Tráfico" };
 const pct = (a, b) => (b ? `${Math.min(100, Math.round((a / b) * 100))} %` : "—");
 
 export default async function Trafico({ searchParams }) {
-  const s = await requireSesion();
+  // Dinero de todos y resultados por asesor: solo el dueño.
+  const s = await requireSesion({ rol: "dueno" });
   const pedido = Number((await searchParams).dias);
   const dias = [7, 30, 90].includes(pedido) ? pedido : 30;
   const [serie, fuentes, pags, e, dinero, fin, foto, videos] = await Promise.all([
@@ -46,16 +47,16 @@ export default async function Trafico({ searchParams }) {
 
       <Seccion titulo="Dinero del mes">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Cifra etiqueta="Tarifas cobradas" valor={pesos(fin.cobrado)} nota={`${fin.cobros} cobros`} />
+          <Cifra etiqueta="Cobrado" valor={pesos(fin.cobrado)} nota={`${fin.cobros} ${fin.cobros === 1 ? "cierre" : "cierres"}, ${fin.en_promocion} en 0 % por promoción · ahorro de las personas ${pesos(fin.ahorro_personas)}`} />
           <Cifra etiqueta="Por cobrar" valor={fin.por_cobrar} nota="cambios concretados sin cobro" href="/leads?etapa=switcheo_concretado" alerta={fin.por_cobrar > 0} />
           <Cifra etiqueta="Cambios del mes" valor={fin.cambios} />
-          <Cifra etiqueta="Ticket promedio" valor={fin.cobros ? pesos(fin.ticket) : "—"} nota="tarifa por cobro" />
+          <Cifra etiqueta="Ticket promedio" valor={fin.cobros ? pesos(fin.ticket) : "—"} nota="por cobro" />
         </div>
         {fin.porAsesor.length > 0 && (
           <div className="overflow-x-auto rounded-xl border border-esmeralda/15 bg-papel-alto">
             <table className="w-full min-w-[36rem] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
               <thead className="text-left text-xs uppercase tracking-[0.08em] text-esmeralda/75">
-                <tr><th>Asesor</th><th>Leads del mes</th><th>Primer contacto</th><th>Citas</th><th>Cambios</th><th>Tarifas</th></tr>
+                <tr><th>Asesor</th><th>Leads del mes</th><th>Primer contacto</th><th>Citas</th><th>Cambios</th><th>Cobrado</th></tr>
               </thead>
               <tbody className="[&_tr]:border-t [&_tr]:border-esmeralda/10">
                 {fin.porAsesor.map((a) => (
@@ -89,7 +90,7 @@ export default async function Trafico({ searchParams }) {
 
       <Seccion titulo="Dinero por campaña">
         <p className="text-sm text-esmeralda/75">
-          Cada lead cuenta para la campaña con la que llegó; la tarifa, en la fecha en que se cobró. Los videos de TikTok con link corto
+          Cada lead cuenta para la campaña con la que llegó; la comisión, en la fecha en que se registró el cierre. Los videos de TikTok con link corto
           (casa-ap.com/v/&lt;código&gt;) aparecen con su código como campaña.
         </p>
         {dinero.length === 0 ? (
@@ -98,7 +99,7 @@ export default async function Trafico({ searchParams }) {
           <div className="overflow-x-auto rounded-xl border border-esmeralda/15 bg-papel-alto">
             <table className="w-full min-w-[44rem] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
               <thead className="text-left text-xs uppercase tracking-[0.08em] text-esmeralda/75">
-                <tr><th>Campaña</th><th>Leads</th><th>Cambios</th><th>Por cobrar</th><th>Tarifas</th><th>Publicidad</th><th>IA</th><th>Margen</th></tr>
+                <tr><th>Campaña</th><th>Leads</th><th>Cambios</th><th>Por cobrar</th><th>Cobrado</th><th>Publicidad</th><th>IA</th><th>Margen</th></tr>
               </thead>
               <tbody className="[&_tr]:border-t [&_tr]:border-esmeralda/10">
                 {dinero.map((c) => {
@@ -152,7 +153,7 @@ export default async function Trafico({ searchParams }) {
           <div className="overflow-x-auto rounded-xl border border-esmeralda/15 bg-papel-alto">
             <table className="w-full min-w-[40rem] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
               <thead className="text-left text-xs uppercase tracking-[0.08em] text-esmeralda/75">
-                <tr><th>Video</th><th>Primera visita</th><th>Visitas</th><th>Chats</th><th>Leads</th><th>Con datos</th><th>Cambios</th><th>Tarifas</th></tr>
+                <tr><th>Video</th><th>Primera visita</th><th>Visitas</th><th>Chats</th><th>Leads</th><th>Con datos</th><th>Cambios</th><th>Cobrado</th></tr>
               </thead>
               <tbody className="[&_tr]:border-t [&_tr]:border-esmeralda/10">
                 {videos.map((v) => (

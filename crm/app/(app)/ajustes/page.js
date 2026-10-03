@@ -3,14 +3,14 @@ import { requireSesion } from "@/lib/auth";
 import { tokensDe } from "@/lib/tokens";
 import { query } from "@lib/db/client";
 import { correoPersonasConfigurado } from "@lib/crm/correo";
-import { tarifaCambio } from "@lib/chatbot/tarifa";
+import { enPromocion, PROMO_FIN_TEXTO } from "@lib/chatbot/comision";
 import { Seccion, Vacio } from "@/components/ui";
 import NuevoToken from "@/components/NuevoToken";
 import { fecha, hace, fechaHora } from "@/lib/formato";
 import { diagnostico } from "@lib/alertas/salud";
 import { eventosRecientes, TITULOS, QUE_HACER } from "@lib/alertas/eventos";
 import { bitacoraReciente } from "@lib/leads/bitacora";
-import { accionRevocarToken, accionUsuarioActivo, accionRecibeLeads } from "../acciones";
+import { accionRevocarToken, accionUsuarioActivo, accionRecibeLeads, accionCerrarSesiones } from "../acciones";
 import FormAccion from "@/components/FormAccion";
 
 export const metadata = { title: "Ajustes" };
@@ -27,7 +27,6 @@ export default async function Ajustes() {
     tokensDe(s.usuario),
     s.rol === "dueno" ? query(`SELECT usuario, nombre, rol, activo, acceso_at, recibe_leads FROM crm_usuario ORDER BY usuario`).then((r) => r.rows) : [],
   ]);
-  const comision = tarifaCambio();
   const [salud, eventos, bitacora] = s.rol === "dueno"
     ? await Promise.all([diagnostico({ revisarLlave: false }), eventosRecientes({ horas: 72, limite: 30 }), bitacoraReciente(40)])
     : [null, [], []];
@@ -69,7 +68,7 @@ export default async function Ajustes() {
         <ul className="space-y-1 rounded-xl border border-esmeralda/10 bg-papel-alto p-4 text-sm">
           <Estado ok={correoPersonasConfigurado()} si="Correos automáticos activos (Resend)." no="Correos automáticos apagados: falta RESEND_API_KEY o CORREO_REMITENTE con dominio verificado. Las tareas de WhatsApp sí se crean." />
           <Estado ok={Boolean(process.env.ANTHROPIC_API_KEY)} si="Clasificación con IA activa." no="Sin ANTHROPIC_API_KEY: solo clasifican las reglas." />
-          <Estado ok={comision !== null} si={`Tarifa por cambio de la red configurada: ${comision?.toLocaleString("es-MX", { style: "currency", currency: "MXN" })} sin IVA.`} no="Tarifa por cambio sin configurar (TARIFA_CAMBIO_MXN). Al usuario no se le cobra nada; la tarifa solo sirve para el cobro a la casa y el dinero por campaña." />
+          <Estado ok si={enPromocion() ? `Comisión: 7 % del ahorro, en 0 % por promoción en cambios concretados hasta el ${PROMO_FIN_TEXTO}. Desde el 1 de mayo se cobra el 7 % sin cambiar nada.` : "Comisión: 7 % del ahorro (la promoción de lanzamiento terminó el 30 de abril de 2027)."} />
           <Estado ok={Boolean(process.env.CRON_SECRET)} si="Seguimiento diario programado." no="Falta CRON_SECRET: el seguimiento automático diario no corre." />
         </ul>
       </Seccion>
@@ -152,6 +151,12 @@ export default async function Ajustes() {
                         <input type="hidden" name="usuario" value={u.usuario} />
                         <input type="hidden" name="activo" value={u.activo ? "0" : "1"} />
                         <button className="min-h-[44px] px-2 text-sm underline">{u.activo ? "Desactivar" : "Activar"}</button>
+                      </FormAccion>
+                    )}
+                    {u.usuario !== s.usuario && u.activo && (
+                      <FormAccion accion={accionCerrarSesiones}>
+                        <input type="hidden" name="usuario" value={u.usuario} />
+                        <button className="min-h-[44px] px-2 text-sm underline">Cerrar sus sesiones</button>
                       </FormAccion>
                     )}
                   </span>

@@ -12,6 +12,8 @@ import { WHATSAPP_URL, WHATSAPP_ACTIVO, BRAND } from "@/lib/constants";
 import AbrirChat from "@/components/chat/AbrirChat";
 import { PREGUNTAS } from "@/lib/contenido/preguntas";
 import Footer from "@/components/Footer";
+import { PrecioComision } from "@/components/Comision";
+import { enPromocion } from "@/lib/chatbot/comision";
 
 function Hero() {
   return (
@@ -167,7 +169,13 @@ function ComoFunciona() {
     ["Nos mandas tu boleta", "Una foto aquí en el chat o por WhatsApp. Sin filas ni explicaciones incómodas."],
     ["Te explicamos qué firmaste", "Tasa, refrendo, plazos y costo total, en palabras que cualquiera entiende. Sin costo."],
     ["Comparamos tus opciones", "Con las tasas que publica cada casa de empeño y el precio del oro del día, te mostramos lo que cada una publica y si tu empeño está bien donde está."],
-    ["Tú decides, te acompañamos", "Si conviene moverte, te acompañamos paso a paso a la que más te ahorra de las que comparamos. Antes de cualquier trámite te decimos lo que te queda: gratis con Montepío Luz Saviñón, que nos paga una tarifa; con otra casa, 10 % de tu ahorro. Si no te conviene, te lo decimos."],
+    [
+      "Tú decides, te acompañamos",
+      <>
+        Si conviene moverte, te acompañamos paso a paso a la que más te ahorra de las que comparamos. Nuestra comisión:{" "}
+        <PrecioComision /> de tu ahorro{enPromocion() ? ", por promoción de lanzamiento hasta el 30 de abril de 2027" : ", solo si el cambio se concreta"}. Si no te conviene, te lo decimos.
+      </>,
+    ],
   ];
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
@@ -379,3 +387,6 @@ export default function Home() {
     </>
   );
 }
+
+// La comisión cambia sola el 1-may-2027 (fin de la promoción): la página se regenera cada hora.
+export const revalidate = 3600;

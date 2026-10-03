@@ -269,20 +269,37 @@ test("markdown: reconoce filas de tabla con y sin pipe final", () => {
   assert.deepEqual(celdas("| B | 5 %"), ["B", "5 %"]);
 });
 
-import { COMISION_USUARIO } from "../lib/chatbot/cotizacion.js";
+import { COMISION_LISTA, comisionVigente, enPromocion, textoComision } from "../lib/chatbot/comision.js";
 
-test("cotizarTraspaso sin convenio: gratis con la casa que paga tarifa; 10 % del ahorro con las demás", () => {
+test("comisión: 7 % de lista, 0 % por promoción hasta el 30-abr-2027 en hora de CDMX", () => {
+  assert.equal(COMISION_LISTA, 0.07);
+  assert.equal(comisionVigente(new Date("2026-10-03T12:00:00-06:00")), 0);
+  assert.equal(comisionVigente(new Date("2027-04-30T23:59:00-06:00")), 0, "el 30 de abril aún es promoción");
+  assert.equal(comisionVigente(new Date("2027-05-01T05:30:00Z")), 0, "en UTC ya es 1 de mayo, en CDMX sigue siendo 30 de abril");
+  assert.equal(comisionVigente(new Date("2027-05-01T00:00:00-06:00")), 0.07);
+  assert.equal(enPromocion(new Date("2027-05-01T00:00:00-06:00")), false);
+  assert.match(textoComision({ fecha: new Date("2026-10-03"), tachado: "markdown" }), /~~7 %~~ 0 %[\s\S]*30 de abril de 2027/);
+  assert.doesNotMatch(textoComision({ fecha: new Date("2027-06-01") }), /promoción|0 %/);
+  assert.doesNotMatch(textoComision(), /nos paga|tarifa/, "ninguna casa nos paga");
+});
+
+test("cotizarTraspaso sin convenio: comisión 0 % en promoción y 7 % del ahorro después", () => {
   const antes = process.env.CHAT_CONVENIO;
   delete process.env.CHAT_CONVENIO;
   try {
-    for (const tasaActual of [9, 12, 20]) {
-      const r = cotizarTraspaso({ prestamo: 8000, tasaActual, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: null });
-      assert.equal(r.ok, true);
-      if (!r.comparacion) continue;
-      const esperado = r.pagaTarifa ? 0 : Math.round(r.comparacion.ahorro * COMISION_USUARIO * 100) / 100;
-      assert.equal(r.comisionUsuario, esperado);
-      assert.equal(r.ahorroNeto, Math.round((r.comparacion.ahorro - esperado) * 100) / 100);
-      if (r.avanza) assert.match(r.mensajeSugerido, r.pagaTarifa ? /gratis[\s\S]*nos paga una tarifa/ : /10 %[\s\S]*pláticas/);
+    for (const [hoy, tasa] of [[new Date("2026-10-03T12:00:00-06:00"), 0], [new Date("2027-05-02T12:00:00-06:00"), 0.07]]) {
+      for (const tasaActual of [9, 12, 20]) {
+        const r = cotizarTraspaso({ prestamo: 8000, tasaActual, mesesRestantes: 6, mesesSinPagar: 0, penalizacion: 0, valorPieza: null, hoy });
+        assert.equal(r.ok, true);
+        if (!r.comparacion) continue;
+        const esperado = Math.round(r.comparacion.ahorro * tasa * 100) / 100;
+        assert.equal(r.comisionUsuario, esperado);
+        assert.equal(r.comisionLista, Math.round(r.comparacion.ahorro * 0.07 * 100) / 100);
+        assert.equal(r.promocion, tasa === 0);
+        assert.equal(r.ahorroNeto, Math.round((r.comparacion.ahorro - esperado) * 100) / 100);
+        assert.doesNotMatch(r.mensajeSugerido, /nos paga una tarifa|10 %|pláticas/);
+        if (r.avanza) assert.match(r.mensajeSugerido, tasa === 0 ? /~~7 %~~ 0 %[\s\S]*30 de abril de 2027/ : /7 % de tu ahorro/);
+      }
     }
   } finally {
     if (antes !== undefined) process.env.CHAT_CONVENIO = antes;

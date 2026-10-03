@@ -27,7 +27,7 @@ Para quien opera el sitio y el chat. Todo se hace desde el navegador.
    - **`citas`**: la persona aparta día y hora. Confirmarla por WhatsApp y en el CRM ponerla en **Confirmada** con el **lugar**. Una cita que nadie confirma en un día hábil se libera sola (el CRM dice la fecha límite).
    Después de la cita: **Atendida** o **No asistió** (este regresa el lead a "por contactar"). Para mover una cita, **Reprogramar**.
    `CITA_CAPACIDAD` = citas al mismo tiempo (una por asesor; 1 por defecto). `LLAMADAS_POR_FRANJA` = llamadas que el equipo alcanza por franja (8 por defecto). `CITA_TOPE_HORA` = reservas hechas por hora en todo el sitio antes de frenar y alertar (20 por defecto).
-   **Tarifa por cambio:** `TARIFA_CAMBIO_MXN` en Vercel (proyecto del CRM): lo que paga la casa de la red por cada cambio, igual en todas. El usuario no paga nada y el chat nunca la menciona; solo sirve para el cobro y el dinero por campaña en el CRM. (Las variables `COMISION_FIJA_MXN` y `COMISION_PCT_AHORRO` ya no se usan.) **Configurarla antes del lanzamiento.**
+   **Comisión:** 7 % del ahorro dado por escrito, solo si el cambio se concreta; 0 % por promoción en cambios concretados hasta el 30-abr-2027. Ninguna casa de empeño paga. La regla vive en `lib/chatbot/comision.js` y cambia sola el 1-may-2027; `TARIFA_CAMBIO_MXN` ya no se usa.
 4. **Leads**: mover la etapa conforme avanza el caso:
    Cita solicitada → Cita confirmada → Atendido → **Cambio concretado** (anotar casa de destino) → **Tarifa cobrada a la casa** (anotar el monto). Si no avanza: **Descartado** con el motivo.
    Todo se guarda solo al escribir. En notas no poner datos de la deuda ni de otras personas.

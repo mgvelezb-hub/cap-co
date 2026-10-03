@@ -1,5 +1,6 @@
 // Sesión del CRM: usuarios en crm_usuario (PBKDF2), sesión en una cookie HttpOnly con un JWT
-// firmado (CRM_SESSION_SECRET). Se revisa en middleware.js (firma) y en requireSesion (usuario activo).
+// firmado (CRM_SESSION_SECRET). Se revisa en middleware.js (firma) y en requireSesion (usuario activo y
+// versión de sesión vigente: cerrar sesión sube la versión y deja sin valor todas las cookies anteriores).
 
 import "server-only";
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
@@ -21,7 +22,7 @@ export function nuevaSal() {
 
 /** @returns {Promise<{usuario, nombre, rol} | null>} */
 export async function verificarUsuario(usuario, clave) {
-  const { rows } = await query(`SELECT usuario, nombre, rol, sal, hash, activo FROM crm_usuario WHERE usuario = $1`, [
+  const { rows } = await query(`SELECT usuario, nombre, rol, sal, hash, activo, sesion_version FROM crm_usuario WHERE usuario = $1`, [
     String(usuario || "").trim().toLowerCase(),
   ]);
   const u = rows[0];
@@ -31,11 +32,11 @@ export async function verificarUsuario(usuario, clave) {
   const igual = calculado.length === guardado.length && timingSafeEqual(calculado, guardado);
   if (!u || !u.activo || !igual) return null;
   await query(`UPDATE crm_usuario SET acceso_at = now() WHERE usuario = $1`, [u.usuario]);
-  return { usuario: u.usuario, nombre: u.nombre, rol: u.rol };
+  return { usuario: u.usuario, nombre: u.nombre, rol: u.rol, ver: u.sesion_version };
 }
 
 export async function iniciarSesion(u) {
-  const jwt = await new SignJWT({ nombre: u.nombre, rol: u.rol })
+  const jwt = await new SignJWT({ nombre: u.nombre, rol: u.rol, ver: u.ver ?? 0 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(u.usuario)
     .setIssuedAt()
@@ -50,17 +51,28 @@ export async function iniciarSesion(u) {
   });
 }
 
+/** Cierra la sesión en este y en todos los dispositivos del usuario. */
 export async function cerrarSesion() {
-  (await cookies()).delete(COOKIE);
+  const jar = await cookies();
+  const s = await verificarSesion(jar.get(COOKIE)?.value);
+  if (s) await query(`UPDATE crm_usuario SET sesion_version = sesion_version + 1 WHERE usuario = $1`, [s.usuario]);
+  jar.delete(COOKIE);
+}
+
+/** Usuario activo de una sesión cuya versión sigue vigente, o null. */
+export async function usuarioDeSesion(s) {
+  if (!s) return null;
+  const { rows } = await query(`SELECT usuario, nombre, rol, sesion_version FROM crm_usuario WHERE usuario = $1 AND activo`, [s.usuario]);
+  const u = rows[0];
+  if (!u || u.sesion_version !== s.ver) return null;
+  return { usuario: u.usuario, nombre: u.nombre, rol: u.rol };
 }
 
 /** Sesión vigente de un usuario activo, o redirige al login. */
 export async function requireSesion({ rol = null } = {}) {
   const token = (await cookies()).get(COOKIE)?.value;
-  const s = await verificarSesion(token);
-  if (!s) redirect("/login");
-  const { rows } = await query(`SELECT usuario, nombre, rol FROM crm_usuario WHERE usuario = $1 AND activo`, [s.usuario]);
-  if (!rows[0]) redirect("/login");
-  if (rol && rows[0].rol !== rol) redirect("/");
-  return rows[0];
+  const u = await usuarioDeSesion(await verificarSesion(token));
+  if (!u) redirect("/login");
+  if (rol && u.rol !== rol) redirect("/");
+  return u;
 }

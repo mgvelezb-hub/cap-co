@@ -102,11 +102,14 @@ test("CRM en la base: lead → datos → clasificación → correo y tareas → 
     await marcarTraspaso(codigo, { paso: "boleta_nueva", hecho: true, usuario: "luis" });
     assert.equal((await leer(codigo)).etapa, "switcheo_concretado", "boleta nueva firmada = cambio concretado");
     const { registrarCobro } = await import("../lib/crm/leads.js");
-    assert.equal((await registrarCobro(codigo, { monto: 0, metodo: "efectivo", usuario: "luis" })).motivo, "monto_invalido");
-    assert.equal((await registrarCobro(codigo, { monto: 1200, metodo: "transferencia", usuario: "luis" })).ok, true);
+    const cobrar = (datos) => registrarCobro(codigo, { usuario: "luis", ...datos });
+    assert.equal((await cobrar({})).motivo, "ahorro_invalido");
+    // Concretado hoy: 0 % por promoción, sin método de pago.
+    assert.deepEqual(await cobrar({ ahorro: 2600, folio: "C-1" }), { ok: true, monto: 0, tasa: 0, promocion: true });
     l = await leer(codigo);
     assert.equal(l.etapa, "comision_cobrada");
-    assert.equal(Number(l.comision_mxn), 1200);
+    assert.deepEqual([Number(l.comision_mxn), Number(l.ahorro_confirmado), l.cobro_metodo, l.cobro_tipo], [0, 2600, "promocion", "ahorro_usuario"]);
+    assert.equal((await cobrar({ ahorro: 999 })).motivo, "ya_cobrado", "no se pisa un cierre registrado");
     assert.ok(l.cobrado_at && l.traspaso.comision_cobrada.hecho);
     assert.equal((await actualizarCaso(codigo, { notas: "cobrado y guardado", etapa: "comision_cobrada" }, "luis")).ok, true, "un caso cobrado se puede seguir editando");
     assert.equal((await actualizarCaso(codigo, { etapa: "descartado" }, "luis")).motivo, "solo_dueno", "un asesor no saca un caso de cobrado");
@@ -271,6 +274,67 @@ test("CRM en la base: alta manual y acordar cita nueva", { skip: !URL && "sin ba
     assert.equal((await acordarCitaNueva({ codigo, inicio: libre.toISOString(), usuario: "qa" })).motivo, "lead_con_otra_cita");
   } finally {
     if (codigo) await query(`DELETE FROM lead WHERE codigo = $1`, [codigo]);
+    await cerrarPool();
+  }
+});
+
+test("CRM en la base: cada asesor ve solo sus casos y las consultas quedan en la bitácora", { skip: !URL && "sin base local" }, async () => {
+  const { crearLeadManual, listarLeads, puedeVerLead, alcanceDe, resumenHoy } = await import("../lib/crm/leads.js");
+  const { colaRevision } = await import("../lib/crm/clasificacion.js");
+  const { tareasAbiertas } = await import("../lib/crm/tareas.js");
+  const { registrarConsulta } = await import("../lib/leads/bitacora.js");
+  const { query, cerrarPool } = await import("../lib/db/client.js");
+  const creados = [];
+  try {
+    for (const usuario of ["qa_ana", "qa_beto"]) {
+      const r = await crearLeadManual({ nombre: "Prueba Alcance", telefono: tel(), perfil: "quiere_traspaso", canal: "whatsapp", consentimiento: true, usuario });
+      assert.equal(r.ok, true);
+      creados.push(r.codigo);
+    }
+    const [deAna, deBeto] = creados;
+    await query(`UPDATE lead SET revision_pendiente = true WHERE codigo = ANY($1)`, [creados]);
+    await query(`INSERT INTO crm_tarea (lead_codigo, tipo, titulo, vence_at) VALUES ($1, 'llamar', 'Llamar', now() - interval '1 hour'), ($2, 'llamar', 'Llamar', now() - interval '1 hour')`, creados);
+
+    const ana = { usuario: "qa_ana", rol: "asesor" };
+    const dueno = { usuario: "mau", rol: "dueno" };
+    assert.equal(alcanceDe(ana), "qa_ana");
+    assert.equal(alcanceDe(dueno), null);
+    assert.equal(await puedeVerLead(deAna, ana), true);
+    assert.equal(await puedeVerLead(deBeto, ana), false, "un asesor no ve el caso de otro");
+    assert.equal(await puedeVerLead(deBeto, dueno), true);
+    assert.equal(await puedeVerLead("CAP-NOEXISTE", ana), false);
+
+    const codigos = (lista) => [...new Set(lista.map((x) => x.codigo ?? x.lead_codigo).filter((c) => creados.includes(c)))].sort();
+    assert.deepEqual(codigos(await listarLeads({ texto: "Prueba Alcance", alcance: "qa_ana" })), [deAna]);
+    assert.deepEqual(codigos(await listarLeads({ texto: "Prueba Alcance" })), [...creados].sort());
+    assert.deepEqual(codigos(await colaRevision(500, { alcance: "qa_ana" })), [deAna]);
+    assert.deepEqual(codigos(await tareasAbiertas({ alcance: "qa_ana", limite: 500 })), [deAna]);
+    const r = await resumenHoy({ alcance: "qa_ana" });
+    assert.equal(r.en_revision, 1);
+    assert.ok(r.tareas_vencidas >= 1);
+    assert.equal(r.tareas_vencidas, (await tareasAbiertas({ hasta: new Date(), alcance: "qa_ana", limite: 500 })).length, "solo cuenta las suyas");
+
+    // Una consulta por persona y caso cada 10 minutos.
+    await registrarConsulta("qa_ana", deAna);
+    await registrarConsulta("qa_ana", deAna);
+    await registrarConsulta("qa_beto", deAna);
+    const n = await query(`SELECT usuario FROM bitacora_panel WHERE accion = 'lead_consultado' AND objetivo = $1 ORDER BY usuario`, [deAna]);
+    assert.deepEqual(n.rows.map((x) => x.usuario), ["qa_ana", "qa_beto"]);
+
+    // Concretado después de la promoción: 7 % del ahorro escrito, con método; el monto no se edita a mano.
+    const { registrarCobro, actualizarCaso } = await import("../lib/crm/leads.js");
+    assert.equal((await registrarCobro(deAna, { ahorro: 2600, metodo: "efectivo", usuario: "mau" })).motivo, "sin_cambio_concretado");
+    await actualizarCaso(deAna, { etapa: "switcheo_concretado", casa_destino: "Nacional Monte de Piedad" }, "qa_ana");
+    await query(`UPDATE lead SET cerrado_at = '2027-05-03T12:00:00-06:00' WHERE codigo = $1`, [deAna]);
+    assert.equal((await registrarCobro(deAna, { ahorro: 2600, usuario: "mau" })).motivo, "metodo_invalido", "con 7 % se dice cómo se cobró");
+    const siete = await registrarCobro(deAna, { ahorro: 2600, folio: " F-12 ", metodo: "transferencia", usuario: "mau" });
+    assert.deepEqual(siete, { ok: true, monto: 182, tasa: 0.07, promocion: false });
+    const l = (await query(`SELECT cobro_tipo, comision_mxn, ahorro_confirmado, cobro_folio, cobro_metodo FROM lead WHERE codigo = $1`, [deAna])).rows[0];
+    assert.deepEqual([l.cobro_tipo, Number(l.comision_mxn), Number(l.ahorro_confirmado), l.cobro_folio, l.cobro_metodo], ["ahorro_usuario", 182, 2600, "F-12", "transferencia"]);
+    assert.equal((await actualizarCaso(deAna, { comision_mxn: "100" }, "mau", { rol: "dueno" })).motivo, "monto_del_ahorro");
+  } finally {
+    await query(`DELETE FROM bitacora_panel WHERE objetivo = ANY($1)`, [creados]);
+    await query(`DELETE FROM lead WHERE codigo = ANY($1)`, [creados]);
     await cerrarPool();
   }
 });

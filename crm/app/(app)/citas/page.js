@@ -1,6 +1,6 @@
 import { requireSesion } from "@/lib/auth";
 import { citasProximas } from "@lib/agenda/repo";
-import { CHECKLIST_TRASPASO } from "@lib/crm/leads";
+import { CHECKLIST_TRASPASO, alcanceDe } from "@lib/crm/leads";
 import { query } from "@lib/db/client";
 import { Seccion, Vacio } from "@/components/ui";
 import { fechaHora, fecha, pesos } from "@/lib/formato";
@@ -9,12 +9,15 @@ export const metadata = { title: "Citas" };
 const FRANJA = { manana: "9:00 a 13:00", tarde: "13:00 a 17:00" };
 
 export default async function Citas() {
-  await requireSesion();
+  const s = await requireSesion();
+  const alcance = alcanceDe(s);
   const [citas, enCambio] = await Promise.all([
-    citasProximas({ dias: 14 }),
+    citasProximas({ dias: 14, alcance }),
     query(
       `SELECT codigo, nombre, etapa, traspaso, ahorro, casa_destino FROM lead
-        WHERE etapa IN ('cita_confirmada', 'atendido', 'switcheo_concretado') ORDER BY actualizado_at DESC NULLS LAST LIMIT 50`,
+        WHERE etapa IN ('cita_confirmada', 'atendido', 'switcheo_concretado') AND ($1::text IS NULL OR asesor_usuario = $1)
+        ORDER BY actualizado_at DESC NULLS LAST LIMIT 50`,
+      [alcance],
     ),
   ]);
   const llamadas = citas.filter((c) => c.tipo === "llamada");

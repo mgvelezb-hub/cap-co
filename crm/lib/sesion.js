@@ -22,7 +22,8 @@ export async function verificarSesion(token) {
   try {
     // secretoSesion lanza si falta el secreto: se trata como sesión inválida.
     const { payload } = await jwtVerify(token, secretoSesion(), { algorithms: ["HS256"] });
-    return { usuario: payload.sub, nombre: payload.nombre, rol: payload.rol };
+    // ver: versión de sesión del usuario al entrar; las cookies de antes de la versión 1 no la traen.
+    return { usuario: payload.sub, nombre: payload.nombre, rol: payload.rol, ver: Number(payload.ver ?? 0) };
   } catch {
     return null;
   }

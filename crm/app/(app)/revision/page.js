@@ -1,5 +1,6 @@
 import { requireSesion } from "@/lib/auth";
 import { colaRevision } from "@lib/crm/clasificacion";
+import { alcanceDe } from "@lib/crm/leads";
 import { Clase, Vacio, CAMPO, BOTON } from "@/components/ui";
 import Enviar from "@/components/Enviar";
 import FormAccion from "@/components/FormAccion";
@@ -9,8 +10,8 @@ import { accionAprobar } from "../acciones";
 export const metadata = { title: "Revisión" };
 
 export default async function Revision() {
-  await requireSesion();
-  const cola = await colaRevision();
+  const s = await requireSesion();
+  const cola = await colaRevision(100, { alcance: alcanceDe(s) });
   return (
     <>
       <header>

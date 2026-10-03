@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 const handler = createMcpHandler(registrarHerramientas, {
   serverInfo: { name: "capco-crm", version: "1.0.0" },
   instructions:
-    "CRM de CAP & Co. (asesoría prendaria en CDMX; no presta dinero ni le cobra al usuario; la casa de la red le paga una tarifa por cada cambio de boleta). " +
+    "CRM de CAP & Co. (asesoría prendaria en CDMX; no presta dinero; revisar y comparar es gratis; ninguna casa de empeño le paga; si la persona se cambia, la comisión es 7 % del ahorro dado por escrito, solo si el cambio se concreta, y 0 % por promoción en cambios concretados hasta el 30-abr-2027). " +
     "Leads del sitio casa-ap.com con clasificación (aplica_auto, revision, no_aplica, taller), días sin contestar, tareas, citas y checklist del cambio. " +
     "Por defecto las herramientas no devuelven nombre ni teléfono; pide incluir_contacto solo si el usuario los necesita. Cada consulta queda en la bitácora. " +
     "Antes de aprobar clasificaciones, descartar leads o mover citas, confirma con el usuario si no lo pidió explícitamente.",

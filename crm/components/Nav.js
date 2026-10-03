@@ -12,11 +12,11 @@ const LINKS = [
   ["/ajustes", "Ajustes"],
 ];
 
-export default function Nav({ contadores = {} }) {
+export default function Nav({ contadores = {}, dueno = false }) {
   const path = usePathname();
   return (
     <nav aria-label="Secciones" className="flex flex-wrap gap-1 md:flex-col">
-      {LINKS.map(([href, texto]) => {
+      {LINKS.filter(([href]) => dueno || href !== "/trafico").map(([href, texto]) => {
         const activo = href === "/" ? path === "/" : path.startsWith(href);
         const n = contadores[href];
         return (

@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 import { CAMPOS_PERFIL, etiquetaPerfil, NO_DICE } from "@lib/chatbot/perfil-visita";
-import { fichaLead, duplicados, CHECKLIST_TRASPASO, METODOS_COBRO } from "@lib/crm/leads";
+import { fichaLead, duplicados, puedeVerLead, CHECKLIST_TRASPASO, METODOS_COBRO } from "@lib/crm/leads";
+import { registrarConsulta } from "@lib/leads/bitacora";
 import { linkWhatsApp, NOMBRE_WHATSAPP } from "@lib/crm/plantillas";
 import { TIPOS_EVENTO } from "@lib/crm/eventos";
 import { TIPOS_TAREA } from "@lib/crm/tareas";
-import { tarifaCambio } from "@lib/chatbot/tarifa";
+import { CASAS } from "@lib/chatbot/casas";
+import { TIPOS_COBRO } from "@lib/crm/cobro";
+import { COMISION_LISTA, comisionVigente, enPromocion, PROMO_FIN_TEXTO } from "@lib/chatbot/comision";
 import { PATRON_CODIGO } from "@lib/chatbot/codigo";
 import { query } from "@lib/db/client";
 import { guionPara, DOCUMENTOS, OBJECIONES } from "@lib/crm/guiones";
@@ -33,7 +36,7 @@ const SEGUIMIENTO = {
   terminado: "Seguimiento automático terminado",
 };
 const FRANJA = { manana: "9:00 a 13:00", tarde: "13:00 a 17:00" };
-const METODO = { efectivo: "Efectivo", transferencia: "Transferencia", tarjeta: "Tarjeta", otro: "Otro" };
+const METODO = { efectivo: "Efectivo", transferencia: "Transferencia", tarjeta: "Tarjeta", otro: "Otro", promocion: "Sin cobro (promoción)" };
 const HORAS = [9, 10, 11, 12, 13, 14, 15, 16];
 
 function Dato({ etiqueta, children }) {
@@ -92,14 +95,48 @@ function detalleEvento(e) {
   if (e.tipo === "seguimiento" && typeof d.paso === "number") partes.push(`paso ${d.paso + 1} de 4`);
   if (e.tipo === "asignado") partes.push(d.a ? `a ${d.a}${d.por === "turno" ? " (por turno)" : ""}` : "sin asesor");
   if (e.tipo === "cita" && d.estado) partes.push(NOMBRE_ESTADO_CITA[d.estado] || d.estado);
-  if (e.tipo === "cobro") partes.push(`${pesos(d.monto)} · ${METODO[d.metodo] || d.metodo}`);
+  if (e.tipo === "cobro") partes.push(`${TIPOS_COBRO[d.tipo] || TIPOS_COBRO.tarifa_casa}${d.tasa !== undefined ? ` ${Math.round(d.tasa * 100)} %` : ""} · ${pesos(d.monto)} · ${METODO[d.metodo] || d.metodo}${d.folio ? ` · folio ${d.folio}` : ""}`);
   return partes.filter(Boolean).join(" · ");
+}
+
+/** Cierre del cambio con su comisión: en promoción, $0 sin método; después, 7 % del ahorro con método. */
+function FormCobro({ codigo, promocion }) {
+  return (
+    <FormAccion accion={accionCobro} className="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="codigo" value={codigo} />
+      <label className="flex flex-col text-xs text-esmeralda/75">
+        Ahorro final dado por escrito (pesos)
+        <input name="ahorro" inputMode="decimal" required className={`${CAMPO} w-40`} />
+        <span>{promocion ? "Comisión 0 % por promoción: queda registrado el ahorro." : "Se cobra el 7 %; el monto lo calcula el sistema."}</span>
+      </label>
+      <label className="flex flex-col text-xs text-esmeralda/75">
+        Fecha
+        <input type="date" name="fecha" defaultValue={hoyCDMX()} max={hoyCDMX()} className={CAMPO} />
+      </label>
+      {!promocion && (
+        <label className="flex flex-col text-xs text-esmeralda/75">
+          Cómo se cobró
+          <select name="metodo" required defaultValue="" className={CAMPO}>
+            <option value="" disabled>Elige…</option>
+            {METODOS_COBRO.map((m) => (<option key={m} value={m}>{METODO[m]}</option>))}
+          </select>
+        </label>
+      )}
+      <label className="flex flex-col text-xs text-esmeralda/75">
+        {promocion ? "Folio de la carta firmada" : "Folio de factura o recibo"}
+        <input name="folio" maxLength={60} className={`${CAMPO} w-32`} />
+      </label>
+      <Enviar className={BOTON}>{promocion ? "Cerrar caso (0 % por promoción)" : "Registrar comisión del 7 %"}</Enviar>
+    </FormAccion>
+  );
 }
 
 export default async function Ficha({ params }) {
   const { codigo } = await params;
   if (!PATRON_CODIGO.test(codigo)) notFound();
   const s = await requireSesion();
+  // Un asesor no ve los casos de otros: para él no existen.
+  if (!(await puedeVerLead(codigo, s))) notFound();
   const [f, dups, usuarios] = await Promise.all([
     fichaLead(codigo),
     duplicados(codigo),
@@ -107,15 +144,17 @@ export default async function Ficha({ params }) {
   ]);
   if (!f) notFound();
   const { lead: l, eventos, tareas, citas, conversacion } = f;
+  if (l.nombre || l.telefono || l.email) await registrarConsulta(s.usuario, codigo, { rol: s.rol });
   const dueno = s.rol === "dueno";
   const asesor = s.nombre.split(" ")[0];
-  const comision = tarifaCambio();
   const citaActiva = citas.find((c) => ["reservada", "confirmada"].includes(c.estado));
   l.ultima_cita_estado = citas[0]?.estado ?? null;
   const citaPresencial = citaActiva && citaActiva.tipo === "cita" ? citaActiva : null;
   const lugar = citaPresencial?.lugar && citaPresencial.lugar !== "Por confirmar" ? citaPresencial.lugar : null;
   const sug = l.sugerencia;
   const cerrado = ["comision_cobrada", "descartado"].includes(l.etapa);
+  // La tasa la decide la fecha en que se concretó el cambio (o hoy, si aún no se concreta).
+  const promocion = enPromocion(l.cerrado_at ?? new Date());
 
   return (
     <>
@@ -145,7 +184,11 @@ export default async function Ficha({ params }) {
         </FormAccion>
         {dups.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-            <span className="text-ambar">Mismo teléfono que {dups.map((d) => <a key={d.codigo} href={`/leads/${d.codigo}`} className="mr-1 font-mono underline">{d.codigo}</a>)}</span>
+            {dueno ? (
+              <span className="text-ambar">Mismo teléfono que {dups.map((d) => <a key={d.codigo} href={`/leads/${d.codigo}`} className="mr-1 font-mono underline">{d.codigo}</a>)}</span>
+            ) : (
+              <span className="text-ambar">Hay otro caso con el mismo teléfono: avisa al dueño antes de seguir.</span>
+            )}
             {!cerrado && (
               <FormAccion accion={accionDescartarRapido} className="contents">
                 <input type="hidden" name="codigo" value={l.codigo} />
@@ -262,7 +305,11 @@ export default async function Ficha({ params }) {
               <Dato etiqueta="Tasa actual">{l.tasa_actual ? `${Number(l.tasa_actual)} % mensual` : null}</Dato>
               <Dato etiqueta="Tasa ofrecida">{l.tasa_oferta ? `${Number(l.tasa_oferta)} % mensual` : null}</Dato>
               <Dato etiqueta="Ahorro estimado">{pesos(l.ahorro)}</Dato>
-              <Dato etiqueta="Tarifa de la casa por el cambio">{comision !== null ? pesos(comision) : "sin monto configurado"}</Dato>
+              <Dato etiqueta="Comisión para la persona">
+                {promocion
+                  ? `0 % por promoción (hasta el ${PROMO_FIN_TEXTO})${l.ahorro ? `; la regular de 7 % sería ≈ ${pesos(Number(l.ahorro) * COMISION_LISTA)}` : ""}`
+                  : `7 % del ahorro${l.ahorro ? ` (≈ ${pesos(Number(l.ahorro) * comisionVigente(l.cerrado_at ?? new Date()))} con el estimado)` : ""}`}
+              </Dato>
               <Dato etiqueta="Probabilidad (chat)">{l.probabilidad !== null ? `${l.probabilidad} %` : null}</Dato>
               {conversacion && <Dato etiqueta="Conversación">{conversacion.turnos} mensajes{conversacion.fotos ? ` · ${conversacion.fotos} foto` : ""}</Dato>}
               {conversacion?.perfil && !conversacion.perfil.omitido && (
@@ -389,7 +436,10 @@ export default async function Ficha({ params }) {
             </label>
             <label className="flex flex-col text-xs text-esmeralda/75">
               Casa de destino
-              <input name="casa_destino" defaultValue={l.casa_destino || ""} maxLength={120} className={CAMPO} />
+              <input name="casa_destino" list="casas-destino" defaultValue={l.casa_destino || ""} maxLength={120} className={CAMPO} />
+              <datalist id="casas-destino">
+                {CASAS.map((c) => (<option key={c.id} value={c.nombre} />))}
+              </datalist>
             </label>
             <label className="flex flex-col text-xs text-esmeralda/75 sm:col-span-2">
               Motivo de descarte
@@ -403,34 +453,19 @@ export default async function Ficha({ params }) {
           </FormAccion>
         </Seccion>
 
-        <Seccion titulo="Cobro de la tarifa a la casa">
-          <div className="rounded-xl border border-esmeralda/15 bg-papel-alto p-4 text-sm">
+        <Seccion titulo="Cobro">
+          <div className="space-y-3 rounded-xl border border-esmeralda/15 bg-papel-alto p-4 text-sm">
             {l.etapa === "comision_cobrada" ? (
               <p>
-                Cobrada: <strong>{pesos(l.comision_mxn)}</strong> el {fecha(l.cobrado_at)}{l.cobro_metodo ? ` · ${METODO[l.cobro_metodo]}` : ""}.
+                {TIPOS_COBRO[l.cobro_tipo] || TIPOS_COBRO.tarifa_casa}: <strong>{pesos(l.comision_mxn)}</strong> el {fecha(l.cobrado_at)}
+                {l.cobro_metodo ? ` · ${METODO[l.cobro_metodo]}` : ""}
+                {l.ahorro_confirmado ? ` · sobre un ahorro de ${pesos(l.ahorro_confirmado)}` : ""}
+                {l.cobro_folio ? ` · folio ${l.cobro_folio}` : ""}.
               </p>
-            ) : dueno ? (
-              <FormAccion accion={accionCobro} className="flex flex-wrap items-end gap-2">
-                <input type="hidden" name="codigo" value={l.codigo} />
-                <label className="flex flex-col text-xs text-esmeralda/75">
-                  Monto (pesos)
-                  <input name="monto" inputMode="decimal" required defaultValue={comision !== null ? String(comision) : ""} className={`${CAMPO} w-32`} />
-                </label>
-                <label className="flex flex-col text-xs text-esmeralda/75">
-                  Fecha
-                  <input type="date" name="fecha" defaultValue={hoyCDMX()} max={hoyCDMX()} className={CAMPO} />
-                </label>
-                <label className="flex flex-col text-xs text-esmeralda/75">
-                  Cómo se cobró
-                  <select name="metodo" required defaultValue="" className={CAMPO}>
-                    <option value="" disabled>Elige…</option>
-                    {METODOS_COBRO.map((m) => (<option key={m} value={m}>{METODO[m]}</option>))}
-                  </select>
-                </label>
-                <Enviar className={BOTON}>Registrar cobro</Enviar>
-              </FormAccion>
+            ) : dueno && l.etapa === "switcheo_concretado" ? (
+              <FormCobro codigo={l.codigo} promocion={promocion} />
             ) : (
-              <p className="text-esmeralda/75">{l.etapa === "switcheo_concretado" ? "Cambio concretado: la tarifa está por cobrar. El cobro lo registra el dueño." : "Se registra cuando se concreta el cambio."}</p>
+              <p className="text-esmeralda/75">{l.etapa === "switcheo_concretado" ? "Cambio concretado: falta registrar el cierre con su comisión. Lo registra el dueño." : "Se registra cuando se concreta el cambio."}</p>
             )}
           </div>
         </Seccion>
