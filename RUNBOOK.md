@@ -10,6 +10,11 @@ Para quien opera el sitio y el chat. Todo se hace desde el navegador.
 | ¿Está vivo el chat? (público) | https://casa-ap.com/api/salud → `ok`, `degradado` o `caido` |
 | Saldo y límite de gasto de la IA | console.anthropic.com → Settings → Billing / Limits |
 
+## Correo (configurado el 3-oct-2026)
+- Todo sale de **contacto@casa-ap.com** por Resend (dominio casa-ap.com verificado, región us-east-1): bienvenida, recordatorios y alertas (`CORREO_REMITENTE`, `ALERTA_REMITENTE`). Las alertas llegan a `ALERTA_EMAIL`.
+- DNS en Namecheap: MX `@` de Google (no tocar), SPF de Google en `@`, DMARC en `_dmarc`, y de Resend MX y TXT en `send` más TXT en `resend._domainkey`. El CRM vive en `admin.casa-ap.com` (CNAME a Vercel).
+- Cambiar una variable en Vercel no basta: el `ignoreCommand` cancela el redeploy si el código no cambió. Hace falta un commit que toque el proyecto (o `vercel deploy --prod`).
+
 ## Si llega una alerta por correo
 | Alerta | Qué hacer |
 |---|---|

@@ -65,7 +65,7 @@ claude mcp add --transport http capco-crm https://<dominio-del-crm>/api/mcp --he
 | `CRM_SESSION_SECRET` | Firma de la sesión (32+ caracteres, obligatoria) |
 | `CRON_SECRET` | Protege el cron de seguimiento |
 | `ANTHROPIC_API_KEY` | Clasificación con IA (sin ella, solo reglas) |
-| `RESEND_API_KEY`, `CORREO_REMITENTE` | Correos automáticos a la persona (dominio verificado en Resend) |
+| `RESEND_API_KEY`, `CORREO_REMITENTE` | Correos automáticos a la persona. Remitente `CAP & Co. <contacto@casa-ap.com>`; dominio casa-ap.com verificado en Resend (us-east-1) |
 | `RATE_SALT` | Freno de intentos de login |
 
 El sitio también necesita `RESEND_API_KEY` y `CORREO_REMITENTE` para el correo de bienvenida
